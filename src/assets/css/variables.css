@@ -1,0 +1,35 @@
+:root {
+  /* Brand Colors */
+  --primary-color: #18d600;
+  --primary-hover: #119e00;
+  --danger-color: #ef4444;
+
+  /* Backgrounds */
+  --bg-main: #f0f4f8;
+  --bg-secondary: #f3f4f6;
+  --white: #ffffff;
+
+  /* Text Colors */
+  --text-bold: #1f2937;
+  --text-main: #374151;
+  --text-muted: #6b7280;
+  --text-light: #9ca3af;
+
+  /* Sidebar Colors */
+  --sidebar-bg: #111827;
+  --sidebar-logo-bg: #1f2937;
+  --sidebar-hover-bg: #374151;
+  --sidebar-link: #d1d5db;
+
+  /* Borders & Shadows */
+  --border-color: #e5e7eb;
+  --input-border: #d1d5db;
+
+  /* Indicator Colors */
+  --indicator-pink: #f472b6;
+  --indicator-blue: #60a5fa;
+  --indicator-teal: #2dd4bf;
+  --indicator-green: #34d399;
+  --indicator-orange: #fb923c;
+  --indicator-mint: #4ade80;
+}

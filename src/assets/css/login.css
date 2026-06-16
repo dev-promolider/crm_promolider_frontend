@@ -1,0 +1,280 @@
+.login-wrapper {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--sidebar-bg); /* Fondo oscuro por defecto */
+}
+
+/* ── PANEL IZQUIERDO (FORMULARIO) ── */
+.login-form-panel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--sidebar-logo-bg);
+  padding: 40px;
+  position: relative;
+  z-index: 2;
+}
+
+.form-container {
+  width: 100%;
+  max-width: 420px;
+}
+
+.mobile-logo-wrapper {
+  display: none; /* Se oculta en desktop */
+  margin-bottom: 30px;
+}
+.mobile-logo {
+  max-width: 160px;
+}
+
+.login-title {
+  color: var(--white);
+  font-size: 32px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  letter-spacing: -0.5px;
+}
+
+.login-subtitle {
+  color: var(--text-muted);
+  font-size: 15px;
+  margin-bottom: 36px;
+}
+.login-subtitle strong {
+  color: var(--primary-color);
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  color: var(--sidebar-link);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-wrapper input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--sidebar-hover-bg);
+  border-radius: 10px;
+  background-color: var(--sidebar-bg);
+  color: var(--white);
+  font-size: 15px;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.input-wrapper input:focus {
+  border-color: var(--primary-color);
+  background-color: var(--sidebar-logo-bg);
+  box-shadow: 0 0 0 4px rgba(24, 214, 0, 0.1);
+}
+
+.eye-btn {
+  position: absolute;
+  right: 14px;
+  background: transparent;
+  border: none;
+  color: var(--text-light);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+.eye-btn:hover {
+  color: var(--primary-color);
+}
+
+.options-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.remember-me {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--sidebar-link);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.remember-me input {
+  accent-color: var(--primary-color);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.forgot-pwd {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 700;
+  transition: opacity 0.2s;
+}
+.forgot-pwd:hover {
+  opacity: 0.8;
+}
+
+/* ReCaptcha */
+.recaptcha-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 8px;
+}
+.recaptcha-error-text {
+  color: var(--danger-color);
+  font-size: 13px;
+  margin-top: 8px;
+  font-weight: 600;
+}
+
+.submit-btn {
+  background-color: var(--primary-color);
+  color: var(--white);
+  border: none;
+  border-radius: 10px;
+  padding: 16px;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: all 0.2s;
+  box-shadow: 0 4px 14px rgba(24, 214, 0, 0.3);
+}
+.submit-btn:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(24, 214, 0, 0.4);
+}
+
+/* ── PANEL DERECHO (BRANDING VISUAL) ── */
+.login-brand-panel {
+  flex: 1.2;
+  background: var(--sidebar-bg);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.brand-content {
+  position: relative;
+  z-index: 10;
+  max-width: 500px;
+  color: var(--white);
+}
+
+.brand-logo {
+  max-width: 220px;
+  margin-bottom: 40px;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+}
+
+.brand-title {
+  font-size: 48px;
+  font-weight: 900;
+  line-height: 1.1;
+  margin-bottom: 20px;
+  letter-spacing: -1px;
+}
+
+.brand-desc {
+  font-size: 18px;
+  color: var(--sidebar-link);
+  line-height: 1.6;
+  margin-bottom: 40px;
+}
+
+/* Glassmorphism Card */
+.glass-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: 320px;
+}
+
+.glass-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(24, 214, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.glass-card h4 {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.glass-card p {
+  font-size: 13px;
+  color: var(--text-light);
+}
+
+/* Abstract Background Circles */
+.circle {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  z-index: 1;
+}
+.circle-1 {
+  width: 500px;
+  height: 500px;
+  background: rgba(24, 214, 0, 0.15);
+  top: -100px;
+  right: -100px;
+}
+.circle-2 {
+  width: 400px;
+  height: 400px;
+  background: rgba(59, 130, 246, 0.15); /* Soft blue blend */
+  bottom: -50px;
+  left: -100px;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 900px) {
+  .login-brand-panel {
+    display: none; /* Ocultamos el arte en móviles para enfocarnos en el form */
+  }
+  .mobile-logo-wrapper {
+    display: flex;
+  }
+  .login-form-panel {
+    padding: 20px;
+  }
+}
