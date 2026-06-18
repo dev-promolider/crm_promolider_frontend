@@ -3,33 +3,75 @@
   --primary-color: #18d600;
   --primary-hover: #119e00;
   --danger-color: #ef4444;
-
-  /* Backgrounds */
-  --bg-main: #f0f4f8;
-  --bg-secondary: #f3f4f6;
   --white: #ffffff;
 
-  /* Text Colors */
-  --text-bold: #1f2937;
-  --text-main: #374151;
-  --text-muted: #6b7280;
-  --text-light: #9ca3af;
-
-  /* Sidebar Colors */
-  --sidebar-bg: #111827;
-  --sidebar-logo-bg: #1f2937;
-  --sidebar-hover-bg: #374151;
+  /* Theme Defaults (Light Mode Glassmorphism) */
+  --bg-main: #e2e8f0; /* Fondo ligeramente gris para que el cristal resalte */
+  --card-bg: rgba(255, 255, 255, 0.7); /* Cristal blanco translúcido */
+  --text-bold: #0f172a;
+  --text-main: #334155;
+  --text-muted: #64748b;
+  --text-light: #94a3b8;
+  --border-color: rgba(255, 255, 255, 0.6); /* Borde blanco brillante sutil */
+  
+  /* Sidebar (Mantenemos oscuro para contraste Premium) */
+  --sidebar-bg: #0b1120;
+  --sidebar-logo-bg: #0f172a;
+  --sidebar-hover-bg: rgba(24, 214, 0, 0.1);
   --sidebar-link: #d1d5db;
+  --sidebar-active: #18d600;
 
-  /* Borders & Shadows */
-  --border-color: #e5e7eb;
-  --input-border: #d1d5db;
+  /* Navbar */
+  --navbar-bg: rgba(255, 255, 255, 0.85); /* Translúcido */
+  --navbar-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+
+  /* Tree & Chart Colors */
+  --node-bg: #fb923c;
+  --node-shadow: rgba(251, 146, 60, 0.3);
 
   /* Indicator Colors */
-  --indicator-pink: #f472b6;
-  --indicator-blue: #60a5fa;
-  --indicator-teal: #2dd4bf;
-  --indicator-green: #34d399;
-  --indicator-orange: #fb923c;
-  --indicator-mint: #4ade80;
+  --indicator-green: #dcfce7;
+  --indicator-green-text: #16a34a;
+  --indicator-blue: #e0f2fe;
+  --indicator-blue-text: #0284c7;
+  --indicator-orange: #ffedd5;
+  --indicator-orange-text: #ea580c;
+  --indicator-red: #fee2e2;
+  --indicator-red-text: #dc2626;
+  --indicator-purple: #f3e8ff;
+  --indicator-purple-text: #9333ea;
+}
+
+body.dark-theme {
+  /* Theme Defaults (Dark Mode Glassmorphism) */
+  --bg-main: #0a0f18; /* Fondo más profundo */
+  --card-bg: rgba(22, 30, 46, 0.65); /* Translúcido para el Glassmorphism */
+  --text-bold: #f8fafc;
+  --text-main: #e2e8f0;
+  --text-muted: #94a3b8;
+  --text-light: #64748b;
+  --border-color: rgba(255, 255, 255, 0.06); /* Borde sutil transparente */
+  
+  /* Sidebar */
+  --sidebar-bg: #06090e;
+  --sidebar-logo-bg: #0a0f18;
+  --sidebar-hover-bg: rgba(24, 214, 0, 0.08); /* Hover con toque verde neón */
+  --sidebar-link: #94a3b8;
+  --sidebar-active: #18d600;
+
+  /* Navbar */
+  --navbar-bg: rgba(10, 15, 24, 0.85); /* Translúcido */
+  --navbar-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+
+  /* Indicators for Dark Mode */
+  --indicator-green: rgba(22, 163, 74, 0.2);
+  --indicator-green-text: #4ade80;
+  --indicator-blue: rgba(2, 132, 199, 0.2);
+  --indicator-blue-text: #38bdf8;
+  --indicator-orange: rgba(234, 88, 12, 0.2);
+  --indicator-orange-text: #fb923c;
+  --indicator-red: rgba(220, 38, 38, 0.2);
+  --indicator-red-text: #f87171;
+  --indicator-purple: rgba(147, 51, 234, 0.2);
+  --indicator-purple-text: #c084fc;
 }
