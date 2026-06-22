@@ -209,9 +209,9 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue';
 import { RouterLink, RouterView, useRouter } from 'vue-router';
-import { useAuthStore } from '../../stores/authStore';
-import api from '../../services/api';
-import echo from '../../services/echo';
+import { useAuthStore } from '@/features/auth/stores/authStore';
+import api from '@/services/apiClient';
+import echo from '@/services/echo';
 import { 
   LayoutDashboard, UserPlus, Database, MonitorPlay, Star, Send, PieChart, ChevronRight, Menu, 
   Search, Bell, Moon, Sun, Award, Apple, User, Medal, Settings, LogOut
@@ -391,3 +391,4 @@ onBeforeUnmount(() => {
 }
 
 </style>
+

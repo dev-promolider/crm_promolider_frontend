@@ -486,8 +486,8 @@ import { ref, onMounted, computed } from 'vue';
 import {
   CheckCircle2, XCircle, TrendingUp, Clock, Award, Users, Video, PlayCircle, UserPlus, X, Info, Loader2, AlertCircle
 } from 'lucide-vue-next';
-import api from '../../services/api';
-import { useAuthStore } from '../../stores/authStore';
+import api from '@/services/apiClient';
+import { useAuthStore } from '@/features/auth/stores/authStore';
 
 const authStore = useAuthStore();
 const user = computed(() => authStore.user);
@@ -786,4 +786,5 @@ onMounted(() => {
   }
 }
 </style>
+
 

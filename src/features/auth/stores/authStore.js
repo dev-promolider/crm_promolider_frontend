@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import api from '../services/api';
+import api from '@/services/apiClient';
 
 export const useAuthStore = defineStore('auth', {
   state: () => {
@@ -12,6 +12,10 @@ export const useAuthStore = defineStore('auth', {
   },
   getters: {
     isAuthenticated: (state) => !!state.token,
+    hasRole: (state) => (role) => {
+      if (!state.user || !state.user.roles) return false;
+      return state.user.roles.includes(role);
+    }
   },
   actions: {
     async login(credentials) {

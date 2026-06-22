@@ -101,7 +101,7 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { useAuthStore } from '../../stores/authStore';
+import { useAuthStore } from '@/features/auth/stores/authStore';
 import VueRecaptcha from 'vue3-recaptcha2';
 import { Eye, EyeOff, Key } from 'lucide-vue-next';
 
@@ -161,3 +161,4 @@ const handleLogin = async () => {
   }
 };
 </script>
+

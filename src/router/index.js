@@ -1,90 +1,95 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import { useAuthStore } from '../stores/authStore';
+import { useAuthStore } from '@/features/auth/stores/authStore';
 
 const routes = [
   {
+    path: '/login',
+    name: 'login',
+    component: () => import('@/features/auth/views/LoginView.vue'),
+    meta: { requiresAuth: false, layout: 'AuthLayout' }
+  },
+  {
     path: '/',
-    component: () => import('../components/layout/MainLayout.vue'),
-    meta: { requiresAuth: true }, // Rutas protegidas por el token
+    redirect: '/dashboard'
+  },
+  {
+    path: '/dashboard',
+    component: () => import('@/layouts/DashboardLayout.vue'),
+    meta: { requiresAuth: true, layout: 'DashboardLayout' },
     children: [
       {
         path: '',
-        name: 'Dashboard',
-        component: () => import('../views/dashboard/Dashboard.vue')
-      },
-      {
-        path: 'cursos',
-        name: 'Cursos',
-        component: () => import('../views/courses/CourseList.vue')
-      },
-      {
-        path: 'marketing',
-        name: 'Marketing',
-        component: () => import('../views/marketing/MarketingTools.vue')
-      },
-      {
-        path: 'ecomercademico',
-        name: 'EcomerAcademico',
-        component: () => import('../views/courses/EcomerAcademico.vue')
-      },
-      {
-        path: 'liderbot',
-        name: 'Liderbot',
-        component: () => import('../views/marketing/Liderbot.vue')
-      },
-      {
-        path: 'leadboost',
-        name: 'LeadBoost',
-        component: () => import('../views/marketing/LeadBoost.vue')
-      },
-      {
-        path: 'smartfunnel',
-        name: 'SmartFunnel',
-        component: () => import('../views/marketing/SmartFunnel.vue')
-      },
-      {
-        path: 'billetera',
-        name: 'Billetera',
-        component: () => import('../views/wallet/WalletOverview.vue')
-      },
-      {
-        path: 'reportes',
-        name: 'Reportes',
-        component: () => import('../views/reports/ReportsOverview.vue')
-      },
-      {
-        path: 'configuracion',
-        name: 'Configuracion',
-        component: () => import('../views/settings/SettingsPanel.vue')
+        name: 'dashboard',
+        component: () => import('@/features/dashboard/views/DashboardView.vue')
       }
     ]
   },
   {
-    path: '/login',
-    name: 'Login',
-    component: () => import('../views/auth/Login.vue'),
-    meta: { requiresGuest: true } // Solo accesible si NO tienes token
+    path: '/admin',
+    component: () => import('@/layouts/DashboardLayout.vue'),
+    meta: { requiresAuth: true, role: 'admin' },
+    children: [
+      {
+        path: '',
+        name: 'admin-panel',
+        component: { template: '<div>Admin Panel Placeholder</div>' }
+      }
+    ]
+  },
+  {
+    path: '/producer',
+    component: () => import('@/layouts/DashboardLayout.vue'),
+    meta: { requiresAuth: true, role: 'producer' },
+    children: [
+      {
+        path: '',
+        name: 'producer-dashboard',
+        component: { template: '<div>Producer Dashboard Placeholder</div>' }
+      }
+    ]
+  },
+  {
+    path: '/affiliate',
+    component: () => import('@/layouts/DashboardLayout.vue'),
+    meta: { requiresAuth: true, role: 'affiliate' },
+    children: [
+      {
+        path: '',
+        name: 'affiliate-market',
+        component: { template: '<div>Affiliate Market Placeholder</div>' }
+      }
+    ]
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: '/login'
   }
 ];
 
 const router = createRouter({
-  history: createWebHistory(),
-  routes,
+  history: createWebHistory(import.meta.env.BASE_URL),
+  routes
 });
 
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore();
-  
-  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    // Si intenta ir al Dashboard u otra ruta bloqueada sin token -> Login
-    next({ name: 'Login' });
-  } else if (to.meta.requiresGuest && authStore.isAuthenticated) {
-    // Si intenta ir al Login y ya tiene un token válido -> Dashboard
-    next({ name: 'Dashboard' });
-  } else {
-    // Si todo está correcto, pasa
-    next();
+  const isAuthenticated = authStore.isAuthenticated;
+
+  if (to.name === 'login' && isAuthenticated) {
+    return next({ name: 'dashboard' });
   }
+
+  if (to.meta.requiresAuth) {
+    if (!isAuthenticated) {
+      return next({ name: 'login' });
+    }
+
+    if (to.meta.role && !authStore.hasRole(to.meta.role)) {
+      return next({ name: 'dashboard' }); 
+    }
+  }
+
+  next();
 });
 
 export default router;
