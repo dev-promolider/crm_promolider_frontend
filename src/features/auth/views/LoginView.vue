@@ -148,7 +148,7 @@ const handleLogin = async () => {
     });
     
     // Redirigir al dashboard tras el éxito
-    router.push({ name: 'Dashboard' });
+    router.push({ name: 'dashboard' });
   } catch (error) {
     console.error("Error capturado en login:", error);
     if (error.response && (error.response.status === 401 || error.response.status === 403)) {

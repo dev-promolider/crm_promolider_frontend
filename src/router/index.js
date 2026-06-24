@@ -71,25 +71,25 @@ const router = createRouter({
   routes
 });
 
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, from) => {
   const authStore = useAuthStore();
   const isAuthenticated = authStore.isAuthenticated;
 
   if (to.name === 'login' && isAuthenticated) {
-    return next({ name: 'dashboard' });
+    return { name: 'dashboard' };
   }
 
   if (to.meta.requiresAuth) {
     if (!isAuthenticated) {
-      return next({ name: 'login' });
+      return { name: 'login' };
     }
 
     if (to.meta.role && !authStore.hasRole(to.meta.role)) {
-      return next({ name: 'dashboard' }); 
+      return { name: 'dashboard' }; 
     }
   }
 
-  next();
+  return true;
 });
 
 export default router;

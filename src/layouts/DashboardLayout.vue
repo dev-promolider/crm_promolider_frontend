@@ -211,10 +211,10 @@ import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue';
 import { RouterLink, RouterView, useRouter } from 'vue-router';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import api from '@/services/apiClient';
-import echo from '@/services/echo';
+// import echo from '@/services/echo';
 import { 
   LayoutDashboard, UserPlus, Database, MonitorPlay, Star, Send, PieChart, ChevronRight, Menu, 
-  Search, Bell, Moon, Sun, Award, Apple, User, Medal, Settings, LogOut
+  Search, Bell, Moon, Sun, Award, Apple, User, Medal, Settings, LogOut, Loader2
 } from 'lucide-vue-next';
 
 const router = useRouter();
@@ -294,11 +294,11 @@ const closeDropdown = () => {
 };
 
 const handleLogout = () => {
-  if (user.value && user.value.id) {
-    echo.leave(`user-notifications.${user.value.id}`);
-  }
+  // if (user.value && user.value.id) {
+  //   echo.leave(`user-notifications.${user.value.id}`);
+  // }
   authStore.logout();
-  router.push({ name: 'Login' });
+  router.push({ name: 'login' });
 };
 
 // Tema Oscuro / Claro
@@ -316,6 +316,7 @@ const toggleTheme = () => {
 };
 
 const listenNotifications = () => {
+  /*
   if (!user.value || !user.value.id) return;
   const channelName = `user-notifications.${user.value.id}`;
   
@@ -343,6 +344,7 @@ const listenNotifications = () => {
         }, 5000);
       }
     });
+  */
 };
 
 onMounted(() => {

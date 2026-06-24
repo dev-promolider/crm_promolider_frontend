@@ -263,8 +263,8 @@
                 <!-- Left Leg (a) -->
                 <li>
                   <a href="#" class="tree-node" v-if="binaryTreeData.a" @click.prevent="openUserModal(binaryTreeData.a, 'Izquierda', binaryTreeData.c?.name)">
-                    <img :src="binaryTreeData.a.user?.photo || 'https://i.pravatar.cc/150?img=12'" alt="A" />
-                    <span>{{ binaryTreeData.a.user?.name }}</span>
+                    <img :src="binaryTreeData.a.photo || 'https://i.pravatar.cc/150?img=12'" alt="A" />
+                    <span>{{ binaryTreeData.a.name }}</span>
                   </a>
                   <a href="#" class="tree-node empty-node" v-else>
                     <UserPlus :size="20" class="empty-icon" />
@@ -273,18 +273,18 @@
                   <!-- Left Leg Children (aa & ab) -->
                   <ul v-if="binaryTreeData.a || binaryTreeData.aa || binaryTreeData.ab">
                     <li>
-                      <a href="#" class="tree-node" v-if="binaryTreeData.aa" @click.prevent="openUserModal(binaryTreeData.aa, 'Izquierda', binaryTreeData.a?.user?.name)">
-                        <img :src="binaryTreeData.aa.user?.photo || 'https://i.pravatar.cc/150?img=13'" alt="AA" />
-                        <span>{{ binaryTreeData.aa.user?.name }}</span>
+                      <a href="#" class="tree-node" v-if="binaryTreeData.aa" @click.prevent="openUserModal(binaryTreeData.aa, 'Izquierda', binaryTreeData.a?.name)">
+                        <img :src="binaryTreeData.aa.photo || 'https://i.pravatar.cc/150?img=13'" alt="AA" />
+                        <span>{{ binaryTreeData.aa.name }}</span>
                       </a>
                       <a href="#" class="tree-node empty-node" v-else>
                         <UserPlus :size="20" class="empty-icon" />
                       </a>
                     </li>
                     <li>
-                      <a href="#" class="tree-node" v-if="binaryTreeData.ab" @click.prevent="openUserModal(binaryTreeData.ab, 'Derecha', binaryTreeData.a?.user?.name)">
-                        <img :src="binaryTreeData.ab.user?.photo || 'https://i.pravatar.cc/150?img=14'" alt="AB" />
-                        <span>{{ binaryTreeData.ab.user?.name }}</span>
+                      <a href="#" class="tree-node" v-if="binaryTreeData.ab" @click.prevent="openUserModal(binaryTreeData.ab, 'Derecha', binaryTreeData.a?.name)">
+                        <img :src="binaryTreeData.ab.photo || 'https://i.pravatar.cc/150?img=14'" alt="AB" />
+                        <span>{{ binaryTreeData.ab.name }}</span>
                       </a>
                       <a href="#" class="tree-node empty-node" v-else>
                         <UserPlus :size="20" class="empty-icon" />
@@ -296,8 +296,8 @@
                 <!-- Right Leg (b) -->
                 <li>
                   <a href="#" class="tree-node" v-if="binaryTreeData.b" @click.prevent="openUserModal(binaryTreeData.b, 'Derecha', binaryTreeData.c?.name)">
-                    <img :src="binaryTreeData.b.user?.photo || 'https://i.pravatar.cc/150?img=15'" alt="B" />
-                    <span>{{ binaryTreeData.b.user?.name }}</span>
+                    <img :src="binaryTreeData.b.photo || 'https://i.pravatar.cc/150?img=15'" alt="B" />
+                    <span>{{ binaryTreeData.b.name }}</span>
                   </a>
                   <a href="#" class="tree-node empty-node" v-else>
                     <UserPlus :size="20" class="empty-icon" />
@@ -306,18 +306,18 @@
                   <!-- Right Leg Children (ba & bb) -->
                   <ul v-if="binaryTreeData.b || binaryTreeData.ba || binaryTreeData.bb">
                     <li>
-                      <a href="#" class="tree-node" v-if="binaryTreeData.ba" @click.prevent="openUserModal(binaryTreeData.ba, 'Izquierda', binaryTreeData.b?.user?.name)">
-                        <img :src="binaryTreeData.ba.user?.photo || 'https://i.pravatar.cc/150?img=16'" alt="BA" />
-                        <span>{{ binaryTreeData.ba.user?.name }}</span>
+                      <a href="#" class="tree-node" v-if="binaryTreeData.ba" @click.prevent="openUserModal(binaryTreeData.ba, 'Izquierda', binaryTreeData.b?.name)">
+                        <img :src="binaryTreeData.ba.photo || 'https://i.pravatar.cc/150?img=16'" alt="BA" />
+                        <span>{{ binaryTreeData.ba.name }}</span>
                       </a>
                       <a href="#" class="tree-node empty-node" v-else>
                         <UserPlus :size="20" class="empty-icon" />
                       </a>
                     </li>
                     <li>
-                      <a href="#" class="tree-node" v-if="binaryTreeData.bb" @click.prevent="openUserModal(binaryTreeData.bb, 'Derecha', binaryTreeData.b?.user?.name)">
-                        <img :src="binaryTreeData.bb.user?.photo || 'https://i.pravatar.cc/150?img=17'" alt="BB" />
-                        <span>{{ binaryTreeData.bb.user?.name }}</span>
+                      <a href="#" class="tree-node" v-if="binaryTreeData.bb" @click.prevent="openUserModal(binaryTreeData.bb, 'Derecha', binaryTreeData.b?.name)">
+                        <img :src="binaryTreeData.bb.photo || 'https://i.pravatar.cc/150?img=17'" alt="BB" />
+                        <span>{{ binaryTreeData.bb.name }}</span>
                       </a>
                       <a href="#" class="tree-node empty-node" v-else>
                         <UserPlus :size="20" class="empty-icon" />
@@ -445,11 +445,11 @@
         </div>
         <div class="user-info-row">
           <span>Estado de OPC</span>
-          <span class="badge" :class="selectedUser.active ? 'badge-green' : 'badge-red'">{{ selectedUser.active ? 'Activo' : 'Inactivo' }}</span>
+          <span class="badge" :class="isTruthy(selectedUser.active) ? 'badge-green' : 'badge-red'">{{ isTruthy(selectedUser.active) ? 'ACTIVO' : 'INACTIVO' }}</span>
         </div>
         <div class="user-info-row">
           <span>Estado de membresía</span>
-          <span class="badge" :class="selectedUser.membershipActive ? 'badge-green' : 'badge-red'">{{ selectedUser.membershipActive ? 'Activo' : 'Inactivo' }}</span>
+          <span class="badge" :class="isTruthy(selectedUser.membershipActive) ? 'badge-green' : 'badge-red'">{{ isTruthy(selectedUser.membershipActive) ? 'ACTIVO' : 'INACTIVO' }}</span>
         </div>
         <div class="user-info-row">
           <span>Calificado</span>
@@ -574,6 +574,8 @@ const closeUserModal = () => {
 };
 
 // Utils para el modal
+const isTruthy = (val) => val === true || val === 1 || val === '1';
+
 const formatDate = (dateString) => {
   if (!dateString) return null;
   
