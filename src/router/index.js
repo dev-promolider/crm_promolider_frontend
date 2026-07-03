@@ -9,6 +9,19 @@ const routes = [
     meta: { requiresAuth: false, layout: 'AuthLayout' }
   },
   {
+    path: '/preregistro/:username',
+    name: 'preregistro-landing',
+    component: () => import('@/features/registration/views/PreregistroLandingView.vue'),
+    meta: { requiresAuth: false, layout: 'AuthLayout' }
+  },
+  {
+    path: '/register/:id/:timestamp/:hash',
+    name: 'registro-landing',
+    component: () => import('@/features/registration/views/RegistroPublicView.vue'),
+    meta: { requiresAuth: false, layout: 'AuthLayout' }
+  },
+
+  {
     path: '/',
     redirect: '/dashboard'
   },
@@ -21,6 +34,58 @@ const routes = [
         path: '',
         name: 'dashboard',
         component: () => import('@/features/dashboard/views/DashboardView.vue')
+      },
+      {
+        path: 'preregistro',
+        name: 'dashboard-preregistro',
+        component: () => import('@/features/registration/views/PreregistroDashboardView.vue')
+      },
+      {
+        path: '/registro',
+        name: 'dashboard-registro',
+        component: () => import('@/features/registration/views/RegistroDashboardView.vue')
+      }
+    ]
+  },
+  {
+    path: '/mi-dashboard',
+    component: () => import('@/layouts/PreregisteredLayout.vue'),
+    meta: { requiresAuth: false, layout: 'PreregisteredLayout' },
+    children: [
+      {
+        path: '',
+        name: 'preregistered-dashboard',
+        component: () => import('@/features/registration/views/PreregisteredDashboardView.vue')
+      },
+      {
+        path: 'pago',
+        name: 'preregistered-payment',
+        component: () => import('@/features/registration/views/PreregisteredPaymentView.vue')
+      },
+      {
+        path: 'liderbot',
+        name: 'preregistered-liderbot',
+        component: () => import('@/features/registration/views/PreregisteredLiderbotView.vue')
+      },
+      {
+        path: 'leadboost',
+        name: 'preregistered-leadboost',
+        component: () => import('@/features/registration/views/PreregisteredLeadBoostView.vue')
+      },
+      {
+        path: 'smartfunnel',
+        name: 'preregistered-smartfunnel',
+        component: () => import('@/features/registration/views/PreregisteredSmartFunnelView.vue')
+      },
+      {
+        path: 'ecomercademico',
+        name: 'preregistered-ecomercademico',
+        component: () => import('@/features/registration/views/PreregisteredEcomerAcademicoView.vue')
+      },
+      {
+        path: 'reportes',
+        name: 'preregistered-reportes',
+        component: { template: '<div><h2 class="p-8">Reportes en construcción</h2></div>' }
       }
     ]
   },
@@ -85,7 +150,7 @@ router.beforeEach((to, from) => {
     }
 
     if (to.meta.role && !authStore.hasRole(to.meta.role)) {
-      return { name: 'dashboard' }; 
+      return { name: 'dashboard' };
     }
   }
 
