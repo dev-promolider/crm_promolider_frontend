@@ -38,7 +38,7 @@
             <span v-if="!isSidebarCollapsed">Dashboards</span>
           </RouterLink>
 
-          <RouterLink to="/preregistro" class="nav-item" active-class="active">
+          <RouterLink to="/dashboard/preregistro" class="nav-item" active-class="active">
             <UserPlus :size="20" />
             <span v-if="!isSidebarCollapsed">Preregistro</span>
           </RouterLink>
@@ -158,12 +158,12 @@
           <div class="user-dropdown-container" @click="toggleDropdown">
             <div class="user-info">
               <div class="user-text text-right">
-                <span class="user-name">{{ user?.name || 'Cargando...' }} {{ user?.last_name || '' }}</span>
+                <span class="user-name">{{ user?.name || user?.nombre || 'Cargando...' }} {{ user?.last_name || user?.apellido || '' }}</span>
                 <span class="user-role">{{ user?.account_type?.name || user?.role || 'University' }}</span>
               </div>
               <div class="user-avatar">
                 <img v-if="user?.photo || user?.avatar" :src="user.photo || user.avatar" alt="Avatar" />
-                <div v-else class="initials-avatar">{{ user?.name ? user.name.charAt(0).toUpperCase() : 'U' }}</div>
+                <div v-else class="initials-avatar">{{ (user?.name || user?.nombre) ? (user.name || user.nombre).charAt(0).toUpperCase() : 'U' }}</div>
                 <div class="status-dot"></div>
               </div>
             </div>

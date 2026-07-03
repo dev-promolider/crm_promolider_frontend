@@ -1,0 +1,226 @@
+/* CSS para el módulo de Registro y Preregistro */
+
+.registration-layout {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--sidebar-bg);
+  padding: 20px;
+  font-family: 'Inter', sans-serif;
+  color: var(--white);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Abstract Background */
+.registration-layout::before {
+  content: '';
+  position: absolute;
+  top: -150px;
+  left: -150px;
+  width: 500px;
+  height: 500px;
+  background: rgba(24, 214, 0, 0.1);
+  border-radius: 50%;
+  filter: blur(80px);
+  z-index: 0;
+}
+
+.registration-layout::after {
+  content: '';
+  position: absolute;
+  bottom: -150px;
+  right: -150px;
+  width: 400px;
+  height: 400px;
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 50%;
+  filter: blur(80px);
+  z-index: 0;
+}
+
+/* Glassmorphism Panel */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  position: relative;
+}
+
+/* Contenedores */
+.landing-content {
+  width: 100%;
+  max-width: 480px;
+  z-index: 10;
+}
+
+.registration-container {
+  width: 100%;
+  max-width: 560px;
+  padding: 40px;
+  z-index: 10;
+}
+
+.landing-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+.landing-header .logo {
+  max-width: 180px;
+}
+
+.landing-card {
+  padding: 40px;
+}
+
+.title {
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  color: var(--white);
+}
+
+.subtitle {
+  color: var(--text-muted);
+  font-size: 15px;
+  margin-bottom: 30px;
+}
+
+.subtitle strong {
+  color: var(--primary-color);
+}
+
+.header-section {
+  text-align: center;
+  margin-bottom: 30px;
+}
+.header-section h2 {
+  font-size: 24px;
+  margin-bottom: 5px;
+}
+.header-section p {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+/* Formularios */
+.form-row {
+  display: flex;
+  gap: 15px;
+}
+.form-row .form-group {
+  flex: 1;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  color: var(--sidebar-link);
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.form-group input, .form-group select {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--sidebar-hover-bg);
+  border-radius: 10px;
+  background-color: var(--sidebar-bg);
+  color: var(--white);
+  font-size: 15px;
+  outline: none;
+  transition: all 0.2s;
+  box-sizing: border-box;
+}
+
+.form-group input:focus, .form-group select:focus {
+  border-color: var(--primary-color);
+  background-color: var(--sidebar-logo-bg);
+  box-shadow: 0 0 0 4px rgba(24, 214, 0, 0.1);
+}
+
+.error-text {
+  color: var(--danger-color);
+  font-size: 12px;
+  margin-top: 6px;
+}
+
+/* Botones */
+.actions-row {
+  display: flex;
+  gap: 15px;
+  margin-top: 30px;
+}
+
+.submit-btn {
+  background-color: var(--primary-color);
+  color: var(--white);
+  border: none;
+  border-radius: 10px;
+  padding: 16px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.2s;
+  box-shadow: 0 4px 14px rgba(24, 214, 0, 0.2);
+}
+
+.submit-btn:hover:not(:disabled) {
+  background-color: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(24, 214, 0, 0.3);
+}
+
+.submit-btn:disabled {
+  background-color: var(--sidebar-hover-bg);
+  color: var(--text-muted);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.back-btn {
+  background-color: transparent;
+  color: var(--white);
+  border: 1px solid var(--sidebar-hover-bg);
+  border-radius: 10px;
+  padding: 16px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  flex: 0 0 auto;
+  min-width: 100px;
+  transition: all 0.2s;
+}
+
+.back-btn:hover {
+  background-color: var(--sidebar-hover-bg);
+}
+
+/* Tema Claro (para landing dinámica) */
+.theme-light {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+.theme-light .glass-panel {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+}
+.theme-light .title { color: #0f172a; }
+.theme-light .form-group label { color: #475569; }
+.theme-light .form-group input {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
