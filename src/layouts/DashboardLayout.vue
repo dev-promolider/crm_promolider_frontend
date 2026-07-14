@@ -48,11 +48,34 @@
             <span v-if="!isSidebarCollapsed">Registro</span>
           </RouterLink>
 
-          <RouterLink to="/cursos" class="nav-item" active-class="active">
-            <MonitorPlay :size="20" />
-            <span v-if="!isSidebarCollapsed">Aula virtual</span>
-            <ChevronRight v-if="!isSidebarCollapsed" :size="16" class="ml-auto opacity-50" />
-          </RouterLink>
+          <div class="nav-group" :class="{ active: isAulaActive, open: isAulaOpen }">
+            <button type="button" class="nav-item nav-parent" @click="toggleAula">
+              <MonitorPlay :size="20" />
+
+              <span v-if="!isSidebarCollapsed">Aula virtual</span>
+
+              <ChevronRight
+                v-if="!isSidebarCollapsed"
+                :size="16"
+                class="ml-auto opacity-50 nav-chevron"
+              />
+            </button>
+
+            <transition name="submenu">
+              <div v-if="isAulaOpen && !isSidebarCollapsed" class="submenu">
+                <RouterLink
+                  v-for="item in aulaVirtualItems"
+                  :key="item.slug"
+                  :to="item.to"
+                  class="submenu-item"
+                  :class="{ active: isSubItemActive(item.to) }"
+                >
+                  <component :is="item.icon" :size="17" />
+                  <span>{{ item.label }}</span>
+                </RouterLink>
+              </div>
+            </transition>
+          </div>
 
           <RouterLink to="/marketing" class="nav-item" active-class="active">
             <Star :size="20" />
@@ -208,16 +231,18 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue';
-import { RouterLink, RouterView, useRouter } from 'vue-router';
+import { RouterLink, RouterView, useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import api from '@/services/apiClient';
 // import echo from '@/services/echo';
 import { 
   LayoutDashboard, UserPlus, Database, MonitorPlay, Star, Send, PieChart, ChevronRight, Menu, 
-  Search, Bell, Moon, Sun, Award, Apple, User, Medal, Settings, LogOut, Loader2
+  Search, Bell, Moon, Sun, Award, Apple, User, Medal, Settings, LogOut, Loader2,
+  BookOpen, Store, Users, Bot
 } from 'lucide-vue-next';
 
 const router = useRouter();
+const route = useRoute();
 const authStore = useAuthStore();
 const user = computed(() => authStore.user);
 
@@ -252,6 +277,61 @@ const toggleDropdown = (e) => {
   e.stopPropagation();
   isDropdownOpen.value = !isDropdownOpen.value;
   isNotificationsOpen.value = false; // Close notifications if open
+};
+
+// --- Aula Virtual Dropdown State ---
+const isAulaOpen = ref(false);
+
+// --- Aula Virtual Navigation Items ---
+const aulaVirtualItems = [
+  {
+    to: '/infoproducts',
+    label: 'Infoproductos',
+    icon: BookOpen,
+    slug: 'infoproducts.index'
+  },
+  {
+    to: '/marketplace',
+    label: 'Marketplace',
+    icon: Store,
+    slug: 'marketplace.toggle'
+  },
+  {
+    to: '/course/subscriber',
+    label: 'Suscriptores',
+    icon: Users,
+    slug: 'courses.subs'
+  },
+  {
+    to: '/chatgpt',
+    label: 'ChatGPT',
+    icon: Bot,
+    slug: 'chatgpt.index'
+  }
+];
+
+const isAulaActive = computed(() => {
+  return aulaVirtualItems.some(item => {
+    return route.path === item.to || route.path.startsWith(`${item.to}/`);
+  });
+});
+
+const toggleAula = () => {
+  if (isSidebarCollapsed.value) {
+    isSidebarCollapsed.value = false;
+    isAulaOpen.value = true;
+    return;
+  }
+
+  isAulaOpen.value = !isAulaOpen.value;
+};
+
+const isSubItemActive = (path) => {
+  if (path === '/course') {
+    return route.path === '/course';
+  }
+
+  return route.path === path || route.path.startsWith(`${path}/`);
 };
 
 // --- Notifications Dropdown State ---
@@ -390,6 +470,73 @@ onBeforeUnmount(() => {
   font-weight: 700;
   border-radius: 50%;
   font-size: 1rem;
+}
+
+.nav-parent {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.nav-chevron {
+  transition: transform 0.2s ease;
+}
+
+.nav-group.open .nav-chevron {
+  transform: rotate(90deg);
+}
+
+.nav-group.active > .nav-parent {
+  color: var(--primary-color);
+}
+
+.submenu {
+  margin-left: 34px;
+  margin-top: 4px;
+  margin-bottom: 6px;
+  padding-left: 12px;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.submenu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.68);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.submenu-item:hover {
+  color: #ffffff;
+  background: rgba(0, 255, 0, 0.08);
+}
+
+.submenu-item.active {
+  color: #00ff00;
+  background: rgba(0, 255, 0, 0.1);
+}
+
+.submenu-enter-active,
+.submenu-leave-active {
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.submenu-enter-from,
+.submenu-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
 }
 
 </style>

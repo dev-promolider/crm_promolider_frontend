@@ -26,6 +26,40 @@ const routes = [
     redirect: '/dashboard'
   },
   {
+    path: '/infoproducts',
+    component: () => import('@/layouts/DashboardLayout.vue'),
+    meta: { requiresAuth: true, layout: 'DashboardLayout' },
+    children: [
+      {
+        path: '',
+        name: 'infoproducts',
+        component: () => import('@/features/infoproducts/views/InfoproductsView.vue')
+      }
+    ]
+  },
+  {
+    path: '/courses/create',
+    name: 'courses.create',
+    component: () => import('@/features/infoproducts/views/CreateCourseView.vue'),
+  },
+  {
+    path: '/course/module/:courseId/editModule',
+    component: () => import('@/layouts/DashboardLayout.vue'),
+    meta: { requiresAuth: true, layout: 'DashboardLayout' },
+    children: [
+      {
+        path: '',
+        name: 'course.module.edit',
+        component: () => import('@/features/infoproducts/views/EditModuleView.vue')
+      }
+    ]
+  },
+  {
+    path: '/books/create',
+    name: 'books.create',
+    component: () => import('@/features/infoproducts/views/CreateBookView.vue'),
+  },
+  {
     path: '/dashboard',
     component: () => import('@/layouts/DashboardLayout.vue'),
     meta: { requiresAuth: true, layout: 'DashboardLayout' },
