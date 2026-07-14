@@ -77,11 +77,48 @@
             </transition>
           </div>
 
-          <RouterLink to="/marketing" class="nav-item" active-class="active">
-            <Star :size="20" />
-            <span v-if="!isSidebarCollapsed">Marketing</span>
-            <ChevronRight v-if="!isSidebarCollapsed" :size="16" class="ml-auto opacity-50" />
-          </RouterLink>
+          <!-- Marketing - Expandable Section -->
+          <div class="nav-section">
+            <button
+              class="nav-item nav-section-toggle"
+              :class="{ expanded: marketingExpanded }"
+              @click="marketingExpanded = !marketingExpanded"
+            >
+              <Star :size="20" />
+              <span v-if="!isSidebarCollapsed" class="nav-label">Marketing</span>
+              <ChevronDown
+                v-if="!isSidebarCollapsed"
+                :size="16"
+                class="nav-arrow"
+                :class="{ rotated: marketingExpanded }"
+              />
+            </button>
+
+            <transition name="submenu-slide">
+              <div v-if="marketingExpanded && !isSidebarCollapsed" class="nav-submenu">
+                <RouterLink to="/marketing/herramientas" class="nav-subitem" active-class="active">
+                  <span class="submenu-dot"></span>
+                  <span>Herramientas</span>
+                </RouterLink>
+                <RouterLink to="/marketing/marketplace" class="nav-subitem" active-class="active">
+                  <span class="submenu-dot"></span>
+                  <span>Marketplace</span>
+                </RouterLink>
+                <RouterLink to="/marketing/calendario" class="nav-subitem" active-class="active">
+                  <span class="submenu-dot"></span>
+                  <span>Calendario</span>
+                </RouterLink>
+                <RouterLink to="/marketing/pages" class="nav-subitem" active-class="active">
+                  <span class="submenu-dot"></span>
+                  <span>Páginas</span>
+                </RouterLink>
+                <RouterLink to="/marketing/reportes" class="nav-subitem" active-class="active">
+                  <span class="submenu-dot"></span>
+                  <span>Reportes</span>
+                </RouterLink>
+              </div>
+            </transition>
+          </div>
 
           <RouterLink to="/solicitudes" class="nav-item" active-class="active">
             <Send :size="20" />
@@ -234,9 +271,8 @@ import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue';
 import { RouterLink, RouterView, useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import api from '@/services/apiClient';
-// import echo from '@/services/echo';
 import { 
-  LayoutDashboard, UserPlus, Database, MonitorPlay, Star, Send, PieChart, ChevronRight, Menu, 
+  LayoutDashboard, UserPlus, Database, MonitorPlay, Star, Send, PieChart, ChevronRight, ChevronDown, Menu, 
   Search, Bell, Moon, Sun, Award, Apple, User, Medal, Settings, LogOut, Loader2,
   BookOpen, Store, Users, Bot
 } from 'lucide-vue-next';
@@ -248,6 +284,7 @@ const user = computed(() => authStore.user);
 
 const isSidebarCollapsed = ref(false);
 const isDropdownOpen = ref(false);
+const marketingExpanded = ref(route.path.startsWith('/marketing'));
 
 const topbarStats = ref({
   credits: 0,
@@ -374,9 +411,6 @@ const closeDropdown = () => {
 };
 
 const handleLogout = () => {
-  // if (user.value && user.value.id) {
-  //   echo.leave(`user-notifications.${user.value.id}`);
-  // }
   authStore.logout();
   router.push({ name: 'login' });
 };
@@ -396,35 +430,8 @@ const toggleTheme = () => {
 };
 
 const listenNotifications = () => {
-  /*
-  if (!user.value || !user.value.id) return;
-  const channelName = `user-notifications.${user.value.id}`;
-  
-  console.log(`[WebSockets] Suscribiéndose al canal: ${channelName}`);
-  
-  // Limpiar cualquier suscripción anterior para evitar duplicados
-  echo.leave(channelName);
-  
-  echo.channel(channelName)
-    .listen('.notification.sent', (data) => {
-      console.log("[WebSockets] Notificación recibida en tiempo real:", data);
-      if (data.notification) {
-        // Incrementar el badge de no leídos
-        topbarStats.value.notifications.unread++;
-        
-        // Configurar y mostrar el Toast flotante
-        toastTitle.value = data.notification.title || 'Nueva notificación';
-        toastBody.value = data.notification.body || '';
-        toastImage.value = data.notification.generator?.photo || '';
-        showToast.value = true;
-        
-        // Ocultar el toast automáticamente después de 5 segundos
-        setTimeout(() => {
-          showToast.value = false;
-        }, 5000);
-      }
-    });
-  */
+  // Listo para implementar con Echo cuando se requieran notificaciones en tiempo real
+  // La inicialización de Echo ya está en main.js
 };
 
 onMounted(() => {
@@ -439,11 +446,11 @@ onMounted(() => {
     authStore.fetchUser();
   }
 
-  // Escuchar cambios en el usuario para inicializar WebSocket
-  watch(user, (newUser) => {
-    if (newUser && newUser.id) {
-      listenNotifications();
-    }
+  listenNotifications();
+
+  // Auto-expand sección Marketing al navegar dentro de /marketing
+  watch(() => route.path, (path) => {
+    marketingExpanded.value = path.startsWith('/marketing');
   }, { immediate: true });
 
   // Cargar estadísticas
@@ -539,5 +546,129 @@ onBeforeUnmount(() => {
   transform: translateY(-6px);
 }
 
+.nav-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.nav-section-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  color: var(--sidebar-link);
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nav-section-toggle:hover {
+  background-color: var(--sidebar-hover-bg);
+  color: var(--white);
+}
+
+.nav-section-toggle.expanded {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--white);
+}
+
+.nav-label {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav-arrow {
+  transition: transform 0.25s ease;
+  flex-shrink: 0;
+}
+
+.nav-arrow.rotated {
+  transform: rotate(180deg);
+}
+
+.nav-submenu {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-left: 14px;
+  margin: 2px 0 4px 14px;
+  border-left: 2px solid rgba(255, 255, 255, 0.08);
+}
+
+.nav-subitem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  color: var(--sidebar-link);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 400;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  opacity: 0.85;
+}
+
+.nav-subitem:hover {
+  background-color: var(--sidebar-hover-bg);
+  color: var(--white);
+  opacity: 1;
+}
+
+.nav-subitem.active {
+  color: var(--primary-color);
+  font-weight: 600;
+  opacity: 1;
+  background-color: rgba(24, 214, 0, 0.08);
+}
+
+.submenu-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: currentColor;
+  opacity: 0.5;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.nav-subitem.active .submenu-dot {
+  opacity: 1;
+  box-shadow: 0 0 6px var(--primary-color);
+}
+
+/* Submenu animation */
+.submenu-slide-enter-active {
+  transition: all 0.25s ease-out;
+  overflow: hidden;
+}
+.submenu-slide-leave-active {
+  transition: all 0.2s ease-in;
+  overflow: hidden;
+}
+.submenu-slide-enter-from {
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-8px);
+}
+.submenu-slide-leave-to {
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-8px);
+}
+.submenu-slide-enter-to,
+.submenu-slide-leave-from {
+  max-height: 500px;
+  opacity: 1;
+  transform: translateY(0);
+}
 </style>
 
