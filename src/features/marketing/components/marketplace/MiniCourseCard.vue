@@ -1,12 +1,16 @@
 <template>
-  <div v-if="loading" class="col-12 text-center py-5">
-    <div class="spinner-border text-warning" role="status"></div>
-    <p class="text-muted mt-2 small">Cargando mini cursos...</p>
-  </div>
-  <div v-else-if="items.length === 0" class="col-12 text-center py-5">
-    <p class="text-muted">No se encontraron mini cursos</p>
-  </div>
-  <div v-for="item in items" :key="item.id" class="col-md-4 mb-4">
+  <template v-if="loading">
+    <div class="col-12 text-center py-5">
+      <div class="spinner-border text-warning" role="status"></div>
+      <p class="text-muted mt-2 small">Cargando mini cursos...</p>
+    </div>
+  </template>
+  <template v-else-if="items.length === 0">
+    <div class="col-12 text-center py-5">
+      <p class="text-muted">No se encontraron mini cursos</p>
+    </div>
+  </template>
+  <div v-for="item in items" :key="item.id" class="col-md-4 mb-4 grid-col">
     <div class="card marketplace-card" @click="$emit('view', item)">
       <div class="card-img-wrapper">
         <img
@@ -26,7 +30,9 @@
           <strong>Duración:</strong> {{ item.duration || item.duracion || '-' }} horas <br>
           <strong>Nivel:</strong> {{ formatLevel(item.level || item.nivel) }}
         </p>
-        <span class="badge badge-minicourse">Mini Curso</span>
+        <div class="card-footer-info">
+          <span class="badge badge-minicourse">Mini Curso</span>
+        </div>
       </div>
     </div>
   </div>
@@ -47,69 +53,103 @@ defineEmits(['view'])
 </script>
 
 <style scoped>
+.grid-col {
+  display: flex;
+}
+
 .marketplace-card {
   cursor: pointer;
-  border-radius: 10px;
-  min-height: 480px;
+  border-radius: 12px;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
   position: relative;
-  transition: box-shadow 0.3s ease, transform 0.3s ease;
-  border: 1px solid #e3e8ef;
+  transition: all 0.3s ease;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  backdrop-filter: blur(16px);
 }
+
 .marketplace-card:hover {
-  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-  transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+  transform: translateY(-4px);
+  border-color: rgba(24, 214, 0, 0.2);
 }
+
 .card-img-wrapper {
-  padding: 16px;
-  background: transparent;
+  position: relative;
+  overflow: hidden;
+  height: 200px;
+  background: var(--bg-main);
 }
+
 .card-img-top {
-  height: 320px !important;
-  object-fit: cover;
   width: 100%;
-  border: 20px solid #fff;
-  box-shadow: 0 0 8px rgba(0,0,0,0.08);
-  border-radius: 10px 10px 0 0;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transition: transform 0.4s ease;
 }
+
+.marketplace-card:hover .card-img-top {
+  transform: scale(1.05);
+}
+
 .card-img-placeholder {
-  height: 320px;
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f8f9fa;
-  border: 20px solid #fff;
-  box-shadow: 0 0 8px rgba(0,0,0,0.08);
-  border-radius: 10px 10px 0 0;
+  background: var(--bg-main);
 }
+
 .card-body {
-  flex-grow: 1;
-  background: #fff;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   padding: 1.25rem;
-  position: relative;
+  gap: 8px;
 }
+
 .card-title {
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 700;
-  color: #333;
-  margin-bottom: 10px;
+  color: var(--text-bold);
   line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
+
 .card-text {
-  font-size: 0.9rem;
-  color: #555;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  flex: 1;
 }
+
+.card-footer-info {
+  margin-top: auto;
+  padding-top: 8px;
+}
+
 .badge-minicourse {
-  position: absolute;
-  bottom: 12px;
-  right: 15px;
-  background: #ff9a3c;
-  color: white;
-  padding: 4px 10px;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 600;
+  display: inline-block;
+  background: rgba(255, 154, 60, 0.12);
+  color: #9a3412;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+body.dark-theme .badge-minicourse {
+  background: rgba(255, 154, 60, 0.2);
+  color: #fb923c;
 }
 </style>

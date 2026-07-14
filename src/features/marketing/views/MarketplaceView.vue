@@ -79,36 +79,29 @@
               <p>No hay campañas {{ campaignFilter !== 'all' ? 'de este tipo' : 'disponibles' }}</p>
             </div>
             <div v-else class="row">
-              <div v-for="item in filteredCampaigns" :key="`${item.content_type}-${item.id}`" class="col-md-4 mb-4">
-                <div class="card marketplace-card" @click="goToDetail(item.content_type, item.id)">
-                  <div class="card-img-wrapper">
+              <div v-for="item in normalizedCampaigns" :key="item.id" class="col-md-4 mb-4 grid-col">
+                <div class="card c-card" @click="goToDetail(item.content_type, item.id)">
+                  <div class="c-card-img-wrapper">
                     <img
-                      v-if="item.images && item.images.length > 0"
-                      :src="item.images[0].image_path || item.images[0].image"
-                      class="card-img-top"
-                      :alt="item.title || item.nombre"
+                      v-if="item.image"
+                      :src="item.image"
+                      class="c-card-img"
+                      :alt="item.title"
                     />
-                    <div v-else class="card-img-placeholder">
+                    <div v-else class="c-card-img-placeholder">
                       <Megaphone :size="48" style="color:#ccc" />
                     </div>
                   </div>
-                  <div class="card-body">
-                    <h5 class="card-title">{{ item.title || item.nombre }}</h5>
-                    <p class="card-text">
-                      <strong>Categoría:</strong> {{ item.category_name || 'General' }} <br>
-                      <template v-if="item.content_type === 'masterclass' && (item.date || item.event_date)">
-                        <strong>Evento:</strong> {{ formatDate(item.date || item.event_date) }} <br>
-                      </template>
-                      <template v-else-if="item.content_type === 'minicourse' && (item.duration || item.duracion)">
-                        <strong>Duración:</strong> {{ item.duration || item.duracion }} horas <br>
-                      </template>
-                      <template v-else-if="item.content_type === 'ebook' && (item.pages || item.paginas)">
-                        <strong>Páginas:</strong> {{ item.pages || item.paginas }} <br>
-                      </template>
+                  <div class="c-card-body">
+                    <h5 class="c-card-title">{{ item.title }}</h5>
+                    <p class="c-card-text">
+                      <strong>Categoría:</strong> {{ item.category_name || 'General' }}
                     </p>
-                    <span class="badge" :class="getCampaignBadgeClass(item.content_type)">
-                      {{ getCampaignTypeLabel(item.content_type) }}
-                    </span>
+                    <div class="c-card-footer">
+                      <span class="c-badge" :class="'c-badge--' + (item.content_type || 'masterclass')">
+                        {{ item.content_type === 'masterclass' ? 'Masterclass' : item.content_type === 'ebook' ? 'E-book' : 'Mini Curso' }}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -159,6 +152,20 @@ const filteredCampaigns = computed(() => {
   return store.campaigns.filter(c => c.content_type === campaignFilter.value)
 })
 
+// Normalize campaigns data for uniform rendering
+const normalizedCampaigns = computed(() => {
+  return filteredCampaigns.value.map(item => ({
+    ...item,
+    id: item.id,
+    image: item.image ||
+      (item.images && item.images.length > 0
+        ? (item.images[0].image_path || item.images[0].image)
+        : null),
+    title: item.title || item.nombre,
+    category_name: item.category_name,
+  }))
+})
+
 let searchTimeout = null
 function debouncedSearch() {
   clearTimeout(searchTimeout)
@@ -198,28 +205,7 @@ function goToDetail(type, id) {
   if (route) router.push(route)
 }
 
-function formatDate(date) {
-  if (!date) return '-'
-  return new Date(date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
-}
 
-function getCampaignBadgeClass(type) {
-  const classes = {
-    masterclass: 'badge-masterclass',
-    ebook: 'badge-ebook',
-    minicourse: 'badge-minicourse',
-  }
-  return classes[type] || 'badge-secondary'
-}
-
-function getCampaignTypeLabel(type) {
-  const labels = {
-    masterclass: 'Masterclass',
-    ebook: 'E-book',
-    minicourse: 'Mini Curso',
-  }
-  return labels[type] || type
-}
 
 onMounted(async () => { await loadTabData() })
 </script>
@@ -231,7 +217,7 @@ onMounted(async () => { await loadTabData() })
 .card-header { margin-bottom: 8px; }
 .card-meta { font-size: 12px; color: var(--text-muted); display: block; margin-top: 2px; }
 
-/* ── Tabs ── */
+/* Tabs */
 .marketplace-tabs,
 .campaign-subtabs {
   display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px;
@@ -248,7 +234,7 @@ onMounted(async () => { await loadTabData() })
 .campaign-subtabs .stats-tab-btn { font-size: 12px; padding: 5px 12px; }
 .campaign-subtabs .stats-tab-btn.active { background: #6c757d; border-color: #6c757d; box-shadow: 0 4px 10px rgba(108,117,125,0.25); }
 
-/* ── Search ── */
+/* Search */
 .marketplace-search {
   position: relative; margin-bottom: 16px; max-width: 360px;
 }
@@ -261,80 +247,147 @@ onMounted(async () => { await loadTabData() })
 }
 .search-input:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(24,214,0,0.08); }
 
-/* ── Loading / Empty ── */
+/* Loading / Empty */
 .loading-state { display: flex; flex-direction: column; align-items: center; padding: 40px; gap: 12px; color: var(--text-muted); }
 .spinner { animation: spin 1s linear infinite; color: var(--primary-color); }
 @keyframes spin { to { transform: rotate(360deg); } }
 .empty-state { display: flex; flex-direction: column; align-items: center; padding: 40px; color: var(--text-muted); gap: 10px; }
 .empty-icon { opacity: 0.4; }
 
-/* ── Cards (inline campaigns, same style as card components) ── */
-.marketplace-card {
+/* Campaign cards (c-card prefix to avoid conflict with outer .card-body) */
+.c-card {
   cursor: pointer;
-  border-radius: 10px;
-  min-height: 480px;
+  border-radius: 12px;
   display: flex;
   flex-direction: column;
+  height: 100%;
   overflow: hidden;
   position: relative;
-  transition: box-shadow 0.3s ease, transform 0.3s ease;
-  border: 1px solid #e3e8ef;
+  transition: all 0.3s ease;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  backdrop-filter: blur(16px);
 }
-.marketplace-card:hover {
-  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-  transform: translateY(-3px);
+.c-card:hover {
+  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+  transform: translateY(-4px);
+  border-color: rgba(24, 214, 0, 0.2);
 }
-.card-img-wrapper {
-  padding: 16px;
-  background: transparent;
+.c-card:hover .c-card-img {
+  transform: scale(1.05);
 }
-.card-img-top {
-  height: 320px !important;
-  object-fit: cover;
+.c-card-img-wrapper {
+  position: relative;
+  overflow: hidden;
+  height: 200px;
+  background: var(--bg-main);
+}
+.c-card-img {
   width: 100%;
-  border: 20px solid #fff;
-  box-shadow: 0 0 8px rgba(0,0,0,0.08);
-  border-radius: 10px 10px 0 0;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transition: transform 0.4s ease;
 }
-.card-img-placeholder {
-  height: 320px;
+.c-card-img-placeholder {
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f8f9fa;
-  border: 20px solid #fff;
-  box-shadow: 0 0 8px rgba(0,0,0,0.08);
-  border-radius: 10px 10px 0 0;
+  background: var(--bg-main);
 }
-.card-body {
-  flex-grow: 1;
-  background: #fff;
+.c-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   padding: 1.25rem;
-  position: relative;
+  gap: 8px;
 }
-.card-title {
-  font-size: 1.1rem;
+.c-card-title {
+  font-size: 1rem;
   font-weight: 700;
-  color: #333;
-  margin-bottom: 10px;
+  color: var(--text-bold);
   line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
-.card-text {
-  font-size: 0.9rem;
-  color: #555;
+.c-card-text {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  flex: 1;
+}
+.c-card-footer {
+  margin-top: auto;
+  padding-top: 8px;
+}
+.c-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.c-badge--masterclass {
+  background: rgba(40, 167, 69, 0.12);
+  color: #166534;
+}
+.c-badge--ebook {
+  background: rgba(0, 208, 228, 0.12);
+  color: #0e7490;
+}
+.c-badge--minicourse {
+  background: rgba(255, 154, 60, 0.12);
+  color: #9a3412;
+}
+body.dark-theme .c-badge--masterclass {
+  background: rgba(40, 167, 69, 0.2);
+  color: #4ade80;
+}
+body.dark-theme .c-badge--ebook {
+  background: rgba(0, 208, 228, 0.2);
+  color: #22d3ee;
+}
+body.dark-theme .c-badge--minicourse {
+  background: rgba(255, 154, 60, 0.2);
+  color: #fb923c;
+}
+</style>
+
+<!-- Global grid styles - non-scoped so they apply to child component elements -->
+<style>
+.marketplace-view .row {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0 -12px;
+}
+.marketplace-view .row > [class*="col-"] {
+  padding: 0 12px;
+}
+.marketplace-view .col-md-4 {
+  flex: 0 0 33.333%;
+  max-width: 33.333%;
+  display: flex;
 }
 
-/* ── Badges (reuse same classes) ── */
-.badge { position: absolute; bottom: 12px; right: 15px; padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; color: white; }
-.badge-masterclass { background: #28a745; }
-.badge-ebook { background: #00d0e4; color: #212529; }
-.badge-minicourse { background: #ff9a3c; }
-.badge-secondary { background: #6c757d; }
-
-/* ── Row fix ── */
-.row { display: flex; flex-wrap: wrap; margin: 0 -12px; }
-.row > [class*="col-"] { padding: 0 12px; }
-.col-md-4 { flex: 0 0 33.333%; max-width: 33.333%; }
-@media (max-width: 992px) { .col-md-4 { flex: 0 0 50%; max-width: 50%; } }
-@media (max-width: 768px) { .col-md-4 { flex: 0 0 100%; max-width: 100%; } }
+/* Vertical spacing between card rows */
+.marketplace-view .mb-4 {
+  margin-bottom: 2rem;
+}
+@media (max-width: 992px) {
+  .marketplace-view .col-md-4 {
+    flex: 0 0 50%;
+    max-width: 50%;
+  }
+}
+@media (max-width: 768px) {
+  .marketplace-view .col-md-4 {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+}
 </style>

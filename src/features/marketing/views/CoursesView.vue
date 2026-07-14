@@ -47,7 +47,7 @@
       <div v-for="mod in store.modules" :key="mod.id" class="module-card">
         <h4 @click="selectModule(mod.id)">{{ mod.name }} ({{ mod.classes_count || 0 }} clases)</h4>
         <button class="btn-sm" @click="editModule(mod)">Editar</button>
-        <button class="btn-sm btn-danger" @click="deleteModuleItem(mod.id)">Eliminar</button>
+        <button class="btn-sm btn-danger" @click="showDeleteConfirm('module', mod.id)">Eliminar</button>
       </div>
     </div>
 
@@ -75,7 +75,7 @@
       <div v-for="game in store.games" :key="game.id" class="game-card">
         <h4>{{ game.name }}</h4>
         <p>Detalles: {{ game.details_count || 0 }}</p>
-        <button class="btn-sm btn-danger" @click="deleteGameItem(game.id)">Eliminar</button>
+        <button class="btn-sm btn-danger" @click="showDeleteConfirm('game', game.id)">Eliminar</button>
       </div>
     </div>
 
@@ -86,12 +86,32 @@
         <p><strong>{{ cert.course?.title }}</strong> - {{ cert.status }}</p>
       </div>
     </div>
+
+    <!-- Confirm Modal & Toast -->
+    <ConfirmModal
+      :visible="confirm.showConfirm.value"
+      :title="confirm.confirmData.value.title"
+      :message="confirm.confirmData.value.message"
+      :confirm-text="confirm.confirmData.value.confirmText"
+      :type="confirm.confirmData.value.type"
+      :loading="confirm.confirmLoading.value"
+      @confirm="confirm.onConfirm"
+      @cancel="confirm.onCancel"
+    />
+    <ToastNotification
+      :toast="toastAlert.toast.value"
+      @close="toastAlert.dismiss"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useCoursesStore } from '../stores/coursesStore'
+import ConfirmModal from '../components/ConfirmModal.vue'
+import ToastNotification from '../components/ToastNotification.vue'
+import { useConfirm } from '../composables/useConfirm'
+import { useToast } from '../composables/useToast'
 
 const store = useCoursesStore()
 const tab = ref('list')
@@ -101,6 +121,10 @@ const showModuleForm = ref(false)
 const moduleForm = ref({ name: '', id_courses: null })
 const showGameForm = ref(false)
 const gameForm = ref({ name: '', id_courses: null, description: '' })
+
+const confirm = useConfirm()
+const toastAlert = useToast()
+const deleteTarget = ref({ type: '', id: null })
 
 async function saveCourse() {
   await store.createCourse(form.value)
@@ -133,18 +157,28 @@ function editModule(mod) {
   showModuleForm.value = true
 }
 
-async function deleteModuleItem(id) {
-  if (confirm('¿Eliminar módulo?')) await store.deleteModule(id, store.currentCourse?.id)
+async function showDeleteConfirm(type, id) {
+  const label = type === 'module' ? 'módulo' : 'juego'
+  const ok = await confirm.show({
+    title: 'Eliminar ' + label,
+    message: '¿Eliminar ' + label + '? Esta acción no se puede deshacer.',
+    confirmText: 'Eliminar',
+    type: 'danger',
+  })
+  if (!ok) return
+  if (type === 'module') {
+    await store.deleteModule(id, store.currentCourse?.id)
+    toastAlert.show('Eliminado', 'Módulo eliminado correctamente', 'success')
+  } else {
+    await store.deleteGame(id, store.currentCourse?.id)
+    toastAlert.show('Eliminado', 'Juego eliminado correctamente', 'success')
+  }
 }
 
 async function saveGame() {
   await store.createGame(gameForm.value)
   showGameForm.value = false
   gameForm.value.name = ''
-}
-
-async function deleteGameItem(id) {
-  if (confirm('¿Eliminar juego?')) await store.deleteGame(id, store.currentCourse?.id)
 }
 
 onMounted(() => {

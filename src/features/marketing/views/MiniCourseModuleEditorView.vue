@@ -175,17 +175,21 @@
       </div>
     </div>
 
-    <!-- ===================== TOAST ===================== -->
-    <Transition name="toast-slide">
-      <div class="toast-notification" v-if="toast">
-        <div class="toast-icon"><CheckCircle2 v-if="toast.type === 'success'" :size="20" class="text-green" /><AlertCircle v-else :size="20" class="text-red" /></div>
-        <div class="toast-content">
-          <h4>{{ toast.title }}</h4>
-          <p>{{ toast.message }}</p>
-        </div>
-        <button class="toast-close" @click="toast = null"><X :size="16" /></button>
-      </div>
-    </Transition>
+    <!-- Confirm Modal & Toast -->
+    <ConfirmModal
+      :visible="confirm.showConfirm.value"
+      :title="confirm.confirmData.value.title"
+      :message="confirm.confirmData.value.message"
+      :confirm-text="confirm.confirmData.value.confirmText"
+      :type="confirm.confirmData.value.type"
+      :loading="confirm.confirmLoading.value"
+      @confirm="confirm.onConfirm"
+      @cancel="confirm.onCancel"
+    />
+    <ToastNotification
+      :toast="toastAlert.toast.value"
+      @close="toastAlert.dismiss"
+    />
   </div>
 </template>
 
@@ -193,8 +197,12 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import apiClient from '@/services/apiClient'
+import ConfirmModal from '../components/ConfirmModal.vue'
+import ToastNotification from '../components/ToastNotification.vue'
+import { useConfirm } from '../composables/useConfirm'
+import { useToast } from '../composables/useToast'
 import {
-  ArrowLeft, Plus, X, Loader2, AlertCircle, CheckCircle2,
+  ArrowLeft, Plus, X, Loader2, AlertCircle,
   BookOpen, Edit3, Trash2, ChevronDown, ChevronRight,
   Package, FileText, Upload, Video, Play, ExternalLink
 } from 'lucide-vue-next'
@@ -206,7 +214,9 @@ const miniCourse = ref(null)
 const modules = ref([])
 const loading = ref(true)
 const error = ref('')
-const toast = ref(null)
+
+const confirm = useConfirm()
+const toastAlert = useToast()
 
 // ─── Module form ────────────────────────────────────────────────────
 
@@ -215,11 +225,6 @@ const moduleEditIndex = ref(null)
 const moduleSaving = ref(false)
 const moduleForm = ref({ title: '', content: '', duration: '' })
 const expandedModules = ref({})
-
-function showToast(title, message, type = 'success') {
-  toast.value = { title, message, type }
-  setTimeout(() => { toast.value = null }, 3500)
-}
 
 function openModuleForm(mod = null, index = null) {
   if (mod) {
@@ -255,28 +260,34 @@ async function saveModule() {
     if (moduleEditIndex.value !== null) {
       const mod = modules.value[moduleEditIndex.value]
       await apiClient.put(`/marketing/mini-course/modules/${mod.id}`, payload)
-      showToast('Actualizado', 'Módulo actualizado correctamente')
+      toastAlert.show('Actualizado', 'Módulo actualizado correctamente', 'success')
     } else {
       await apiClient.post('/marketing/mini-course/modules', payload)
-      showToast('Creado', 'Módulo creado correctamente')
+      toastAlert.show('Creado', 'Módulo creado correctamente', 'success')
     }
     closeModuleForm()
     await loadModules()
   } catch (err) {
-    showToast('Error', 'No se pudo guardar el módulo', 'error')
+    toastAlert.show('Error', 'No se pudo guardar el módulo', 'error')
   } finally {
     moduleSaving.value = false
   }
 }
 
 async function confirmDeleteModule(moduleId) {
-  if (!confirm('¿Eliminar este módulo y todo su contenido?')) return
+  const ok = await confirm.show({
+    title: 'Eliminar módulo',
+    message: '¿Eliminar este módulo y todo su contenido? Esta acción no se puede deshacer.',
+    confirmText: 'Eliminar',
+    type: 'danger',
+  })
+  if (!ok) return
   try {
     await apiClient.delete(`/marketing/mini-course/modules/${moduleId}`)
-    showToast('Eliminado', 'Módulo eliminado correctamente')
+    toastAlert.show('Eliminado', 'Módulo eliminado correctamente', 'success')
     await loadModules()
   } catch {
-    showToast('Error', 'No se pudo eliminar el módulo', 'error')
+    toastAlert.show('Error', 'No se pudo eliminar el módulo', 'error')
   }
 }
 
@@ -306,25 +317,31 @@ async function handleDocUpload(modIndex, event) {
     await apiClient.post(`/marketing/mini-course/modules/${modules.value[modIndex].id}`, fd, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
-    showToast('Documentos subidos', 'Documentos agregados al módulo')
+    toastAlert.show('Documentos subidos', 'Documentos agregados al módulo', 'success')
     event.target.value = ''
     await loadModules()
   } catch {
-    showToast('Error', 'No se pudieron subir los documentos', 'error')
+    toastAlert.show('Error', 'No se pudieron subir los documentos', 'error')
   }
 }
 
 async function removeDoc(moduleId, modIndex, docIndex) {
-  if (!confirm('¿Eliminar este documento?')) return
+  const ok = await confirm.show({
+    title: 'Eliminar documento',
+    message: '¿Eliminar este documento? Esta acción no se puede deshacer.',
+    confirmText: 'Eliminar',
+    type: 'danger',
+  })
+  if (!ok) return
   try {
     const doc = modules.value[modIndex]?.documents?.[docIndex]
     if (doc?.id) {
       await apiClient.delete(`/marketing/mini-course/documents/${doc.id}`)
-      showToast('Eliminado', 'Documento eliminado')
+      toastAlert.show('Eliminado', 'Documento eliminado correctamente', 'success')
       await loadModules()
     }
   } catch {
-    showToast('Error', 'No se pudo eliminar el documento', 'error')
+    toastAlert.show('Error', 'No se pudo eliminar el documento', 'error')
   }
 }
 
@@ -404,12 +421,12 @@ async function saveClass(modIndex) {
         await apiClient.post(`/marketing/mini-course/classes/${cls.id}`, fd, {
           headers: { 'Content-Type': 'multipart/form-data' }
         })
-        showToast('Actualizada', 'Clase actualizada correctamente')
+        toastAlert.show('Actualizada', 'Clase actualizada correctamente', 'success')
       } else {
         await apiClient.post('/marketing/mini-course/classes', fd, {
           headers: { 'Content-Type': 'multipart/form-data' }
         })
-        showToast('Creada', 'Clase creada correctamente')
+        toastAlert.show('Creada', 'Clase creada correctamente', 'success')
       }
     } else if (classEditIndex.value !== null) {
       // Edit without file - just text fields
@@ -420,9 +437,9 @@ async function saveClass(modIndex) {
         mini_course_id: Number(miniCourse.value.id),
         mini_course_module_id: mod.id,
       })
-      showToast('Actualizada', 'Clase actualizada correctamente')
+      toastAlert.show('Actualizada', 'Clase actualizada correctamente', 'success')
     } else {
-      showToast('Error', 'Debes seleccionar un archivo de video', 'error')
+      toastAlert.show('Error', 'Debes seleccionar un archivo de video', 'error')
       classSaving.value = false
       return
     }
@@ -431,20 +448,26 @@ async function saveClass(modIndex) {
     await loadClasses(modIndex)
   } catch (err) {
     const msg = err.response?.data?.message || 'No se pudo guardar la clase'
-    showToast('Error', msg, 'error')
+    toastAlert.show('Error', msg, 'error')
   } finally {
     classSaving.value = false
   }
 }
 
 async function confirmDeleteClass(classId, modIndex) {
-  if (!confirm('¿Eliminar esta clase?')) return
+  const ok = await confirm.show({
+    title: 'Eliminar clase',
+    message: '¿Eliminar esta clase? Esta acción no se puede deshacer.',
+    confirmText: 'Eliminar',
+    type: 'danger',
+  })
+  if (!ok) return
   try {
     await apiClient.delete(`/marketing/mini-course/classes/${classId}`)
-    showToast('Eliminada', 'Clase eliminada correctamente')
+    toastAlert.show('Eliminada', 'Clase eliminada correctamente', 'success')
     await loadClasses(modIndex)
   } catch {
-    showToast('Error', 'No se pudo eliminar la clase', 'error')
+    toastAlert.show('Error', 'No se pudo eliminar la clase', 'error')
   }
 }
 
@@ -466,7 +489,7 @@ async function loadModules() {
     // Load classes for each module
     await Promise.all(modules.value.map((mod, idx) => loadClasses(idx)))
   } catch {
-    showToast('Error', 'No se pudieron cargar los módulos', 'error')
+    toastAlert.show('Error', 'No se pudieron cargar los módulos', 'error')
   }
 }
 

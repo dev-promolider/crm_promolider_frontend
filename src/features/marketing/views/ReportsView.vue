@@ -24,7 +24,25 @@
 
         <!-- ===== ADMIN / PRODUCER TABLE ===== -->
         <div v-if="userRole === 'admin' || userRole === 'producer'">
-          <div v-if="groupedData.length > 0" class="table-responsive">
+          <!-- Table Toolbar -->
+          <div class="table-toolbar">
+            <div class="show-entries">
+              <span>Mostrar</span>
+              <select class="table-page-select" v-model.number="perPage">
+                <option :value="10">10</option>
+                <option :value="25">25</option>
+                <option :value="50">50</option>
+                <option :value="100">100</option>
+              </select>
+              <span>registros</span>
+            </div>
+            <div class="search-wrapper">
+              <Search :size="16" class="search-icon" />
+              <input type="text" class="table-search" v-model="searchQuery" placeholder="Buscar..." />
+            </div>
+          </div>
+
+          <div class="table-responsive">
             <table class="table table-striped table-bordered table-hover">
               <thead class="thead-light">
                 <tr>
@@ -38,7 +56,7 @@
               </thead>
               <tbody>
                 <tr v-for="(group, index) in paginatedData" :key="group.content_id || index">
-                  <td>{{ index + 1 }}</td>
+                  <td>{{ startIndex + index + 1 }}</td>
                   <td class="cell-name">{{ group.content_name || '-' }}</td>
                   <td>{{ formatDate(group.fecha || group.created_at) }}</td>
                   <td class="cell-center">{{ group.num_distribuidores || 0 }}</td>
@@ -56,13 +74,27 @@
                     </select>
                   </td>
                 </tr>
+                <tr v-if="!loading && filteredGroupedData.length === 0">
+                  <td :colspan="6" class="text-center text-muted empty-row">
+                    <BarChart3 :size="20" class="empty-icon-inline" />
+                    No hay {{ contentTypeLabel.toLowerCase() }}s registrados
+                  </td>
+                </tr>
+                <tr v-if="loading">
+                  <td :colspan="6" class="text-center text-muted empty-row">
+                    <Loader2 :size="18" class="spinner-inline" />
+                    Cargando datos...
+                  </td>
+                </tr>
               </tbody>
             </table>
           </div>
 
           <!-- Pagination & Info -->
-          <div v-if="groupedData.length > 0" class="table-footer">
-            <small class="text-muted">Mostrando {{ groupedData.length }} registros</small>
+          <div class="table-footer">
+            <small class="text-muted">
+              Mostrando {{ filteredGroupedData.length }} registro{{ filteredGroupedData.length !== 1 ? 's' : '' }}
+            </small>
             <nav v-if="totalPages > 1">
               <ul class="pagination-custom">
                 <li :class="{ disabled: currentPage <= 1 }">
@@ -77,16 +109,29 @@
               </ul>
             </nav>
           </div>
-
-          <div v-else-if="!loading" class="empty-state">
-            <BarChart3 :size="32" class="empty-icon" />
-            <p>No hay datos disponibles</p>
-          </div>
         </div>
 
         <!-- ===== DISTRIBUTOR TABLE ===== -->
         <div v-else-if="userRole === 'distributor'">
-          <div v-if="masterclasses.length > 0" class="table-responsive">
+          <!-- Table Toolbar -->
+          <div class="table-toolbar">
+            <div class="show-entries">
+              <span>Mostrar</span>
+              <select class="table-page-select" v-model.number="distPerPage">
+                <option :value="10">10</option>
+                <option :value="25">25</option>
+                <option :value="50">50</option>
+                <option :value="100">100</option>
+              </select>
+              <span>registros</span>
+            </div>
+            <div class="search-wrapper">
+              <Search :size="16" class="search-icon" />
+              <input type="text" class="table-search" v-model="distSearchQuery" placeholder="Buscar..." />
+            </div>
+          </div>
+
+          <div class="table-responsive">
             <table class="table table-striped table-bordered table-hover">
               <thead class="thead-light">
                 <tr>
@@ -98,8 +143,8 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="(item, index) in distributorData" :key="item.id || index">
-                  <td>{{ index + 1 }}</td>
+                <tr v-for="(item, index) in paginatedDistributorData" :key="item.id || index">
+                  <td>{{ distStartIndex + index + 1 }}</td>
                   <td class="cell-name">{{ item.content_name || '-' }}</td>
                   <td>{{ item.productor_nombre || item.producer_name || '-' }}</td>
                   <td class="cell-center">{{ item.usuarios_registrados || item.registered_users || 0 }}</td>
@@ -109,17 +154,40 @@
                     </button>
                   </td>
                 </tr>
+                <tr v-if="!loading && filteredDistributorData.length === 0">
+                  <td :colspan="5" class="text-center text-muted empty-row">
+                    <BarChart3 :size="20" class="empty-icon-inline" />
+                    No hay {{ contentTypeLabel.toLowerCase() }}s disponibles
+                  </td>
+                </tr>
+                <tr v-if="loading">
+                  <td :colspan="5" class="text-center text-muted empty-row">
+                    <Loader2 :size="18" class="spinner-inline" />
+                    Cargando datos...
+                  </td>
+                </tr>
               </tbody>
             </table>
           </div>
 
-          <div v-if="masterclasses.length > 0" class="table-footer">
-            <small class="text-muted">Mostrando {{ masterclasses.length }} registros</small>
-          </div>
-
-          <div v-else-if="!loading" class="empty-state">
-            <BarChart3 :size="32" class="empty-icon" />
-            <p>No hay datos disponibles</p>
+          <!-- Pagination & Info -->
+          <div class="table-footer">
+            <small class="text-muted">
+              Mostrando {{ filteredDistributorData.length }} registro{{ filteredDistributorData.length !== 1 ? 's' : '' }}
+            </small>
+            <nav v-if="distTotalPages > 1">
+              <ul class="pagination-custom">
+                <li :class="{ disabled: distCurrentPage <= 1 }">
+                  <a href="#" @click.prevent="distCurrentPage > 1 && distCurrentPage--">&laquo;</a>
+                </li>
+                <li v-for="page in distTotalPages" :key="page" :class="{ active: page === distCurrentPage }">
+                  <a href="#" @click.prevent="distCurrentPage = page">{{ page }}</a>
+                </li>
+                <li :class="{ disabled: distCurrentPage >= distTotalPages }">
+                  <a href="#" @click.prevent="distCurrentPage < distTotalPages && distCurrentPage++">&raquo;</a>
+                </li>
+              </ul>
+            </nav>
           </div>
         </div>
       </div>
@@ -239,14 +307,15 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useReportsStore } from '../stores/reportsStore'
 import { useAuthStore } from '@/features/auth/stores/authStore'
 import { formatDate } from '@/utils/formatDate'
 import apiClient from '@/services/apiClient'
 import {
   BarChart3, Loader2, Share2, X, Info, AlertTriangle, Plus, CheckCircle,
-  Copy, MessageCircle, ExternalLink, GraduationCap, Users, UserCheck, UserPlus
+  Copy, MessageCircle, ExternalLink, GraduationCap, Users, UserCheck, UserPlus,
+  Search
 } from 'lucide-vue-next'
 
 const store = useReportsStore()
@@ -265,8 +334,14 @@ const userRole = computed(() => {
 const loading = ref(false)
 const selectedContentType = ref('masterclass')
 const masterclasses = ref([])
+const searchQuery = ref('')
 const currentPage = ref(1)
-const perPage = 10
+const perPage = ref(10)
+
+// Distributor table specific
+const distSearchQuery = ref('')
+const distCurrentPage = ref(1)
+const distPerPage = ref(10)
 
 // Invitation modal
 const showInvitationModal = ref(false)
@@ -328,12 +403,31 @@ const groupedData = computed(() => {
   })
 })
 
-const totalPages = computed(() => Math.max(1, Math.ceil(groupedData.value.length / perPage)))
+// Filtered grouped data by search query (Admin/Producer)
+const filteredGroupedData = computed(() => {
+  if (!searchQuery.value.trim()) return groupedData.value
+  const q = searchQuery.value.toLowerCase()
+  return groupedData.value.filter(g =>
+    (g.content_name || '').toLowerCase().includes(q) ||
+    String(g.num_distribuidores || 0).includes(q) ||
+    (g.estado || getEstadoLabel(g) || '').toLowerCase().includes(q)
+  )
+})
+
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredGroupedData.value.length / perPage.value)))
+
+const startIndex = computed(() => (currentPage.value - 1) * perPage.value)
 
 const paginatedData = computed(() => {
-  const start = (currentPage.value - 1) * perPage
-  return groupedData.value.slice(start, start + perPage)
+  const start = startIndex.value
+  return filteredGroupedData.value.slice(start, start + perPage.value)
 })
+
+// Watchers to reset page on search/filter change
+watch(searchQuery, () => { currentPage.value = 1 })
+watch(perPage, () => { currentPage.value = 1 })
+watch(distSearchQuery, () => { distCurrentPage.value = 1 })
+watch(distPerPage, () => { distCurrentPage.value = 1 })
 
 // Distributor view - flat list with content name mapping
 const distributorData = computed(() => {
@@ -343,6 +437,25 @@ const distributorData = computed(() => {
     ...item,
     content_name: item[nameKey] || item.masterclass_nombre || item.minicourse_nombre || item.ebook_nombre || item.title || item.name,
   }))
+})
+
+// Filtered distributor data by search query
+const filteredDistributorData = computed(() => {
+  if (!distSearchQuery.value.trim()) return distributorData.value
+  const q = distSearchQuery.value.toLowerCase()
+  return distributorData.value.filter(d =>
+    (d.content_name || '').toLowerCase().includes(q) ||
+    (d.productor_nombre || d.producer_name || '').toLowerCase().includes(q)
+  )
+})
+
+const distTotalPages = computed(() => Math.max(1, Math.ceil(filteredDistributorData.value.length / distPerPage.value)))
+
+const distStartIndex = computed(() => (distCurrentPage.value - 1) * distPerPage.value)
+
+const paginatedDistributorData = computed(() => {
+  const start = distStartIndex.value
+  return filteredDistributorData.value.slice(start, start + distPerPage.value)
 })
 
 // ─── Helpers ──────────────────────────────────────────────────────────
@@ -719,10 +832,40 @@ onMounted(() => {
 .pagination-custom li.active a { background: var(--primary-color); border-color: var(--primary-color); color: white; font-weight: 700; }
 .pagination-custom li.disabled a { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
 
+/* ── Table Toolbar ── */
+.table-toolbar {
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 12px; margin-bottom: 12px;
+}
+.show-entries { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-muted); }
+.table-page-select {
+  border: 1px solid var(--border-color); border-radius: 6px;
+  padding: 4px 8px; font-size: 13px; background: var(--card-bg);
+  color: var(--text-main); cursor: pointer;
+}
+.search-wrapper { position: relative; display: flex; align-items: center; }
+.search-icon { position: absolute; left: 10px; color: var(--text-light); pointer-events: none; }
+.table-search {
+  border: 1px solid var(--border-color); border-radius: 8px;
+  padding: 7px 12px 7px 34px; font-size: 13px;
+  background: var(--card-bg); color: var(--text-main);
+  min-width: 220px; transition: border-color 0.2s;
+}
+.table-search:focus { outline: none; border-color: var(--primary-color); }
+
+/* ── Empty Row inside table ── */
+.empty-row { padding: 30px 12px !important; font-size: 14px; }
+.empty-icon-inline {
+  display: inline-block; vertical-align: middle;
+  margin-right: 6px; opacity: 0.4;
+}
+
 /* ── Empty / Loading States ── */
 .empty-state { display: flex; flex-direction: column; align-items: center; padding: 40px; color: var(--text-muted); gap: 8px; }
 .empty-icon { opacity: 0.4; }
 .loading-state { display: flex; flex-direction: column; align-items: center; padding: 30px; color: var(--text-muted); gap: 8px; }
+.text-center { text-align: center; }
+.text-muted { color: var(--text-muted); }
 
 /* ── Modal ── */
 .modal-overlay {

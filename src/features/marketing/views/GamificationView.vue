@@ -210,15 +210,38 @@
         </div>
       </div>
     </div>
+
+    <!-- Confirm Modal & Toast -->
+    <ConfirmModal
+      :visible="confirm.showConfirm.value"
+      :title="confirm.confirmData.value.title"
+      :message="confirm.confirmData.value.message"
+      :confirm-text="confirm.confirmData.value.confirmText"
+      :type="confirm.confirmData.value.type"
+      :loading="confirm.confirmLoading.value"
+      @confirm="confirm.onConfirm"
+      @cancel="confirm.onCancel"
+    />
+    <ToastNotification
+      :toast="toastAlert.toast.value"
+      @close="toastAlert.dismiss"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useGamificationStore } from '../stores/gamificationStore'
+import ConfirmModal from '../components/ConfirmModal.vue'
+import ToastNotification from '../components/ToastNotification.vue'
+import { useConfirm } from '../composables/useConfirm'
+import { useToast } from '../composables/useToast'
 
 const store = useGamificationStore()
 const tab = ref('ranking')
+
+const confirm = useConfirm()
+const toastAlert = useToast()
 
 const showLevelForm = ref(false)
 const editingLevel = ref(null)
@@ -271,7 +294,18 @@ async function saveReward() {
   rewardForm.value = { name: '', description: '', cost: 0, stock: null, image: '', active: true }
 }
 
-async function deleteRewardItem(id) { if (confirm('¿Eliminar recompensa?')) await store.deleteReward(id) }
+async function deleteRewardItem(id) {
+  const ok = await confirm.show({
+    title: 'Eliminar recompensa',
+    message: '¿Eliminar recompensa? Esta acción no se puede deshacer.',
+    confirmText: 'Eliminar',
+    type: 'danger',
+  })
+  if (!ok) return
+  await store.deleteReward(id)
+  toastAlert.show('Eliminada', 'Recompensa eliminada correctamente', 'success')
+}
+
 async function restoreRewardItem(id) { await store.restoreReward(id) }
 async function processRedemptionItem(id, status) { await store.processRedemption(id, { status }) }
 async function saveConfigItem(id, data) { await store.saveConfig(id, { passed_course: data.passed_course, daily_question: data.daily_question, achievement: data.achievement }) }

@@ -75,10 +75,16 @@
           </div>
 
           <!-- Nueva nota -->
-          <div class="new-note-section" :class="{ 'mt-3': selectedDateNotes?.length > 0 }">
-            <h6 class="section-label">Agregar nota</h6>
+          <div class="new-note-section" :class="{ 'with-notes': selectedDateNotes?.length > 0 }">
+            <div class="section-header">
+              <div class="section-header-icon">
+                <Plus :size="14" />
+              </div>
+              <h6 class="section-label">Agregar nota</h6>
+            </div>
 
             <div class="time-picker">
+              <label class="field-label">Hora</label>
               <div class="time-selects">
                 <select v-model="newNote.hour" class="time-select">
                   <option value="">HH</option>
@@ -98,14 +104,15 @@
               </div>
             </div>
 
-            <div class="form-group mt-2">
-              <textarea v-model="newNote.text" class="form-control" rows="3" placeholder="Escribe tu nota aquí..."></textarea>
+            <div class="form-group">
+              <label class="field-label">Nota</label>
+              <textarea v-model="newNote.text" class="form-control" rows="4" placeholder="¿Qué tienes pendiente para este día?..."></textarea>
             </div>
 
             <button @click="addNote" class="add-btn" :disabled="!newNote.text.trim() || loading">
               <Loader2 v-if="loading" :size="16" class="spinner-inline" />
               <Plus v-else :size="16" />
-              {{ loading ? 'Guardando...' : 'Agregar' }}
+              {{ loading ? 'Guardando...' : 'Guardar nota' }}
             </button>
           </div>
         </div>
@@ -434,25 +441,65 @@ export default {
 .quick-btn.now-btn { border-color: rgba(24, 214, 0, 0.3); color: var(--primary-color); }
 .quick-btn.now-btn:hover { background: rgba(24, 214, 0, 0.08); }
 
+/* ── New Note Section ── */
+.new-note-section {
+  background: var(--bg-main);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.2s;
+}
+.new-note-section.with-notes {
+  margin-top: 20px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.section-header-icon {
+  width: 28px;
+  height: 28px;
+  background: var(--primary-color);
+  color: white;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.field-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
 /* ── Form ── */
-.form-group { margin-bottom: 12px; }
+.form-group { margin-bottom: 18px; }
 .form-control {
-  width: 100%; padding: 10px 12px;
-  border: 1px solid var(--border-color); border-radius: 8px;
-  font-size: 13px; font-family: inherit;
+  width: 100%; padding: 12px 14px;
+  border: 1px solid var(--border-color); border-radius: 10px;
+  font-size: 14px; font-family: inherit; line-height: 1.5;
   background: var(--card-bg); color: var(--text-main);
-  transition: border-color 0.2s; resize: vertical;
+  transition: all 0.2s; resize: vertical;
 }
 .form-control:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(24, 214, 0, 0.1); }
-.form-control::placeholder { color: var(--text-light); }
+.form-control::placeholder { color: var(--text-light); font-style: italic; }
 
 .add-btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 8px 18px; background: var(--primary-color); color: white;
-  border: none; border-radius: 8px; font-weight: 600; font-size: 13px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 12px 18px; background: var(--primary-color); color: white;
+  border: none; border-radius: 10px; font-weight: 700; font-size: 14px;
   cursor: pointer; transition: all 0.2s;
 }
-.add-btn:hover:not(:disabled) { background: var(--primary-hover); transform: translateY(-1px); }
+.add-btn:hover:not(:disabled) { background: var(--primary-hover); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(24, 214, 0, 0.3); }
 .add-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .spinner-inline { animation: spin 1s linear infinite; }
 

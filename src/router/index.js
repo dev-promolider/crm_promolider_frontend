@@ -227,21 +227,7 @@ const routes = [
         name: 'marketing-dinamica',
         component: () => import('@/features/marketing/views/DinamicaView.vue')
       },
-      {
-        path: 'dinamica/nueva/:tipo',
-        name: 'marketing-dinamica-nueva',
-        component: () => import('@/features/marketing/views/DinamicaCreateRedirect.vue')
-      },
-      {
-        path: 'dinamica/:id/specifications',
-        name: 'marketing-dinamica-specs',
-        component: () => import('@/features/marketing/views/DinamicaSpecificationsView.vue')
-      },
-      {
-        path: 'dinamica/:id/trivia',
-        name: 'marketing-dinamica-trivia',
-        component: () => import('@/features/marketing/views/TriviaDesignerView.vue')
-      },
+
       {
         path: 'categorias-preguntas',
         name: 'marketing-question-categories',
