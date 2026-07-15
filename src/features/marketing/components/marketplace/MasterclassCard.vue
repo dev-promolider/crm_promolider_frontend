@@ -42,6 +42,9 @@ const S3_BASE = 'https://promolider-storage-user.s3.amazonaws.com'
 
 function getS3Url(path) {
   if (!path) return ''
+  if (path.includes('api.promolider.email')) {
+    path = path.replace(/https?:\/\/api\.promolider\.email/g, '');
+  }
   if (path.startsWith('http://') || path.startsWith('https://')) return path
   const cleanPath = path.startsWith('/') ? path : '/' + path
   return S3_BASE + cleanPath
