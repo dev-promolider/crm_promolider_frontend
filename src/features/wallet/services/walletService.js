@@ -1,24 +1,24 @@
 import apiClient from '@/services/apiClient';
 
 export default {
-  getAllMovements(userId) {
-    return apiClient.get(`/reports/mymovements/${userId}`);
+  getAllMovements(userId, params = {}) {
+    return apiClient.get(`/marketing/reports/mymovements/${userId}`, { params });
   },
 
   getWalletBalance() {
-    return apiClient.get('/reports/wallet/balance');
+    return apiClient.get('/marketing/reports/wallet/balance');
   },
 
   getMovementsHistory() {
-    return apiClient.get('/reports/mymovements-history');
+    return apiClient.get('/marketing/reports/mymovements-history');
   },
 
   transferFunds(direct, amount) {
-    return apiClient.post('/reports/movements/transfer-founds', { direct, amount });
+    return apiClient.post('/marketing/reports/movements/transfer-founds', { direct, amount });
   },
 
   requestFunds(amount, accountType, accountNumber) {
-    return apiClient.post('/reports/movements/request-founds', {
+    return apiClient.post('/marketing/reports/movements/request-founds', {
       amount,
       account_type: accountType,
       account_number: accountNumber
@@ -26,15 +26,15 @@ export default {
   },
 
   getRequestFundsList() {
-    return apiClient.get('/reports/movements/request-founds/list');
+    return apiClient.get('/marketing/reports/movements/request-founds/list');
   },
 
   rejectRequest(id) {
-    return apiClient.post('/reports/movements/request-founds/reject', { id });
+    return apiClient.post('/marketing/reports/movements/request-founds/reject', { id });
   },
 
   approveRequest(formData) {
-    return apiClient.post('/reports/movements/request-founds/approve', formData, {
+    return apiClient.post('/marketing/reports/movements/request-founds/approve', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
@@ -42,10 +42,14 @@ export default {
   },
 
   getBinaryHistory(params = {}) {
-    return apiClient.get('/reports/binary-history', { params });
+    return apiClient.get('/marketing/reports/binary-history', { params });
   },
 
   getSales(userId) {
-    return apiClient.get(`/reports/getsales/${userId}`);
+    return apiClient.get(`/marketing/reports/getsales/${userId}`);
+  },
+
+  getMyPurchases(userId) {
+    return apiClient.get(`/marketing/reports/mypurchases/${userId}`);
   }
 };

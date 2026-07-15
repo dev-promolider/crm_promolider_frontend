@@ -40,6 +40,10 @@ const routes = [
   },
 
   {
+    path: '/reportes',
+    redirect: '/dashboard/billetera'
+  },
+  {
     path: '/',
     redirect: '/dashboard'
   },
@@ -101,6 +105,41 @@ const routes = [
         path: 'billetera',
         name: 'wallet',
         component: () => import('@/features/wallet/views/WalletHistoryUser.vue')
+      },
+      {
+        path: 'mis-compras',
+        name: 'my-purchases',
+        component: () => import('@/features/wallet/views/MyPurchasesView.vue')
+      },
+      {
+        path: 'mis-ventas',
+        name: 'my-sales',
+        component: () => import('@/features/wallet/views/MySalesView.vue')
+      },
+      {
+        path: 'bono-rango/historial',
+        name: 'binary-history',
+        component: () => import('@/features/wallet/views/BinaryHistoryView.vue')
+      },
+      {
+        path: '/solicitudes',
+        name: 'dashboard-solicitudes',
+        component: { template: '<div class="p-6"><h2>Módulo de Solicitudes (En construcción)</h2></div>' }
+      },
+      {
+        path: '/perfil',
+        name: 'dashboard-perfil',
+        component: { template: '<div class="p-6"><h2>Mi Perfil (En construcción)</h2></div>' }
+      },
+      {
+        path: '/logros',
+        name: 'dashboard-logros',
+        component: { template: '<div class="p-6"><h2>Mis Logros (En construcción)</h2></div>' }
+      },
+      {
+        path: '/configuracion',
+        name: 'dashboard-configuracion',
+        component: { template: '<div class="p-6"><h2>Configuración (En construcción)</h2></div>' }
       }
     ]
   },

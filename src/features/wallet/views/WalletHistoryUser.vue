@@ -44,14 +44,14 @@
         :class="{ active: activeTab === 'binary' }" 
         @click="activeTab = 'binary'"
       >
-        <TrendingUp :size="16" /> Historial Binario
+        <Settings :size="16" /> Configuración de Billetera
       </button>
       <button 
         class="tab-btn" 
-        :class="{ active: activeTab === 'sales' }" 
-        @click="activeTab = 'sales'"
+        :class="{ active: activeTab === 'redemption' }" 
+        @click="activeTab = 'redemption'"
       >
-        <DollarSign :size="16" /> Reporte de Ventas
+        <Award :size="16" /> Canje de Premios
       </button>
       <button 
         v-if="isAdmin"
@@ -68,11 +68,110 @@
       
       <!-- 1. MOVEMENTS TAB -->
       <div v-if="activeTab === 'movements'" class="tab-pane">
-        <div class="table-header">
-          <h3>Historial de Transacciones</h3>
-          <Loader2 v-if="loadingMovements" :size="18" class="spinner" />
+        <!-- Filter Bar -->
+        <div class="movements-filter-bar">
+          <div class="filter-bar-top">
+            <h3 class="filter-title">Historial de Transacciones</h3>
+            <Loader2 v-if="loadingMovements" :size="18" class="spinner" />
+          </div>
+
+          <div class="filter-controls">
+            <!-- Fecha desde -->
+            <div class="filter-group">
+              <label class="filter-label">Desde</label>
+              <div class="filter-input-wrapper">
+                <input
+                  type="date"
+                  v-model="movFilterFrom"
+                  class="filter-input"
+                  @change="changeMovPage(1)"
+                />
+              </div>
+            </div>
+
+            <!-- Fecha hasta -->
+            <div class="filter-group">
+              <label class="filter-label">Hasta</label>
+              <div class="filter-input-wrapper">
+                <input
+                  type="date"
+                  v-model="movFilterTo"
+                  class="filter-input"
+                  @change="changeMovPage(1)"
+                />
+              </div>
+            </div>
+
+            <!-- Estado -->
+            <div class="filter-group">
+              <label class="filter-label">Estado</label>
+              <div class="filter-input-wrapper">
+                <select
+                  v-model="movFilterStatus"
+                  class="filter-input filter-select"
+                  @change="changeMovPage(1)"
+                >
+                  <option value="">Todos</option>
+                  <option value="approved">Aprobado</option>
+                  <option value="pending">Pendiente</option>
+                  <option value="rejected">Rechazado</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Buscar concepto -->
+            <div class="filter-group filter-group--wide">
+              <label class="filter-label">Concepto / Motivo</label>
+              <div class="filter-input-wrapper filter-search-wrapper">
+                <Search :size="14" class="filter-search-icon" />
+                <input
+                  type="text"
+                  v-model="movFilterSearch"
+                  placeholder="Buscar por concepto..."
+                  class="filter-input filter-input--search"
+                  @input="debouncedFetchMovements"
+                  @keyup.enter="changeMovPage(1)"
+                />
+              </div>
+            </div>
+
+            <!-- Por página -->
+            <div class="filter-group">
+              <label class="filter-label">Por página</label>
+              <div class="filter-input-wrapper">
+                <select
+                  v-model="movPerPage"
+                  class="filter-input filter-select"
+                  @change="changeMovPage(1)"
+                >
+                  <option :value="10">10</option>
+                  <option :value="15">15</option>
+                  <option :value="25">25</option>
+                  <option :value="50">50</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Limpiar filtros -->
+            <div class="filter-group filter-group--action">
+              <button
+                class="btn-clear-filters"
+                @click="clearMovFilters"
+                :disabled="!movFilterFrom && !movFilterTo && !movFilterStatus && !movFilterSearch"
+              >
+                <X :size="14" /> Limpiar
+              </button>
+            </div>
+          </div>
+
+          <!-- Results summary -->
+          <div class="filter-summary" v-if="movTotal > 0">
+            <span class="filter-badge">
+              Mostrando {{ movFrom }}–{{ movTo }} de {{ movTotal }} movimientos
+            </span>
+          </div>
         </div>
-        
+
         <div class="table-responsive">
           <table class="table-custom">
             <thead>
@@ -116,7 +215,49 @@
             </tbody>
           </table>
         </div>
+
+        <!-- Pagination footer -->
+        <div class="pagination-footer" v-if="movTotalPages > 1">
+          <span class="pag-info">
+            Página {{ movPage }} de {{ movTotalPages }}
+          </span>
+          <div class="pag-controls">
+            <button
+              class="btn-page"
+              :disabled="movPage === 1"
+              @click="changeMovPage(1)"
+              title="Primera página"
+            >&laquo;</button>
+            <button
+              class="btn-page"
+              :disabled="movPage === 1"
+              @click="changeMovPage(movPage - 1)"
+            >&lsaquo; Anterior</button>
+
+            <button
+              v-for="p in movTotalPages"
+              :key="p"
+              class="btn-page btn-page-num"
+              :class="{ active: p === movPage }"
+              @click="changeMovPage(p)"
+              v-show="Math.abs(p - movPage) <= 2"
+            >{{ p }}</button>
+
+            <button
+              class="btn-page"
+              :disabled="movPage === movTotalPages"
+              @click="changeMovPage(movPage + 1)"
+            >Siguiente &rsaquo;</button>
+            <button
+              class="btn-page"
+              :disabled="movPage === movTotalPages"
+              @click="changeMovPage(movTotalPages)"
+              title="Última página"
+            >&raquo;</button>
+          </div>
+        </div>
       </div>
+
 
       <!-- 2. BINARY HISTORY TAB -->
       <div v-if="activeTab === 'binary'" class="tab-pane">
@@ -284,6 +425,264 @@
               </tr>
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <!-- 5. CONFIG TAB -->
+      <div v-if="activeTab === 'config'" class="tab-pane">
+        <div class="wallet-config-grid">
+          
+          <!-- Left Column: Form to Add/Edit Payment Method -->
+          <div class="config-card form-section">
+            <div class="card-header-clean">
+              <Coins :size="20" class="text-premium" />
+              <h3>{{ isEditingAccount ? 'Editar Cuenta de Pago' : 'Agregar Método de Pago' }}</h3>
+            </div>
+            
+            <div class="form-group mt-4" v-if="!isEditingAccount">
+              <label>Método de Pago</label>
+              <select v-model="selectedMethod" class="form-control" @change="handleConfigSelectChange">
+                <option value="">Selecciona un método</option>
+                <option v-for="method in listMethods" :key="method.id" :value="method.id">
+                  {{ method.name }}
+                </option>
+              </select>
+            </div>
+
+            <div v-if="selectedMethod === 'binance' || (isEditingAccount && editingAccountType === 'binance')" class="method-form-fields mt-3">
+              <div class="form-group">
+                <label>Nombre del Titular</label>
+                <input type="text" v-model="configForm.account_name" class="form-control" placeholder="Solo letras" :class="{ 'error-border': configErrors.account_name }">
+                <small v-if="configErrors.account_name" class="error-msg">Por favor ingrese un nombre válido (solo letras).</small>
+              </div>
+
+              <div class="form-group">
+                <label>Correo Electrónico (Binance)</label>
+                <input type="email" v-model="configForm.email" class="form-control" placeholder="correo@ejemplo.com" :class="{ 'error-border': configErrors.email }">
+                <small v-if="configErrors.email" class="error-msg">Ingrese un correo electrónico válido.</small>
+              </div>
+
+              <div class="form-group">
+                <label>Binance ID / Dirección USDT</label>
+                <input type="text" v-model="configForm.binance_id" class="form-control" placeholder="Binance ID o Wallet Address" :class="{ 'error-border': configErrors.binance_id }">
+                <small v-if="configErrors.binance_id" class="error-msg">Este campo es requerido.</small>
+              </div>
+
+              <div class="form-group">
+                <label>Red</label>
+                <select v-model="configForm.network" class="form-control">
+                  <option value="BSC">BSC (BEP20)</option>
+                  <option value="ETH">ETH (ERC20)</option>
+                  <option value="TRX">TRX (TRC20)</option>
+                  <option value="BTC">BTC</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Teléfono (Opcional)</label>
+                <input type="text" v-model="configForm.phone" class="form-control" placeholder="+51 999 999 999">
+              </div>
+            </div>
+
+            <div v-if="selectedMethod === 'paypal' || (isEditingAccount && editingAccountType === 'paypal')" class="method-form-fields mt-3">
+              <div class="form-group">
+                <label>Nombre del Titular</label>
+                <input type="text" v-model="configForm.account_name" class="form-control" placeholder="Solo letras" :class="{ 'error-border': configErrors.account_name }">
+                <small v-if="configErrors.account_name" class="error-msg">Por favor ingrese un nombre válido (solo letras).</small>
+              </div>
+
+              <div class="form-group">
+                <label>Correo Electrónico PayPal</label>
+                <input type="email" v-model="configForm.email" class="form-control" placeholder="correo@paypal.com" :class="{ 'error-border': configErrors.email }">
+                <small v-if="configErrors.email" class="error-msg">Ingrese un correo electrónico válido.</small>
+              </div>
+
+              <div class="form-group">
+                <label>País</label>
+                <select v-model="configForm.country_code" class="form-control">
+                  <option value="PE">Perú</option>
+                  <option value="US">Estados Unidos</option>
+                  <option value="MX">México</option>
+                  <option value="CO">Colombia</option>
+                  <option value="AR">Argentina</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Moneda</label>
+                <select v-model="configForm.currency" class="form-control">
+                  <option value="USD">USD - Dólar Estadounidense</option>
+                  <option value="EUR">EUR - Euro</option>
+                  <option value="PEN">PEN - Sol Peruano</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Tipo de Cuenta</label>
+                <select v-model="configForm.account_type" class="form-control">
+                  <option value="personal">Personal</option>
+                  <option value="business">Negocios (Business)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-actions mt-4" v-if="selectedMethod || isEditingAccount">
+              <button class="btn btn-premium btn-block" :disabled="loadingConfigSave" @click="savePaymentAccount">
+                <Loader2 v-if="loadingConfigSave" class="spinner" :size="16" />
+                {{ isEditingAccount ? 'Actualizar Cuenta' : 'Guardar Cuenta' }}
+              </button>
+              <button v-if="isEditingAccount" class="btn btn-secondary btn-block mt-2" @click="resetConfigForm">
+                Cancelar Edición
+              </button>
+            </div>
+          </div>
+
+          <!-- Right Column: List of Saved Payment Methods -->
+          <div class="config-card list-section">
+            <div class="card-header-clean">
+              <ListTodo :size="20" class="text-premium" />
+              <h3>Mis Cuentas de Pago</h3>
+            </div>
+
+            <div v-if="loadingAccounts" class="empty-loader mt-5">
+              <Loader2 class="spinner text-primary" :size="30" />
+              <p class="mt-2 text-muted">Cargando métodos de pago...</p>
+            </div>
+
+            <div v-else class="payment-accounts-list mt-4">
+              <div v-for="account in paymentAccounts" :key="`${account.type}-${account.id}`" class="payment-account-item">
+                <div class="item-header">
+                  <div class="method-badge-premium" :class="account.type">
+                    <Globe v-if="account.type === 'paypal'" :size="14" />
+                    <Coins v-else :size="14" />
+                    <span>{{ account.method }}</span>
+                  </div>
+                  <div class="item-actions">
+                    <button class="action-icon-btn edit" @click="startEditAccount(account)" title="Editar">
+                      <Edit3 :size="14" />
+                    </button>
+                    <button class="action-icon-btn delete" @click="deletePaymentAccount(account)" title="Eliminar">
+                      <Trash2 :size="14" />
+                    </button>
+                  </div>
+                </div>
+
+                <div class="item-body mt-3">
+                  <div class="detail-row">
+                    <span class="label">Titular:</span>
+                    <span class="val">{{ account.account_name }}</span>
+                  </div>
+                  <div class="detail-row">
+                    <span class="label">Correo:</span>
+                    <span class="val">{{ account.email }}</span>
+                  </div>
+                  <div class="detail-row" v-if="account.type === 'binance'">
+                    <span class="label">Binance ID:</span>
+                    <span class="val font-mono">{{ account.account_number }}</span>
+                  </div>
+                  <div class="detail-row" v-if="account.type === 'binance'">
+                    <span class="label">Red:</span>
+                    <span class="val badge-network">{{ account.extra_info.network }}</span>
+                  </div>
+                  <div class="detail-row" v-if="account.type === 'paypal'">
+                    <span class="label">País/Moneda:</span>
+                    <span class="val">{{ account.extra_info.country_code }} ({{ account.extra_info.currency }})</span>
+                  </div>
+                  <div class="detail-row" v-if="account.type === 'paypal'">
+                    <span class="label">Tipo:</span>
+                    <span class="val capitalize">{{ account.extra_info.account_type }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="paymentAccounts.length === 0" class="empty-list">
+                <Inbox :size="32" class="text-muted" />
+                <p class="mt-2 text-muted">No tienes métodos de pago registrados.</p>
+                <span class="text-xs text-muted-light">Agrega uno a la izquierda para poder solicitar retiros de fondos.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. REDEMPTION TAB -->
+      <div v-if="activeTab === 'redemption'" class="tab-pane">
+        
+        <!-- Credits Summary Banner Card -->
+        <div class="redemption-credits-banner">
+          <div class="banner-overlay"></div>
+          <div class="banner-content">
+            <div class="credits-info">
+              <span class="banner-label"><Coins :size="20" /> Créditos Disponibles</span>
+              <h2 class="credits-amount">{{ formatMoney(availableCredits) }}</h2>
+              <p class="credits-desc">¡Canjea tus créditos acumulados por fabulosos cursos, membresías y premios!</p>
+            </div>
+            <div class="banner-icon-bg">
+              <Award :size="80" />
+            </div>
+          </div>
+        </div>
+
+        <div class="rewards-section mt-4">
+          <div class="section-header">
+            <h3>Premios y Membresías Disponibles</h3>
+            <Loader2 v-if="loadingRewards" :size="18" class="spinner" />
+          </div>
+
+          <div v-if="loadingRewards" class="empty-loader mt-5">
+            <Loader2 class="spinner text-primary" :size="32" />
+            <p class="mt-2 text-muted">Cargando catálogo de premios...</p>
+          </div>
+
+          <div v-else class="rewards-grid mt-3">
+            <div v-for="reward in rewardsList" :key="reward.id" class="reward-card-premium">
+              <div class="reward-img-wrapper">
+                <img 
+                  :src="reward.image" 
+                  :alt="reward.name" 
+                  class="reward-img"
+                  @error="(e) => e.target.src = 'https://via.placeholder.com/300x200?text=Premio'"
+                />
+                <div v-if="availableCredits < reward.cost" class="insufficient-badge">
+                  <span>Créditos Insuficientes</span>
+                </div>
+              </div>
+
+              <div class="reward-body">
+                <h4>{{ reward.name }}</h4>
+                <p class="reward-desc">{{ reward.description }}</p>
+
+                <div class="reward-stats mt-3">
+                  <div class="stat-item">
+                    <span class="label">Costo:</span>
+                    <span class="val cost-val">{{ formatMoney(reward.cost) }}</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="label">Stock:</span>
+                    <span class="val badge-stock" :class="reward.stock > 0 ? 'instock' : 'outstock'">
+                      {{ reward.stock > 0 ? `${reward.stock} Disp.` : 'Agotado' }}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="reward-action-btn-wrapper mt-4">
+                  <button 
+                    class="btn btn-premium btn-block"
+                    :disabled="!canRedeem(reward)"
+                    @click="openRedeemConfirmation(reward)"
+                  >
+                    {{ getButtonText(reward) }}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="rewardsList.length === 0" class="empty-list">
+              <Inbox :size="32" class="text-muted" />
+              <p class="mt-2 text-muted">No hay premios disponibles para canjear en este momento.</p>
+              <span class="text-xs text-muted-light">Vuelve más tarde para ver nuevos lanzamientos.</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -529,6 +928,58 @@
       </div>
     </div>
 
+    <!-- Modal: Confirmar Canje de Premio -->
+    <div v-if="showConfirmRedeem" class="modal-overlay" @click.self="closeRedeemConfirmation">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h5>Confirmar Canje de Premio</h5>
+          <button class="close-btn" @click="closeRedeemConfirmation"><X :size="18" /></button>
+        </div>
+        <div class="modal-body" v-if="selectedReward">
+          <div class="text-center mb-3">
+            <img 
+              :src="selectedReward.image" 
+              :alt="selectedReward.name"
+              class="img-fluid rounded reward-confirm-img"
+              @error="(e) => e.target.src = 'https://via.placeholder.com/300x200?text=Premio'"
+              style="max-height: 180px; object-fit: contain; width: 100%; border-radius: 8px;"
+            />
+          </div>
+          <h4 class="text-center font-weight-bold mb-1">{{ selectedReward.name }}</h4>
+          <p class="text-center text-muted text-sm mb-4">{{ selectedReward.description }}</p>
+          
+          <div class="confirm-summary-box">
+            <div class="summary-row">
+              <span>Costo del premio:</span>
+              <strong class="text-premium">{{ formatMoney(selectedReward.cost) }}</strong>
+            </div>
+            <div class="summary-row">
+              <span>Créditos disponibles:</span>
+              <strong>{{ formatMoney(availableCredits) }}</strong>
+            </div>
+            <hr class="my-2 border-dashed">
+            <div class="summary-row total">
+              <span>Saldo restante estimado:</span>
+              <strong :class="availableCredits - selectedReward.cost >= 0 ? 'text-success' : 'text-danger'">
+                {{ formatMoney(availableCredits - selectedReward.cost) }}
+              </strong>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" @click="closeRedeemConfirmation">Cancelar</button>
+          <button 
+            class="btn btn-premium" 
+            :disabled="redeemingRewardId !== null" 
+            @click="confirmRedeemReward"
+          >
+            <Loader2 v-if="redeemingRewardId !== null" class="spinner" :size="14" />
+            Confirmar Canje
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Toast Component -->
     <div v-if="toast.show" class="toast-notification" :class="toast.type">
       <div class="toast-content">
@@ -550,7 +1001,8 @@ import { formatDate } from '@/utils/formatDate';
 import {
   Wallet as WalletIcon, CheckCircle, Clock, ArrowUpRight, RefreshCw, Plus, 
   ListTodo, TrendingUp, DollarSign, ShieldAlert, Eye, Inbox, Search, 
-  ShieldCheck, X, Check, ImageOff, Download, Loader2, AlertTriangle
+  ShieldCheck, X, Check, ImageOff, Download, Loader2, AlertTriangle,
+  Settings, Award, Trash2, Edit3, Globe, Coins
 } from 'lucide-vue-next';
 
 const authStore = useAuthStore();
@@ -572,6 +1024,35 @@ const pendingRequests = ref([]);
 const myDirects = ref([]);
 const paypalAccounts = ref([]);
 const binanceAccounts = ref([]);
+
+// Config & Redemption state variables
+const selectedMethod = ref('');
+const listMethods = ref([{ id: 'binance', name: 'Binance' }, { id: 'paypal', name: 'PayPal' }]);
+const paymentAccounts = ref([]);
+const loadingAccounts = ref(false);
+const loadingConfigSave = ref(false);
+const configErrors = ref({});
+const isEditingAccount = ref(false);
+const editingAccountId = ref(null);
+const editingAccountType = ref('');
+
+const configForm = ref({
+  email: '',
+  account_name: '',
+  binance_id: '',
+  network: 'BSC',
+  phone: '',
+  country_code: 'PE',
+  currency: 'USD',
+  account_type: 'personal'
+});
+
+const availableCredits = ref(0);
+const rewardsList = ref([]);
+const loadingRewards = ref(false);
+const redeemingRewardId = ref(null);
+const selectedReward = ref(null);
+const showConfirmRedeem = ref(false);
 
 const activeTab = ref('movements');
 const activeModal = ref(null);
@@ -596,6 +1077,18 @@ const binaryPage = ref(1);
 const binaryTotalPages = ref(1);
 const perPage = ref(10);
 
+// Movements Filters & Pagination (server-side)
+const movFilterFrom   = ref('');
+const movFilterTo     = ref('');
+const movFilterStatus = ref('');
+const movFilterSearch = ref('');
+const movPage         = ref(1);
+const movPerPage      = ref(15);
+const movTotalPages   = ref(1);
+const movTotal        = ref(0);
+const movFrom         = ref(0);
+const movTo           = ref(0);
+
 // Toast
 const toast = ref({ show: false, message: '', type: 'success' });
 
@@ -617,6 +1110,20 @@ const availableAccounts = computed(() => {
   return [];
 });
 
+function clearMovFilters() {
+  movFilterFrom.value   = '';
+  movFilterTo.value     = '';
+  movFilterStatus.value = '';
+  movFilterSearch.value = '';
+  movPage.value = 1;
+  loadMovements();
+}
+
+function changeMovPage(p) {
+  movPage.value = p;
+  loadMovements();
+}
+
 // Initialization
 onMounted(() => {
   loadBalance();
@@ -624,6 +1131,9 @@ onMounted(() => {
   loadBinaryHistory();
   loadSales();
   loadDirects();
+  loadPaymentAccounts();
+  loadCredits();
+  loadRewards();
   
   if (isAdmin.value) {
     loadPendingRequests();
@@ -646,8 +1156,21 @@ async function loadMovements() {
   if (!userId.value) return;
   loadingMovements.value = true;
   try {
-    const response = await walletService.getAllMovements(userId.value);
-    movements.value = response.data?.data || response.data || [];
+    const params = {
+      page:     movPage.value,
+      per_page: movPerPage.value,
+    };
+    if (movFilterFrom.value)   params.date_from = movFilterFrom.value;
+    if (movFilterTo.value)     params.date_to   = movFilterTo.value;
+    if (movFilterStatus.value) params.status     = movFilterStatus.value;
+    if (movFilterSearch.value) params.search     = movFilterSearch.value;
+
+    const response = await walletService.getAllMovements(userId.value, params);
+    movements.value   = response.data?.data         || [];
+    movTotalPages.value = response.data?.last_page  ?? 1;
+    movTotal.value      = response.data?.total      ?? 0;
+    movFrom.value       = response.data?.from       ?? 0;
+    movTo.value         = response.data?.to         ?? 0;
   } catch (error) {
     console.error('Error loading movements:', error);
   } finally {
@@ -699,10 +1222,262 @@ async function loadPendingRequests() {
 
 async function loadDirects() {
   try {
-    const response = await apiClient.get('/reports/movements/my-directs');
+    const response = await apiClient.get('/marketing/reports/movements/my-directs');
     myDirects.value = response.data || [];
   } catch (error) {
     console.error('Error loading directs:', error);
+  }
+}
+
+// Wallet Configuration methods
+async function loadPaymentAccounts() {
+  loadingAccounts.value = true;
+  try {
+    const [binanceResponse, paypalResponse] = await Promise.all([
+      apiClient.get('/marketing/payment/binance-accounts'),
+      apiClient.get('/marketing/payment/paypal-accounts')
+    ]);
+    
+    // Refresh the accounts lists used in withdrawal forms
+    binanceAccounts.value = binanceResponse.data?.data || binanceResponse.data || [];
+    paypalAccounts.value = paypalResponse.data?.data || paypalResponse.data || [];
+
+    const parsedBinance = binanceAccounts.value.map(account => ({
+      id: account.id,
+      type: 'binance',
+      method: 'Binance',
+      email: account.email,
+      account_name: account.account_name,
+      account_number: account.binance_id,
+      extra_info: {
+        network: account.network,
+        phone: account.phone
+      }
+    }));
+
+    const parsedPaypal = paypalAccounts.value.map(account => ({
+      id: account.id,
+      type: 'paypal',
+      method: 'PayPal',
+      email: account.email,
+      account_name: account.account_name,
+      account_number: account.email,
+      extra_info: {
+        country_code: account.country_code,
+        currency: account.currency,
+        account_type: account.account_type,
+        is_verified: account.is_verified
+      }
+    }));
+
+    paymentAccounts.value = [...parsedBinance, ...parsedPaypal];
+  } catch (error) {
+    console.error("Error loading payment accounts:", error);
+  } finally {
+    loadingAccounts.value = false;
+  }
+}
+
+function resetConfigForm() {
+  configForm.value = {
+    email: '',
+    account_name: '',
+    binance_id: '',
+    network: 'BSC',
+    phone: '',
+    country_code: 'PE',
+    currency: 'USD',
+    account_type: 'personal'
+  };
+  configErrors.value = {};
+  isEditingAccount.value = false;
+  editingAccountId.value = null;
+  editingAccountType.value = '';
+}
+
+function handleConfigSelectChange() {
+  configErrors.value = {};
+}
+
+async function savePaymentAccount() {
+  configErrors.value = {};
+  if (!configForm.value.email || !configForm.value.email.includes('@')) {
+    configErrors.value.email = true;
+  }
+  if (!configForm.value.account_name || /[^a-zA-Z\s]/.test(configForm.value.account_name)) {
+    configErrors.value.account_name = true;
+  }
+  if (selectedMethod.value === 'binance' && !configForm.value.binance_id) {
+    configErrors.value.binance_id = true;
+  }
+
+  if (Object.keys(configErrors.value).length > 0) {
+    showToast('Por favor, corrija los campos requeridos.', 'error');
+    return;
+  }
+
+  loadingConfigSave.value = true;
+  try {
+    let response;
+    const isEditing = isEditingAccount.value;
+    const type = isEditing ? editingAccountType.value : selectedMethod.value;
+    const id = editingAccountId.value;
+    
+    let payload = {
+      email: configForm.value.email,
+      account_name: configForm.value.account_name,
+    };
+
+    if (type === 'binance') {
+      payload.binance_id = configForm.value.binance_id;
+      payload.network = configForm.value.network;
+      if (configForm.value.phone) payload.phone = configForm.value.phone;
+      
+      if (isEditing) {
+        response = await apiClient.put(`/marketing/payment/binance-accounts/${id}`, payload);
+      } else {
+        response = await apiClient.post('/marketing/payment/binance-accounts', payload);
+      }
+    } else {
+      payload.country_code = configForm.value.country_code;
+      payload.currency = configForm.value.currency;
+      payload.account_type = configForm.value.account_type;
+      
+      if (isEditing) {
+        response = await apiClient.put(`/marketing/payment/paypal-accounts/${id}`, payload);
+      } else {
+        response = await apiClient.post('/marketing/payment/paypal-accounts', payload);
+      }
+    }
+
+    if (response.data.success) {
+      showToast(isEditing ? 'Cuenta actualizada exitosamente' : 'Cuenta registrada exitosamente', 'success');
+      resetConfigForm();
+      selectedMethod.value = '';
+      await loadPaymentAccounts();
+    }
+  } catch (error) {
+    console.error("Error saving account:", error);
+    const msg = error.response?.data?.message || 'Error al guardar la cuenta de pago';
+    showToast(msg, 'error');
+  } finally {
+    loadingConfigSave.value = false;
+  }
+}
+
+function startEditAccount(account) {
+  isEditingAccount.value = true;
+  editingAccountId.value = account.id;
+  editingAccountType.value = account.type;
+  selectedMethod.value = account.type;
+  
+  configForm.value.email = account.email;
+  configForm.value.account_name = account.account_name;
+  
+  if (account.type === 'binance') {
+    configForm.value.binance_id = account.account_number;
+    configForm.value.network = account.extra_info.network;
+    configForm.value.phone = account.extra_info.phone || '';
+  } else {
+    configForm.value.country_code = account.extra_info.country_code;
+    configForm.value.currency = account.extra_info.currency;
+    configForm.value.account_type = account.extra_info.account_type;
+  }
+}
+
+async function deletePaymentAccount(account) {
+  if (!confirm('¿Estás seguro de que deseas eliminar esta cuenta?')) return;
+  
+  try {
+    const endpoint = account.type === 'binance' 
+      ? `/marketing/payment/binance-accounts/${account.id}` 
+      : `/marketing/payment/paypal-accounts/${account.id}`;
+      
+    const response = await apiClient.delete(endpoint);
+    if (response.data.success) {
+      showToast('Cuenta eliminada exitosamente', 'success');
+      await loadPaymentAccounts();
+    }
+  } catch (error) {
+    console.error("Error deleting account:", error);
+    showToast('Error al eliminar la cuenta de pago', 'error');
+  }
+}
+
+// Rewards Redemption methods
+async function loadCredits() {
+  try {
+    const response = await apiClient.get('/marketing/gamification/my-credits');
+    if (response.data.success) {
+      availableCredits.value = response.data.data?.credits || 0;
+    }
+  } catch (error) {
+    console.error("Error loading credits:", error);
+  }
+}
+
+async function loadRewards() {
+  loadingRewards.value = true;
+  try {
+    const response = await apiClient.get('/marketing/gamification/available-rewards');
+    if (response.data.success) {
+      rewardsList.value = response.data.data || [];
+    }
+  } catch (error) {
+    console.error("Error loading rewards:", error);
+  } finally {
+    loadingRewards.value = false;
+  }
+}
+
+function getButtonText(reward) {
+  if (reward.stock !== null && reward.stock === 0) {
+    return 'Agotado';
+  }
+  if (availableCredits.value < reward.cost) {
+    return 'Créditos insuficientes';
+  }
+  return 'Canjear Premio';
+}
+
+function canRedeem(reward) {
+  return availableCredits.value >= reward.cost && (reward.stock === null || reward.stock > 0);
+}
+
+function openRedeemConfirmation(reward) {
+  selectedReward.value = reward;
+  showConfirmRedeem.value = true;
+}
+
+function closeRedeemConfirmation() {
+  selectedReward.value = null;
+  showConfirmRedeem.value = false;
+}
+
+async function confirmRedeemReward() {
+  if (!selectedReward.value) return;
+  
+  redeemingRewardId.value = selectedReward.value.id;
+  try {
+    const response = await apiClient.post('/marketing/gamification/redeem', {
+      reward_id: selectedReward.value.id
+    });
+    
+    if (response.data.success) {
+      showToast('¡Premio canjeado exitosamente!', 'success');
+      closeRedeemConfirmation();
+      await loadCredits();
+      await loadRewards();
+      await loadBalance(); // Refresh balance too
+    } else {
+      showToast(response.data.message || 'Error al canjear el premio', 'error');
+    }
+  } catch (error) {
+    console.error("Error redeeming reward:", error);
+    const msg = error.response?.data?.message || 'Error al procesar el canje';
+    showToast(msg, 'error');
+  } finally {
+    redeemingRewardId.value = null;
   }
 }
 
@@ -711,14 +1486,14 @@ async function onAccountTypeChange() {
   formRequest.value.account_number = '';
   if (formRequest.value.account_type === 'paypal') {
     try {
-      const res = await apiClient.get('/payment/paypal-accounts');
+      const res = await apiClient.get('/marketing/payment/paypal-accounts');
       paypalAccounts.value = res.data?.data || res.data || [];
     } catch {
       paypalAccounts.value = [];
     }
   } else if (formRequest.value.account_type === 'binance') {
     try {
-      const res = await apiClient.get('/payment/binance-accounts');
+      const res = await apiClient.get('/marketing/payment/binance-accounts');
       binanceAccounts.value = res.data?.data || res.data || [];
     } catch {
       binanceAccounts.value = [];
@@ -891,6 +1666,15 @@ function debouncedFetchBinary() {
   }, 400);
 }
 
+let searchMovTimeout;
+function debouncedFetchMovements() {
+  clearTimeout(searchMovTimeout);
+  searchMovTimeout = setTimeout(() => {
+    movPage.value = 1;
+    loadMovements();
+  }, 400);
+}
+
 function changeBinaryPage(page) {
   binaryPage.value = page;
   loadBinaryHistory();
@@ -947,11 +1731,11 @@ function showToast(message, type = 'success') {
 /* Header Card */
 .wallet-header-card {
   position: relative;
-  background: linear-gradient(135deg, #1e1b4b 0%, #311042 50%, #4c1d95 100%);
+  background: linear-gradient(135deg, #0a1a12 0%, #0d2118 50%, #14532d 100%);
   border-radius: 16px;
   padding: 32px;
   overflow: hidden;
-  box-shadow: 0 8px 30px rgba(76, 29, 149, 0.15);
+  box-shadow: 0 8px 30px rgba(11, 245, 11, 0.12);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
@@ -983,7 +1767,7 @@ function showToast(message, type = 'success') {
 
 .balance-label {
   font-size: 14px;
-  color: #c084fc;
+  color: #86efac;
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -994,7 +1778,7 @@ function showToast(message, type = 'success') {
   font-size: 42px;
   font-weight: 800;
   letter-spacing: -1px;
-  background: linear-gradient(to right, #ffffff, #e9d5ff);
+  background: linear-gradient(to right, #ffffff, #bbf7d0);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   margin: 0;
@@ -1038,14 +1822,14 @@ function showToast(message, type = 'success') {
 }
 
 .btn-premium {
-  background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
   color: white;
-  box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
+  box-shadow: 0 4px 15px rgba(22, 163, 74, 0.35);
 }
 
 .btn-premium:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.4);
+  box-shadow: 0 6px 20px rgba(22, 163, 74, 0.45);
 }
 
 .btn-secondary {
@@ -1099,8 +1883,8 @@ function showToast(message, type = 'success') {
 }
 
 .tab-btn.active {
-  background: #f3f4f6;
-  color: #7c3aed;
+  background: #f0fdf4;
+  color: #16a34a;
 }
 
 .admin-tab {
@@ -1122,11 +1906,11 @@ function showToast(message, type = 'success') {
 
 /* Tab Panels */
 .tab-content-wrapper {
-  background: white;
+  background: var(--card-bg);
   border-radius: 12px;
   padding: 24px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  border: 1px solid #f3f4f6;
+  border: 1px solid var(--border-color);
 }
 
 .table-header {
@@ -1141,7 +1925,7 @@ function showToast(message, type = 'success') {
 .table-header h3 {
   font-size: 16px;
   font-weight: 700;
-  color: #111827;
+  color: var(--text-bold);
   margin: 0;
 }
 
@@ -1161,27 +1945,27 @@ function showToast(message, type = 'success') {
   padding: 12px 16px;
   font-size: 12px;
   text-transform: uppercase;
-  color: #6b7280;
+  color: var(--text-muted);
   font-weight: 700;
-  border-bottom: 2px solid #f3f4f6;
+  border-bottom: 2px solid var(--border-color);
 }
 
 .table-custom td {
   padding: 16px;
   font-size: 14px;
-  color: #374151;
-  border-bottom: 1px solid #f3f4f6;
+  color: var(--text-main);
+  border-bottom: 1px solid var(--border-color);
   vertical-align: middle;
 }
 
 .table-custom tbody tr:hover {
-  background: #fafafa;
+  background: rgba(0,0,0,0.025);
 }
 
 .empty-row {
   text-align: center;
   padding: 48px 16px !important;
-  color: #9ca3af;
+  color: var(--text-muted);
 }
 
 .empty-row p {
@@ -1197,18 +1981,18 @@ function showToast(message, type = 'success') {
   font-weight: 700;
 }
 
-.badge-warning { background: #fef3c7; color: #d97706; }
-.badge-success { background: #dcfce7; color: #15803d; }
-.badge-danger { background: #fee2e2; color: #b91c1c; }
+.badge-warning { background: var(--indicator-orange);  color: var(--indicator-orange-text); }
+.badge-success { background: var(--indicator-green);   color: var(--indicator-green-text);  }
+.badge-danger  { background: var(--indicator-red);     color: var(--indicator-red-text);    }
 
 .rank-tag {
-  background: #f5f3ff;
-  color: #7c3aed;
+  background: var(--indicator-green);
+  color: var(--indicator-green-text);
   padding: 4px 10px;
   border-radius: 6px;
   font-weight: 600;
   font-size: 12px;
-  border: 1px solid #ddd6fe;
+  border: 1px solid var(--border-color);
 }
 
 .bonus-tag {
@@ -1219,9 +2003,9 @@ function showToast(message, type = 'success') {
   font-weight: 600;
 }
 
-.tag-primary { background: #eff6ff; color: #1d4ed8; }
-.tag-purple { background: #faf5ff; color: #6b21a8; }
-.tag-gray { background: #f3f4f6; color: #374151; }
+.tag-primary { background: var(--indicator-blue);   color: var(--indicator-blue-text);  }
+.tag-purple  { background: var(--indicator-green);  color: var(--indicator-green-text); }
+.tag-gray    { background: rgba(0,0,0,0.06);         color: var(--text-main);            }
 
 /* Admin actions */
 .admin-actions {
@@ -1259,8 +2043,8 @@ function showToast(message, type = 'success') {
 
 .btn-table-action {
   background: transparent;
-  border: 1px solid #ddd6fe;
-  color: #7c3aed;
+  border: 1px solid #bbf7d0;
+  color: #16a34a;
   padding: 6px 12px;
   border-radius: 6px;
   font-size: 12px;
@@ -1272,7 +2056,7 @@ function showToast(message, type = 'success') {
 }
 
 .btn-table-action:hover {
-  background: #f5f3ff;
+  background: #f0fdf4;
 }
 
 /* Modals */
@@ -1297,18 +2081,20 @@ function showToast(message, type = 'success') {
 }
 
 .modal-card {
-  background: white;
+  background: var(--card-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-radius: 12px;
   width: 90%;
   max-width: 500px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  border: 1px solid #f3f4f6;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border-color);
   overflow: hidden;
 }
 
 .modal-header {
   padding: 16px 20px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--border-color);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1318,7 +2104,7 @@ function showToast(message, type = 'success') {
   font-size: 15px;
   font-weight: 700;
   margin: 0;
-  color: #111827;
+  color: var(--text-bold);
 }
 
 .modal-body {
@@ -1327,7 +2113,7 @@ function showToast(message, type = 'success') {
 
 .modal-footer {
   padding: 16px 20px;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--border-color);
   display: flex;
   justify-content: flex-end;
   gap: 12px;
@@ -1340,7 +2126,7 @@ function showToast(message, type = 'success') {
 .form-group label {
   font-size: 13px;
   font-weight: 600;
-  color: #374151;
+  color: var(--text-main);
   display: block;
   margin-bottom: 6px;
 }
@@ -1349,22 +2135,24 @@ function showToast(message, type = 'success') {
   width: 100%;
   padding: 10px 14px;
   border-radius: 8px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-bold);
   font-size: 14px;
   outline: none;
   box-sizing: border-box;
 }
 
 .form-control:focus {
-  border-color: #a855f7;
-  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
+  border-color: #22c55e;
+  box-shadow: 0 0 0 3px rgba(22, 197, 94, 0.12);
 }
 
 .manual-input-box {
-  background: #fbfbfe;
+  background: var(--card-bg);
   padding: 12px;
   border-radius: 8px;
-  border: 1px solid #e0e0f0;
+  border: 1px solid var(--border-color);
 }
 
 /* Support Modal Img */
@@ -1451,7 +2239,7 @@ function showToast(message, type = 'success') {
 }
 
 .search-bar input:focus {
-  border-color: #a855f7;
+  border-color: #22c55e;
 }
 
 .pagination-footer {
@@ -1475,4 +2263,624 @@ function showToast(message, type = 'success') {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* Wallet Config Styles */
+.wallet-config-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  .wallet-config-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.config-card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.card-header-clean {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid #f3f4f6;
+  padding-bottom: 14px;
+}
+
+.card-header-clean h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.text-premium {
+  color: #10b10b;
+}
+
+.error-border {
+  border-color: #ef4444 !important;
+}
+
+.error-msg {
+  color: #ef4444;
+  font-size: 11px;
+  margin-top: 4px;
+  display: block;
+}
+
+.payment-accounts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.payment-account-item {
+  border: 1px solid #f3f4f6;
+  border-radius: 8px;
+  padding: 16px;
+  background: #fafafa;
+  transition: all 0.2s ease;
+}
+
+.payment-account-item:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.method-badge-premium {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.method-badge-premium.paypal {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.method-badge-premium.binance {
+  background: #fffbeb;
+  color: #d97706;
+}
+
+.item-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.action-icon-btn {
+  background: white;
+  border: 1px solid #e5e7eb;
+  color: #4b5563;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-icon-btn:hover {
+  background: #f3f4f6;
+}
+
+.action-icon-btn.delete:hover {
+  border-color: #fee2e2;
+  color: #ef4444;
+  background: #fef2f2;
+}
+
+.item-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.detail-row .label {
+  color: #6b7280;
+}
+
+.detail-row .val {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.badge-network {
+  background: #e0f2fe;
+  color: #0369a1;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+.empty-list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.text-xs {
+  font-size: 12px;
+}
+
+.text-muted-light {
+  color: #9ca3af;
+}
+
+.empty-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 0;
+}
+
+/* Redemption Banner */
+.redemption-credits-banner {
+  position: relative;
+  background: linear-gradient(135deg, #10b10b 0%, #0c8c0c 100%);
+  border-radius: 12px;
+  padding: 30px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(16, 177, 11, 0.15);
+}
+
+.banner-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.15) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.banner-content {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 2;
+  color: white;
+}
+
+.credits-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.banner-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+.credits-amount {
+  font-size: 32px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.credits-desc {
+  font-size: 13px;
+  opacity: 0.85;
+  margin: 0;
+  max-width: 450px;
+}
+
+.banner-icon-bg {
+  opacity: 0.2;
+}
+
+/* Rewards Catalog */
+.rewards-section .section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rewards-section h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.rewards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.reward-card-premium {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.25s ease;
+}
+
+.reward-card-premium:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+  border-color: #d1d5db;
+}
+
+.reward-img-wrapper {
+  position: relative;
+  height: 180px;
+  background: #f3f4f6;
+  overflow: hidden;
+}
+
+.reward-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+
+.reward-card-premium:hover .reward-img {
+  transform: scale(1.05);
+}
+
+.insufficient-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(239, 68, 68, 0.9);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  backdrop-filter: blur(4px);
+}
+
+.reward-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.reward-body h4 {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 6px 0;
+}
+
+.reward-desc {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.4;
+  flex-grow: 1;
+}
+
+.reward-stats {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px dashed #f3f4f6;
+  padding-top: 12px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stat-item .label {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.stat-item .val {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.cost-val {
+  color: #10b10b;
+}
+
+.badge-stock {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.badge-stock.instock {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.badge-stock.outstock {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+/* Confirmation Summary Box */
+.confirm-summary-box {
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px solid #f3f4f6;
+  padding: 16px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.summary-row:last-child {
+  margin-bottom: 0;
+}
+
+.summary-row.total {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.border-dashed {
+  border-style: dashed;
+}
+
+/* ── Movements Filter Bar ─────────────────────────────────── */
+.movements-filter-bar {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 18px 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.filter-bar-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.filter-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-bold);
+  margin: 0;
+  flex: 1;
+}
+
+.filter-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 130px;
+}
+
+.filter-group--wide {
+  flex: 1;
+  min-width: 200px;
+}
+
+.filter-group--action {
+  min-width: auto;
+  justify-content: flex-end;
+}
+
+.filter-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.filter-input-wrapper {
+  position: relative;
+}
+
+.filter-search-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.filter-search-icon {
+  position: absolute;
+  left: 10px;
+  color: #9ca3af;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.filter-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text-bold);
+  background: var(--card-bg);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.18s, box-shadow 0.18s, background 0.18s;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.filter-input:focus {
+  border-color: #22c55e;
+  box-shadow: 0 0 0 3px rgba(22, 197, 94, 0.10);
+  background: var(--card-bg);
+}
+
+.filter-input--search {
+  padding-left: 32px;
+}
+
+.filter-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 28px;
+}
+
+.btn-clear-filters {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.18s;
+  white-space: nowrap;
+}
+
+.btn-clear-filters:hover:not(:disabled) {
+  border-color: #ef4444;
+  color: #ef4444;
+  background: #fef2f2;
+}
+
+.btn-clear-filters:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.filter-summary {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border-color);
+}
+
+.filter-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #dcfce7;
+  color: #15803d;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .filter-controls {
+    flex-direction: column;
+  }
+
+  .filter-group,
+  .filter-group--wide {
+    min-width: 100%;
+  }
+}
+
+/* ── Movements Pagination Footer ──────────────────────────── */
+.pagination-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 4px 4px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pag-info {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.pag-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-page {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.15s;
+  min-width: 36px;
+}
+
+.btn-page:hover:not(:disabled) {
+  border-color: #16a34a;
+  color: #16a34a;
+  background: #f0fdf4;
+}
+
+.btn-page:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.btn-page-num.active {
+  background: #16a34a;
+  border-color: #16a34a;
+  color: white;
+  font-weight: 700;
+}
 </style>
+
+
+

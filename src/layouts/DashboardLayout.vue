@@ -131,11 +131,89 @@
             <ChevronRight v-if="!isSidebarCollapsed" :size="16" class="ml-auto opacity-50" />
           </RouterLink>
 
-          <RouterLink to="/reportes" class="nav-item" active-class="active">
-            <PieChart :size="20" />
-            <span v-if="!isSidebarCollapsed">Reportes</span>
-            <ChevronRight v-if="!isSidebarCollapsed" :size="16" class="ml-auto opacity-50" />
-          </RouterLink>
+          <!-- Reportes - Collapsible Menu Section -->
+          <div class="nav-section">
+            <button
+              class="nav-item nav-section-toggle"
+              :class="{ expanded: reportesExpanded }"
+              @click="reportesExpanded = !reportesExpanded"
+            >
+              <PieChart :size="20" />
+              <span v-if="!isSidebarCollapsed" class="nav-label">Reportes</span>
+              <ChevronDown
+                v-if="!isSidebarCollapsed"
+                :size="16"
+                class="nav-arrow"
+                :class="{ rotated: reportesExpanded }"
+              />
+            </button>
+
+            <transition name="submenu-slide">
+              <div v-if="reportesExpanded && !isSidebarCollapsed" class="nav-submenu">
+                
+                <!-- Mi Cartera - Collapsible Sub-section -->
+                <div class="nav-subsection">
+                  <button
+                    class="nav-subitem nav-subsection-toggle"
+                    :class="{ expanded: carteraExpanded }"
+                    @click="carteraExpanded = !carteraExpanded"
+                  >
+                    <Wallet :size="16" />
+                    <span class="nav-label">Mi Cartera</span>
+                    <ChevronDown
+                      :size="12"
+                      class="nav-arrow"
+                      :class="{ rotated: carteraExpanded }"
+                    />
+                  </button>
+
+                  <transition name="submenu-slide">
+                    <div v-if="carteraExpanded" class="nav-sub-submenu">
+                      <RouterLink to="/dashboard/billetera" class="nav-subitem-deep" active-class="active">
+                        <span class="submenu-dot"></span>
+                        <span>Mi Billetera</span>
+                      </RouterLink>
+                      <RouterLink to="/dashboard/mis-compras" class="nav-subitem-deep" active-class="active">
+                        <span class="submenu-dot"></span>
+                        <span>Mis Compras</span>
+                      </RouterLink>
+                      <RouterLink to="/dashboard/mis-ventas" class="nav-subitem-deep" active-class="active">
+                        <span class="submenu-dot"></span>
+                        <span>Mis Ventas</span>
+                      </RouterLink>
+                    </div>
+                  </transition>
+                </div>
+
+                <!-- Bono Rango - Collapsible Sub-section -->
+                <div class="nav-subsection mt-1">
+                  <button
+                    class="nav-subitem nav-subsection-toggle"
+                    :class="{ expanded: bonoRangoExpanded }"
+                    @click="bonoRangoExpanded = !bonoRangoExpanded"
+                  >
+                    <Award :size="16" />
+                    <span class="nav-label">Bono Rango</span>
+                    <ChevronDown
+                      :size="12"
+                      class="nav-arrow"
+                      :class="{ rotated: bonoRangoExpanded }"
+                    />
+                  </button>
+
+                  <transition name="submenu-slide">
+                    <div v-if="bonoRangoExpanded" class="nav-sub-submenu">
+                      <RouterLink to="/dashboard/bono-rango/historial" class="nav-subitem-deep" active-class="active">
+                        <span class="submenu-dot"></span>
+                        <span>Historial</span>
+                      </RouterLink>
+                    </div>
+                  </transition>
+                </div>
+
+              </div>
+            </transition>
+          </div>
         </nav>
       </div>
 
@@ -295,6 +373,9 @@ const getAvatarUrl = (photoPath) => {
 const isSidebarCollapsed = ref(false);
 const isDropdownOpen = ref(false);
 const marketingExpanded = ref(route.path.startsWith('/marketing'));
+const reportesExpanded = ref(route.path.includes('billetera') || route.path.includes('mis-compras') || route.path.includes('mis-ventas') || route.path.includes('bono-rango'));
+const carteraExpanded = ref(route.path.includes('billetera') || route.path.includes('mis-compras') || route.path.includes('mis-ventas'));
+const bonoRangoExpanded = ref(route.path.includes('bono-rango'));
 
 const topbarStats = ref({
   credits: 0,
@@ -677,6 +758,74 @@ onBeforeUnmount(() => {
   max-height: 500px;
   opacity: 1;
   transform: translateY(0);
+}
+
+.nav-subsection {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.nav-subsection-toggle {
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  outline: none;
+  display: flex;
+  align-items: center;
+}
+
+.nav-subsection-toggle .nav-label {
+  flex: 1;
+  text-align: left;
+  margin-left: 10px;
+}
+
+.nav-subsection-toggle .nav-arrow {
+  margin-left: auto;
+}
+
+.nav-sub-submenu {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-left: 1px dashed rgba(255, 255, 255, 0.08);
+  margin-left: 20px;
+  padding-left: 10px;
+}
+
+.nav-subitem-deep {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  color: var(--sidebar-link);
+  text-decoration: none;
+  font-size: 12.5px;
+  font-weight: 400;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  opacity: 0.8;
+}
+
+.nav-subitem-deep:hover {
+  background-color: var(--sidebar-hover-bg);
+  color: var(--white);
+  opacity: 1;
+}
+
+.nav-subitem-deep.active {
+  color: var(--primary-color);
+  font-weight: 600;
+  opacity: 1;
+  background-color: rgba(24, 214, 0, 0.05);
+}
+
+.nav-subitem-deep.active .submenu-dot {
+  opacity: 1;
+  box-shadow: 0 0 6px var(--primary-color);
 }
 </style>
 
