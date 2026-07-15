@@ -49,7 +49,7 @@ export default {
     return apiClient.get(`/marketing/reports/getsales/${userId}`);
   },
 
-  getMyPurchases(userId) {
-    return apiClient.get(`/marketing/reports/mypurchases/${userId}`);
+  getMyPurchases(userId, params = {}) {
+    return apiClient.get(`/marketing/reports/mypurchases/${userId}`, { params });
   }
 };

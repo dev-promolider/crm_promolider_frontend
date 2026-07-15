@@ -2,8 +2,8 @@
   <div class="purchases-container">
     <div class="header-section">
       <div class="title-wrapper">
-        <div class="icon-bg">
-          <ShoppingBag :size="24" class="text-emerald-400" />
+        <div class="header-icon-box">
+          <ShoppingBag :size="24" />
         </div>
         <div>
           <h1 class="page-title">Mis Compras</h1>
@@ -15,8 +15,8 @@
     <!-- Quick Stats -->
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="stat-icon-wrapper bg-emerald-500/10">
-          <DollarSign :size="20" class="text-emerald-400" />
+        <div class="stat-icon-wrapper stat-green">
+          <DollarSign :size="20" />
         </div>
         <div class="stat-info">
           <span class="stat-label">Total Invertido</span>
@@ -24,17 +24,17 @@
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon-wrapper bg-blue-500/10">
-          <ShoppingBag :size="20" class="text-blue-400" />
+        <div class="stat-icon-wrapper stat-blue">
+          <ShoppingBag :size="20" />
         </div>
         <div class="stat-info">
           <span class="stat-label">Total Transacciones</span>
-          <span class="stat-value">{{ filteredPayments.length }}</span>
+          <span class="stat-value">{{ totalTransactions }}</span>
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon-wrapper bg-purple-500/10">
-          <Calendar :size="20" class="text-purple-400" />
+        <div class="stat-icon-wrapper stat-purple">
+          <Calendar :size="20" />
         </div>
         <div class="stat-info">
           <span class="stat-label">Última Compra</span>
@@ -53,7 +53,19 @@
             v-model="searchQuery"
             placeholder="Buscar por método, operación o detalle..."
             class="search-input"
+            @input="debouncedFetchPurchases"
+            @keyup.enter="changePage(1)"
           />
+        </div>
+        
+        <div class="per-page-selector">
+          <span class="text-sm text-gray-500 mr-2">Mostrar:</span>
+          <select v-model="perPage" @change="changePage(1)" class="per-page-select">
+            <option :value="10">10</option>
+            <option :value="15">15</option>
+            <option :value="25">25</option>
+            <option :value="50">50</option>
+          </select>
         </div>
       </div>
 
@@ -64,7 +76,7 @@
       </div>
 
       <!-- Empty State -->
-      <div v-else-if="filteredPayments.length === 0" class="empty-state">
+      <div v-else-if="payments.length === 0" class="empty-state">
         <Inbox :size="48" class="text-gray-500 mb-2" />
         <h3>No se encontraron compras</h3>
         <p>No tienes transacciones registradas que coincidan con la búsqueda.</p>
@@ -85,7 +97,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="pay in filteredPayments" :key="pay.id">
+            <tr v-for="pay in payments" :key="pay.id">
               <td>
                 <div class="user-cell">
                   <span class="user-fullname">{{ pay.user?.name }} {{ pay.user?.last_name }}</span>
@@ -99,7 +111,6 @@
               </td>
               <td>
                 <div class="payment-method">
-                  <CreditCard :size="14" class="mr-1 opacity-70" />
                   <span>{{ pay.payment_method?.name || 'Otro' }}</span>
                 </div>
               </td>
@@ -115,6 +126,35 @@
             </tr>
           </tbody>
         </table>
+
+        <!-- Pagination -->
+        <div class="pagination-wrapper" v-if="totalPages > 1">
+          <div class="pagination-info">
+            Mostrando pág {{ currentPage }} de {{ totalPages }} ({{ totalItems }} compras)
+          </div>
+          <div class="pagination-controls">
+            <button
+              class="btn-page"
+              :disabled="currentPage === 1"
+              @click="changePage(currentPage - 1)"
+            >&lsaquo; Anterior</button>
+
+            <button
+              v-for="p in totalPages"
+              :key="p"
+              class="btn-page btn-page-num"
+              :class="{ active: p === currentPage }"
+              @click="changePage(p)"
+              v-show="Math.abs(p - currentPage) <= 2"
+            >{{ p }}</button>
+
+            <button
+              class="btn-page"
+              :disabled="currentPage === totalPages"
+              @click="changePage(currentPage + 1)"
+            >Siguiente &rsaquo;</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -136,16 +176,51 @@ import {
 
 const authStore = useAuthStore();
 const payments = ref([]);
+const stats = ref({ total_invested: 0, total_transactions: 0, last_purchase_date: null });
 const loading = ref(false);
 const searchQuery = ref('');
+
+// Pagination state
+const currentPage = ref(1);
+const perPage = ref(15);
+const totalPages = ref(1);
+const totalItems = ref(0);
+
+let searchTimeout;
+const debouncedFetchPurchases = () => {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    currentPage.value = 1;
+    fetchPurchases();
+  }, 400);
+};
+
+const changePage = (page) => {
+  currentPage.value = page;
+  fetchPurchases();
+};
 
 const fetchPurchases = async () => {
   loading.value = true;
   try {
     const userId = authStore.user?.id;
     if (userId) {
-      const response = await walletService.getMyPurchases(userId);
-      payments.value = response.data || response;
+      const params = {
+        page: currentPage.value,
+        per_page: perPage.value,
+        search: searchQuery.value
+      };
+      const response = await walletService.getMyPurchases(userId, params);
+      
+      const payload = response.data || response;
+      if (payload.stats && payload.paginator) {
+        stats.value = payload.stats;
+        payments.value = payload.paginator.data || [];
+        totalPages.value = payload.paginator.last_page || 1;
+        totalItems.value = payload.paginator.total || 0;
+      } else {
+        payments.value = payload; // fallback
+      }
     }
   } catch (error) {
     console.error('Error fetching purchases:', error);
@@ -158,27 +233,10 @@ onMounted(() => {
   fetchPurchases();
 });
 
-// Computed
-const filteredPayments = computed(() => {
-  if (!searchQuery.value.trim()) return payments.value;
-  const query = searchQuery.value.toLowerCase();
-  return payments.value.filter(pay => {
-    const method = (pay.payment_method?.name || '').toLowerCase();
-    const op = (pay.operation_number || '').toLowerCase();
-    const detail = (pay.details || '').toLowerCase();
-    return method.includes(query) || op.includes(query) || detail.includes(query);
-  });
-});
-
-const totalInvested = computed(() => {
-  return filteredPayments.value.reduce((sum, pay) => sum + parseFloat(pay.amount || 0), 0);
-});
-
-const lastPurchaseDate = computed(() => {
-  if (payments.value.length === 0) return null;
-  const sorted = [...payments.value].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-  return formatDate(sorted[0].created_at);
-});
+// Computed for stats (from backend)
+const totalInvested = computed(() => stats.value.total_invested || 0);
+const totalTransactions = computed(() => stats.value.total_transactions || 0);
+const lastPurchaseDate = computed(() => formatDate(stats.value.last_purchase_date) || 'N/A');
 
 // Helpers
 const formatNumber = (val) => {
@@ -206,7 +264,7 @@ const formatDate = (dateString) => {
   padding: 1.5rem;
   max-width: 1200px;
   margin: 0 auto;
-  color: #f8fafc;
+  color: var(--text-main);
 }
 
 .header-section {
@@ -219,28 +277,27 @@ const formatDate = (dateString) => {
   gap: 1rem;
 }
 
-.icon-bg {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  background: rgba(16, 185, 129, 0.1);
+.header-icon-box {
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
+  background: var(--indicator-blue);
+  color: var(--indicator-blue-text);
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(16, 185, 129, 0.2);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 
 .page-title {
   font-size: 1.75rem;
   font-weight: 700;
   margin: 0;
-  background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--text-bold);
 }
 
 .page-subtitle {
-  color: #94a3b8;
+  color: var(--text-muted);
   font-size: 0.875rem;
   margin: 0.25rem 0 0 0;
 }
@@ -254,9 +311,9 @@ const formatDate = (dateString) => {
 }
 
 .stat-card {
-  background: rgba(30, 41, 59, 0.7);
+  background: var(--card-bg);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
   border-radius: 16px;
   padding: 1.25rem;
   display: flex;
@@ -266,18 +323,33 @@ const formatDate = (dateString) => {
 }
 
 .stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-  border-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  border-color: var(--primary-color);
 }
 
 .stat-icon-wrapper {
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.stat-green {
+  background: var(--indicator-green);
+  color: var(--indicator-green-text);
+}
+
+.stat-blue {
+  background: var(--indicator-blue);
+  color: var(--indicator-blue-text);
+}
+
+.stat-purple {
+  background: var(--indicator-purple);
+  color: var(--indicator-purple-text);
 }
 
 .stat-info {
@@ -287,7 +359,7 @@ const formatDate = (dateString) => {
 
 .stat-label {
   font-size: 0.75rem;
-  color: #94a3b8;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -295,15 +367,15 @@ const formatDate = (dateString) => {
 .stat-value {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #f1f5f9;
+  color: var(--text-bold);
   margin-top: 0.125rem;
 }
 
 /* Content card */
 .content-card {
-  background: rgba(30, 41, 59, 0.5);
+  background: var(--card-bg);
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
   border-radius: 20px;
   padding: 1.5rem;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
@@ -333,10 +405,10 @@ const formatDate = (dateString) => {
 .search-input {
   width: 100%;
   padding: 0.625rem 1rem 0.625rem 2.5rem;
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
-  color: #f1f5f9;
+  color: var(--text-bold);
   font-size: 0.875rem;
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
@@ -352,8 +424,8 @@ const formatDate = (dateString) => {
   width: 100%;
   overflow-x: auto;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  background: rgba(15, 23, 42, 0.3);
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
 }
 
 .premium-table {
@@ -364,17 +436,17 @@ const formatDate = (dateString) => {
 }
 
 .premium-table th {
-  background: rgba(15, 23, 42, 0.5);
+  background: rgba(0, 0, 0, 0.05);
   padding: 1rem;
-  color: #94a3b8;
+  color: var(--text-muted);
   font-weight: 600;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .premium-table td {
   padding: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  color: #cbd5e1;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-main);
 }
 
 .premium-table tbody tr {
@@ -382,7 +454,7 @@ const formatDate = (dateString) => {
 }
 
 .premium-table tbody tr:hover {
-  background-color: rgba(255, 255, 255, 0.02);
+  background-color: rgba(0, 0, 0, 0.025);
 }
 
 /* Cell elements */
@@ -393,15 +465,15 @@ const formatDate = (dateString) => {
 
 .user-fullname {
   font-weight: 500;
-  color: #f1f5f9;
+  color: var(--text-bold);
 }
 
 .username-badge {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.05);
   padding: 0.125rem 0.5rem;
   border-radius: 6px;
   font-size: 0.75rem;
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 .amount-text {
@@ -415,11 +487,11 @@ const formatDate = (dateString) => {
 
 .op-number {
   font-family: monospace;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(0, 0, 0, 0.03);
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
   font-size: 0.8rem;
-  color: #cbd5e1;
+  color: var(--text-main);
 }
 
 .detail-text {
@@ -431,7 +503,7 @@ const formatDate = (dateString) => {
 }
 
 .date-text {
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 /* States */
@@ -446,20 +518,77 @@ const formatDate = (dateString) => {
 
 .loading-state span {
   margin-top: 1rem;
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 .empty-state h3 {
   font-size: 1.125rem;
   font-weight: 600;
   margin: 0.5rem 0 0.25rem 0;
-  color: #f1f5f9;
+  color: var(--text-bold);
 }
 
 .empty-state p {
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 0.875rem;
   margin: 0;
   max-width: 300px;
+}
+
+/* ── Pagination Footer ──────────────────────────── */
+.pagination-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 4px;
+  gap: 12px;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--border-color);
+  margin-top: 10px;
+}
+
+.pagination-info {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-page {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: all 0.15s;
+  min-width: 36px;
+}
+
+.btn-page:hover:not(:disabled) {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  background: var(--indicator-green);
+}
+
+.btn-page:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.btn-page-num.active {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+  font-weight: 700;
 }
 </style>
