@@ -41,8 +41,8 @@
       </button>
       <button 
         class="tab-btn" 
-        :class="{ active: activeTab === 'binary' }" 
-        @click="activeTab = 'binary'"
+        :class="{ active: activeTab === 'config' }" 
+        @click="activeTab = 'config'"
       >
         <Settings :size="16" /> Configuración de Billetera
       </button>
@@ -259,77 +259,6 @@
       </div>
 
 
-      <!-- 2. BINARY HISTORY TAB -->
-      <div v-if="activeTab === 'binary'" class="tab-pane">
-        <div class="table-header">
-          <h3>Historial de Cortes Binarios</h3>
-          <div class="search-bar">
-            <Search :size="16" class="search-icon" />
-            <input 
-              type="text" 
-              v-model="binarySearch" 
-              placeholder="Buscar por rango o fecha..." 
-              @input="debouncedFetchBinary"
-            />
-          </div>
-        </div>
-
-        <div class="table-responsive">
-          <table class="table-custom">
-            <thead>
-              <tr>
-                <th>Fecha de Corte</th>
-                <th>Puntos Izq</th>
-                <th>Puntos Der</th>
-                <th>Rango Alcanzado</th>
-                <th>Bono Recibido</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="cut in binaryHistory" :key="cut.id">
-                <td>{{ formatDateString(cut.created_at) }}</td>
-                <td>{{ cut.left_points || 0 }}</td>
-                <td>{{ cut.right_points || 0 }}</td>
-                <td>
-                  <span class="rank-tag" v-if="cut.rank">
-                    {{ cut.rank.name }}
-                  </span>
-                  <span v-else class="text-muted">-</span>
-                </td>
-                <td class="font-weight-bolder text-success">
-                  {{ formatMoney(cut.amount || 0) }}
-                </td>
-              </tr>
-              <tr v-if="binaryHistory.length === 0 && !loadingBinary">
-                <td colspan="5" class="empty-row">
-                  <TrendingUp :size="24" />
-                  <p>No hay cortes binarios registrados.</p>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Pagination -->
-        <div class="pagination-footer" v-if="binaryTotalPages > 1">
-          <button 
-            :disabled="binaryPage === 1" 
-            @click="changeBinaryPage(binaryPage - 1)"
-            class="btn-page"
-          >
-            &laquo; Anterior
-          </button>
-          <span>Página {{ binaryPage }} de {{ binaryTotalPages }}</span>
-          <button 
-            :disabled="binaryPage === binaryTotalPages" 
-            @click="changeBinaryPage(binaryPage + 1)"
-            class="btn-page"
-          >
-            Siguiente &raquo;
-          </button>
-        </div>
-      </div>
-
       <!-- 3. SALES TAB -->
       <div v-if="activeTab === 'sales'" class="tab-pane">
         <div class="table-header">
@@ -433,7 +362,8 @@
         <div class="wallet-config-grid">
           
           <!-- Left Column: Form to Add/Edit Payment Method -->
-          <div class="config-card form-section">
+          <div class="left-column d-flex flex-column" style="gap: 24px; flex: 1;">
+            <div class="config-card form-section">
             <div class="card-header-clean">
               <Coins :size="20" class="text-premium" />
               <h3>{{ isEditingAccount ? 'Editar Cuenta de Pago' : 'Agregar Método de Pago' }}</h3>
@@ -535,7 +465,12 @@
                 Cancelar Edición
               </button>
             </div>
-          </div>
+            </div>
+
+            <div class="promo-logo-wrapper d-flex justify-content-center align-items-center" style="opacity: 0.15; pointer-events: none; flex-grow: 1;">
+              <img src="/images/logo/promolider_logo.png" alt="Promolider" style="max-width: 80%; max-height: 250px; object-fit: contain;">
+            </div>
+            </div>
 
           <!-- Right Column: List of Saved Payment Methods -->
           <div class="config-card list-section">
@@ -2279,9 +2214,9 @@ function showToast(message, type = 'success') {
 }
 
 .config-card {
-  background: white;
+  background: var(--card-bg);
   border-radius: 12px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-color);
   padding: 24px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
@@ -2297,7 +2232,7 @@ function showToast(message, type = 'success') {
 .card-header-clean h3 {
   font-size: 16px;
   font-weight: 700;
-  color: #111827;
+  color: var(--text-bold);
   margin: 0;
 }
 
@@ -2524,9 +2459,9 @@ function showToast(message, type = 'success') {
 }
 
 .reward-card-premium {
-  background: white;
+  background: var(--card-bg);
   border-radius: 12px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-color);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -2580,13 +2515,13 @@ function showToast(message, type = 'success') {
 .reward-body h4 {
   font-size: 15px;
   font-weight: 700;
-  color: #111827;
+  color: var(--text-bold);
   margin: 0 0 6px 0;
 }
 
 .reward-desc {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--text-muted);
   margin: 0;
   line-height: 1.4;
   flex-grow: 1;
@@ -2595,7 +2530,7 @@ function showToast(message, type = 'success') {
 .reward-stats {
   display: flex;
   justify-content: space-between;
-  border-top: 1px dashed #f3f4f6;
+  border-top: 1px dashed var(--border-color);
   padding-top: 12px;
 }
 

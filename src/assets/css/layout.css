@@ -376,6 +376,7 @@ body.dark-theme .watermark-bg img {
   padding: 30px;
   overflow-y: auto;
   overflow-x: hidden;
+  position: relative;
 }
 
 /* ==================================

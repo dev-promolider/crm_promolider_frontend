@@ -1,4 +1,5 @@
 <template>
+  <div>
   <div class="dashboard-page">
 
     <!-- TOP WIDGETS ROW -->
@@ -478,6 +479,7 @@
 
       </div>
     </div>
+  </div>
   </div>
 </template>
 

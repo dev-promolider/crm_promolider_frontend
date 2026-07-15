@@ -2,9 +2,6 @@
   <div class="sales-container">
     <div class="header-section">
       <div class="title-wrapper">
-        <div class="icon-bg">
-          <TrendingUp :size="24" class="text-indigo-400" />
-        </div>
         <div>
           <h1 class="page-title">Mis Ventas</h1>
           <p class="page-subtitle">Monitorea tus comisiones obtenidas por ventas directas y bonificaciones</p>
@@ -14,31 +11,48 @@
 
     <!-- Quick Stats -->
     <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-icon-wrapper bg-indigo-500/10">
-          <DollarSign :size="20" class="text-indigo-400" />
+      <div class="card">
+        <div class="title">
+          <span style="background-color: #6366f1;">
+            <DollarSign :size="18" color="#ffffff" />
+          </span>
+          <p class="title-text">Total Ganado</p>
         </div>
-        <div class="stat-info">
-          <span class="stat-label">Total Ganado</span>
-          <span class="stat-value">${{ formatNumber(totalEarned) }}</span>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon-wrapper bg-blue-500/10">
-          <TrendingUp :size="20" class="text-blue-400" />
-        </div>
-        <div class="stat-info">
-          <span class="stat-label">Cantidad Ventas</span>
-          <span class="stat-value">{{ filteredSales.length }}</span>
+        <div class="data">
+          <p>${{ formatNumber(totalEarned) }}</p>
+          <div class="range">
+            <div class="fill" style="background-color: #6366f1; width: 100%;"></div>
+          </div>
         </div>
       </div>
-      <div class="stat-card">
-        <div class="stat-icon-wrapper bg-purple-500/10">
-          <Calendar :size="20" class="text-purple-400" />
+      
+      <div class="card">
+        <div class="title">
+          <span style="background-color: #3b82f6;">
+            <TrendingUp :size="18" color="#ffffff" />
+          </span>
+          <p class="title-text">Cantidad Ventas</p>
         </div>
-        <div class="stat-info">
-          <span class="stat-label">Última Venta</span>
-          <span class="stat-value">{{ lastSaleDate || 'N/A' }}</span>
+        <div class="data">
+          <p>{{ filteredSales.length }}</p>
+          <div class="range">
+            <div class="fill" style="background-color: #3b82f6; width: 100%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="title">
+          <span style="background-color: #a855f7;">
+            <Calendar :size="18" color="#ffffff" />
+          </span>
+          <p class="title-text">Última Venta</p>
+        </div>
+        <div class="data">
+          <p style="font-size: 1.5rem; line-height: 2.5rem;">{{ lastSaleDate || 'N/A' }}</p>
+          <div class="range">
+            <div class="fill" style="background-color: #a855f7; width: 100%;"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -240,50 +254,77 @@ const formatDate = (dateString) => {
   margin-bottom: 2rem;
 }
 
-.stat-card {
-  background: rgba(30, 41, 59, 0.7);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 16px;
+.card {
   padding: 1.25rem;
+  background-color: var(--card-bg, #fff);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  border-radius: 20px;
+  border: 1px solid var(--border-color, rgba(0,0,0,0.05));
+  width: 100%;
+}
+
+.card .title {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
-.stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-.stat-icon-wrapper {
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
+.card .title span {
+  position: relative;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.stat-info {
+.card .title-text {
+  margin-left: 0.75rem;
+  color: var(--text-muted, #374151);
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0;
+}
+
+.card .percent {
+  margin-left: auto;
+  color: #02972f;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  font-size: 0.875rem;
+}
+
+.card .data {
   display: flex;
   flex-direction: column;
+  justify-content: flex-start;
+  margin-top: 1rem;
 }
 
-.stat-label {
-  font-size: 0.75rem;
-  color: #94a3b8;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.stat-value {
-  font-size: 1.25rem;
+.card .data p {
+  margin: 0 0 1rem 0;
+  color: var(--text-bold, #1F2937);
+  font-size: 2rem;
+  line-height: 2.5rem;
   font-weight: 700;
-  color: #f1f5f9;
-  margin-top: 0.125rem;
+  text-align: left;
+}
+
+.card .data .range {
+  position: relative;
+  background-color: var(--bg-main, #E5E7EB);
+  width: 100%;
+  height: 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.card .data .range .fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  border-radius: 0.25rem;
 }
 
 /* Content card */

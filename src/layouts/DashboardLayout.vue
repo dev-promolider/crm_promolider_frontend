@@ -48,10 +48,6 @@
             <span v-if="!isSidebarCollapsed">Registro</span>
           </RouterLink>
 
-          <RouterLink to="/dashboard/billetera" class="nav-item" active-class="active">
-            <Wallet :size="20" />
-            <span v-if="!isSidebarCollapsed">Billetera</span>
-          </RouterLink>
 
           <div class="nav-group" :class="{ active: isAulaActive, open: isAulaOpen }">
             <button type="button" class="nav-item nav-parent" @click="toggleAula">
@@ -336,7 +332,12 @@
 
       <!-- CONTENT AREA -->
       <div class="router-view-container">
-        <RouterView />
+        <PageLoader :loading="isLoading" />
+        <RouterView v-slot="{ Component }">
+          <transition name="fade-page" mode="out-in">
+            <component :is="Component" />
+          </transition>
+        </RouterView>
       </div>
 
       <!-- FOOTER -->
@@ -353,6 +354,10 @@ import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue';
 import { RouterLink, RouterView, useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import api from '@/services/apiClient';
+import PageLoader from '@/components/PageLoader.vue';
+import { globalLoading } from '@/utils/loaderState';
+
+const isLoading = computed(() => globalLoading.value > 0);
 import { 
   LayoutDashboard, UserPlus, Database, MonitorPlay, Star, Send, PieChart, ChevronRight, ChevronDown, Menu, 
   Search, Bell, Moon, Sun, Award, Apple, User, Medal, Settings, LogOut, Loader2,
@@ -826,6 +831,22 @@ onBeforeUnmount(() => {
 .nav-subitem-deep.active .submenu-dot {
   opacity: 1;
   box-shadow: 0 0 6px var(--primary-color);
+}
+
+/* Page Transitions */
+.fade-page-enter-active,
+.fade-page-leave-active {
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.fade-page-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.fade-page-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 </style>
 
