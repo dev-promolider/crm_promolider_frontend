@@ -48,6 +48,11 @@
             <span v-if="!isSidebarCollapsed">Registro</span>
           </RouterLink>
 
+          <RouterLink to="/dashboard/billetera" class="nav-item" active-class="active">
+            <Wallet :size="20" />
+            <span v-if="!isSidebarCollapsed">Billetera</span>
+          </RouterLink>
+
           <div class="nav-group" :class="{ active: isAulaActive, open: isAulaOpen }">
             <button type="button" class="nav-item nav-parent" @click="toggleAula">
               <MonitorPlay :size="20" />
@@ -273,7 +278,7 @@ import api from '@/services/apiClient';
 import { 
   LayoutDashboard, UserPlus, Database, MonitorPlay, Star, Send, PieChart, ChevronRight, ChevronDown, Menu, 
   Search, Bell, Moon, Sun, Award, Apple, User, Medal, Settings, LogOut, Loader2,
-  BookOpen, Store, Users, Bot
+  BookOpen, Store, Users, Bot, Wallet
 } from 'lucide-vue-next';
 
 const router = useRouter();

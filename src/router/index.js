@@ -96,6 +96,11 @@ const routes = [
         path: '/registro',
         name: 'dashboard-registro',
         component: () => import('@/features/registration/views/RegistroDashboardView.vue')
+      },
+      {
+        path: 'billetera',
+        name: 'wallet',
+        component: () => import('@/features/wallet/views/WalletHistoryUser.vue')
       }
     ]
   },
