@@ -33,7 +33,7 @@
 
       <div class="sidebar-scroll">
         <nav class="sidebar-nav">
-          <RouterLink to="/" class="nav-item" active-class="active">
+          <RouterLink to="/dashboard" class="nav-item" exact-active-class="active">
             <LayoutDashboard :size="20" />
             <span v-if="!isSidebarCollapsed">Dashboards</span>
           </RouterLink>
@@ -166,7 +166,7 @@
           <!-- Rango -->
           <div class="topbar-item" :title="'Rango: ' + topbarStats.rank.name">
             <button class="icon-btn">
-              <img v-if="topbarStats.rank.icon" :src="topbarStats.rank.icon" alt="Rango" style="width:20px; height:20px; object-fit:contain;" />
+              <img v-if="topbarStats.rank.icon" :src="getAvatarUrl(topbarStats.rank.icon)" alt="Rango" style="width:20px; height:20px; object-fit:contain;" />
               <Award v-else :size="20" />
             </button>
           </div>
@@ -214,19 +214,18 @@
             </div>
           </div>
 
-          <!-- User Profile & Dropdown -->
-          <div class="user-dropdown-container" @click="toggleDropdown">
-            <div class="user-info">
-              <div class="user-text text-right">
-                <span class="user-name">{{ user?.name || user?.nombre || 'Cargando...' }} {{ user?.last_name || user?.apellido || '' }}</span>
-                <span class="user-role">{{ user?.account_type?.name || user?.role || 'University' }}</span>
+            <div class="user-dropdown-container" @click="toggleDropdown">
+              <div class="user-info">
+                <div class="user-text text-right">
+                  <span class="user-name">{{ user?.name || user?.nombre || 'Cargando...' }} {{ user?.last_name || user?.apellido || '' }}</span>
+                  <span class="user-role">{{ user?.account_type?.name || user?.role || 'University' }}</span>
+                </div>
+                <div class="user-avatar">
+                  <img v-if="user?.photo || user?.avatar" :src="getAvatarUrl(user.photo || user.avatar)" alt="Avatar" />
+                  <div v-else class="initials-avatar">{{ (user?.name || user?.nombre) ? (user.name || user.nombre).charAt(0).toUpperCase() : 'U' }}</div>
+                  <div class="status-dot"></div>
+                </div>
               </div>
-              <div class="user-avatar">
-                <img v-if="user?.photo || user?.avatar" :src="user.photo || user.avatar" alt="Avatar" />
-                <div v-else class="initials-avatar">{{ (user?.name || user?.nombre) ? (user.name || user.nombre).charAt(0).toUpperCase() : 'U' }}</div>
-                <div class="status-dot"></div>
-              </div>
-            </div>
 
             <!-- Dropdown Menu -->
             <div class="dropdown-menu" :class="{ 'show': isDropdownOpen }">
@@ -281,6 +280,12 @@ const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
 const user = computed(() => authStore.user);
+
+const getAvatarUrl = (photoPath) => {
+  if (!photoPath) return '';
+  if (photoPath.startsWith('http')) return photoPath;
+  return `https://promolider-storage-user.s3.sa-east-1.amazonaws.com/${photoPath}`;
+};
 
 const isSidebarCollapsed = ref(false);
 const isDropdownOpen = ref(false);
@@ -441,10 +446,8 @@ onMounted(() => {
     document.body.classList.add('dark-theme');
   }
   
-  // Si no hay datos del usuario (ej. al hacer F5), recargarlos
-  if (!user.value) {
-    authStore.fetchUser();
-  }
+  // Siempre recargar datos del usuario para mantener actualizada la info
+  authStore.fetchUser();
 
   listenNotifications();
 

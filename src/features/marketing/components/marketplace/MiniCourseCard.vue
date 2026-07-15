@@ -1,13 +1,13 @@
 <template>
   <template v-if="loading">
-    <div class="col-12 text-center py-5">
-      <div class="spinner-border text-warning" role="status"></div>
-      <p class="text-muted mt-2 small">Cargando mini cursos...</p>
+    <div class="mc-state-box">
+      <div class="mc-spinner"></div>
+      <p class="mc-state-text">Cargando mini cursos...</p>
     </div>
   </template>
   <template v-else-if="items.length === 0">
-    <div class="col-12 text-center py-5">
-      <p class="text-muted">No se encontraron mini cursos</p>
+    <div class="mc-state-box">
+      <p class="mc-state-text">No se encontraron mini cursos</p>
     </div>
   </template>
   <div v-for="item in items" :key="item.id" class="col-md-4 mb-4 grid-col">
@@ -15,7 +15,7 @@
       <div class="card-img-wrapper">
         <img
           v-if="item.image"
-          :src="item.image"
+          :src="getS3Url(item.image)"
           class="card-img-top"
           :alt="item.title"
         />
@@ -39,6 +39,15 @@
 </template>
 
 <script setup>
+const S3_BASE = 'https://promolider-storage-user.s3.amazonaws.com'
+
+function getS3Url(path) {
+  if (!path) return ''
+  if (path.startsWith('http://') || path.startsWith('https://')) return path
+  const cleanPath = path.startsWith('/') ? path : '/' + path
+  return S3_BASE + cleanPath
+}
+
 function formatLevel(level) {
   if (!level) return '-'
   return level.charAt(0).toUpperCase() + level.slice(1)
@@ -151,5 +160,34 @@ defineEmits(['view'])
 body.dark-theme .badge-minicourse {
   background: rgba(255, 154, 60, 0.2);
   color: #fb923c;
+}
+
+.mc-state-box {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  gap: 12px;
+}
+
+.mc-state-text {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.mc-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border-color);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: mc-spin 0.8s linear infinite;
+}
+
+@keyframes mc-spin {
+  to { transform: rotate(360deg); }
 }
 </style>

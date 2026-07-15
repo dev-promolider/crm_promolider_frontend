@@ -256,14 +256,14 @@
             <li>
               <!-- Root Node (c) -->
               <a href="#" class="tree-node root-node" @click.prevent="openUserModal(binaryTreeData.c, 'Raíz Principal', 'Ninguno')">
-                <img :src="binaryTreeData.c.photo || 'https://i.pravatar.cc/150?img=11'" alt="Root" />
+                <img :src="getAvatarUrl(binaryTreeData.c.photo) || 'https://i.pravatar.cc/150?img=11'" alt="Root" />
                 <span>{{ binaryTreeData.c.name }}</span>
               </a>
               <ul>
                 <!-- Left Leg (a) -->
                 <li>
                   <a href="#" class="tree-node" v-if="binaryTreeData.a" @click.prevent="openUserModal(binaryTreeData.a, 'Izquierda', binaryTreeData.c?.name)">
-                    <img :src="binaryTreeData.a.photo || 'https://i.pravatar.cc/150?img=12'" alt="A" />
+                    <img :src="getAvatarUrl(binaryTreeData.a.photo) || 'https://i.pravatar.cc/150?img=12'" alt="A" />
                     <span>{{ binaryTreeData.a.name }}</span>
                   </a>
                   <a href="#" class="tree-node empty-node" v-else>
@@ -274,7 +274,7 @@
                   <ul v-if="binaryTreeData.a || binaryTreeData.aa || binaryTreeData.ab">
                     <li>
                       <a href="#" class="tree-node" v-if="binaryTreeData.aa" @click.prevent="openUserModal(binaryTreeData.aa, 'Izquierda', binaryTreeData.a?.name)">
-                        <img :src="binaryTreeData.aa.photo || 'https://i.pravatar.cc/150?img=13'" alt="AA" />
+                        <img :src="getAvatarUrl(binaryTreeData.aa.photo) || 'https://i.pravatar.cc/150?img=13'" alt="AA" />
                         <span>{{ binaryTreeData.aa.name }}</span>
                       </a>
                       <a href="#" class="tree-node empty-node" v-else>
@@ -283,7 +283,7 @@
                     </li>
                     <li>
                       <a href="#" class="tree-node" v-if="binaryTreeData.ab" @click.prevent="openUserModal(binaryTreeData.ab, 'Derecha', binaryTreeData.a?.name)">
-                        <img :src="binaryTreeData.ab.photo || 'https://i.pravatar.cc/150?img=14'" alt="AB" />
+                        <img :src="getAvatarUrl(binaryTreeData.ab.photo) || 'https://i.pravatar.cc/150?img=14'" alt="AB" />
                         <span>{{ binaryTreeData.ab.name }}</span>
                       </a>
                       <a href="#" class="tree-node empty-node" v-else>
@@ -296,7 +296,7 @@
                 <!-- Right Leg (b) -->
                 <li>
                   <a href="#" class="tree-node" v-if="binaryTreeData.b" @click.prevent="openUserModal(binaryTreeData.b, 'Derecha', binaryTreeData.c?.name)">
-                    <img :src="binaryTreeData.b.photo || 'https://i.pravatar.cc/150?img=15'" alt="B" />
+                    <img :src="getAvatarUrl(binaryTreeData.b.photo) || 'https://i.pravatar.cc/150?img=15'" alt="B" />
                     <span>{{ binaryTreeData.b.name }}</span>
                   </a>
                   <a href="#" class="tree-node empty-node" v-else>
@@ -307,7 +307,7 @@
                   <ul v-if="binaryTreeData.b || binaryTreeData.ba || binaryTreeData.bb">
                     <li>
                       <a href="#" class="tree-node" v-if="binaryTreeData.ba" @click.prevent="openUserModal(binaryTreeData.ba, 'Izquierda', binaryTreeData.b?.name)">
-                        <img :src="binaryTreeData.ba.photo || 'https://i.pravatar.cc/150?img=16'" alt="BA" />
+                        <img :src="getAvatarUrl(binaryTreeData.ba.photo) || 'https://i.pravatar.cc/150?img=16'" alt="BA" />
                         <span>{{ binaryTreeData.ba.name }}</span>
                       </a>
                       <a href="#" class="tree-node empty-node" v-else>
@@ -316,7 +316,7 @@
                     </li>
                     <li>
                       <a href="#" class="tree-node" v-if="binaryTreeData.bb" @click.prevent="openUserModal(binaryTreeData.bb, 'Derecha', binaryTreeData.b?.name)">
-                        <img :src="binaryTreeData.bb.photo || 'https://i.pravatar.cc/150?img=17'" alt="BB" />
+                        <img :src="getAvatarUrl(binaryTreeData.bb.photo) || 'https://i.pravatar.cc/150?img=17'" alt="BB" />
                         <span>{{ binaryTreeData.bb.name }}</span>
                       </a>
                       <a href="#" class="tree-node empty-node" v-else>
@@ -339,7 +339,7 @@
           <ul v-if="unilevelTreeData.root">
             <li>
               <a href="#" class="tree-node root-node" @click.prevent="openUserModal(unilevelTreeData.root, 'Raíz Uninivel', 'Ninguno')">
-                <img :src="unilevelTreeData.root.photo || 'https://i.pravatar.cc/150?img=11'" alt="Root" />
+                <img :src="getAvatarUrl(unilevelTreeData.root.photo) || 'https://i.pravatar.cc/150?img=11'" alt="Root" />
                 <span>{{ unilevelTreeData.root.name }}</span>
               </a>
 
@@ -347,7 +347,7 @@
               <!-- ahora: contenedor aparte, no es un <ul> jerárquico anidado -->
               <div class="unilevel-directs-grid" v-if="unilevelTreeData.directs && unilevelTreeData.directs.length > 0">
                 <a href="#" class="tree-node" v-for="direct in unilevelTreeData.directs" :key="direct.id" @click.prevent="openUserModal(direct, 'Frontal (Directo)', unilevelTreeData.root?.name)">
-                  <img :src="direct.photo || 'https://i.pravatar.cc/150?img=10'" :alt="direct.name" />
+                  <img :src="getAvatarUrl(direct.photo) || 'https://i.pravatar.cc/150?img=10'" :alt="direct.name" />
                   <span>{{ direct.name }}</span>
                   <span :class="direct.active ? 'text-green' : 'text-red'"
                     style="font-size: 10px; margin-top: 5px; font-weight: bold;">
@@ -495,6 +495,13 @@ const user = computed(() => authStore.user);
 const showToast = ref(false);
 
 const activeTab = ref('binary');
+
+// Manejo de URL de S3 para fotos de avatar
+const getAvatarUrl = (photoPath) => {
+  if (!photoPath) return '';
+  if (photoPath.startsWith('http')) return photoPath;
+  return `https://promolider-storage-user.s3.sa-east-1.amazonaws.com/${photoPath}`;
+};
 
 const allConditionsMet = computed(() => {
   return widgetsData.value.conditions.membershipActive && 

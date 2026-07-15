@@ -58,7 +58,7 @@ const routes = [
   {
     path: '/courses/create',
     name: 'courses.create',
-    component: () => import('@/features/infoproducts/views/CreateCourseView.vue'),
+    component: { template: '<div>Create Course Placeholder</div>' }
   },
   {
     path: '/course/module/:courseId/editModule',
@@ -68,14 +68,14 @@ const routes = [
       {
         path: '',
         name: 'course.module.edit',
-        component: () => import('@/features/infoproducts/views/EditModuleView.vue')
+        component: { template: '<div>Edit Module Placeholder</div>' }
       }
     ]
   },
   {
     path: '/books/create',
     name: 'books.create',
-    component: () => import('@/features/infoproducts/views/CreateBookView.vue'),
+    component: { template: '<div>Create Book Placeholder</div>' }
   },
   {
     path: '/dashboard',

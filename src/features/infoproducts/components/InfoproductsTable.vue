@@ -805,7 +805,7 @@ const onCertificateDownloaded = () => {
   border: 1px solid var(--border-color);
   padding: 0 12px;
   background: var(--card-bg);
-  color: var(--text-color);
+  color: var(--text-main);
 }
 
 .table-card {
@@ -938,7 +938,7 @@ const onCertificateDownloaded = () => {
 .btn-secondary {
   border: 1px solid var(--border-color);
   background: transparent;
-  color: var(--text-color);
+  color: var(--text-main);
 }
 
 .btn-danger {
@@ -979,7 +979,7 @@ const onCertificateDownloaded = () => {
   border-radius: 8px;
   border: 1px solid var(--border-color);
   background: var(--card-bg);
-  color: var(--text-color);
+  color: var(--text-main);
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;

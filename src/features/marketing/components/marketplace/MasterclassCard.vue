@@ -1,13 +1,13 @@
 <template>
   <template v-if="loading">
-    <div class="col-12 text-center py-5">
-      <div class="spinner-border text-primary" role="status"></div>
-      <p class="text-muted mt-2 small">Cargando masterclasses...</p>
+    <div class="mc-state-box">
+      <div class="mc-spinner"></div>
+      <p class="mc-state-text">Cargando masterclasses...</p>
     </div>
   </template>
   <template v-else-if="items.length === 0">
-    <div class="col-12 text-center py-5">
-      <p class="text-muted">No se encontraron masterclasses</p>
+    <div class="mc-state-box">
+      <p class="mc-state-text">No se encontraron masterclasses</p>
     </div>
   </template>
   <div v-for="item in items" :key="item.id" class="col-md-4 mb-4 grid-col">
@@ -15,7 +15,7 @@
       <div class="card-img-wrapper">
         <img
           v-if="item.image"
-          :src="item.image"
+          :src="getS3Url(item.image)"
           class="card-img-top"
           :alt="item.title"
         />
@@ -38,6 +38,15 @@
 </template>
 
 <script setup>
+const S3_BASE = 'https://promolider-storage-user.s3.amazonaws.com'
+
+function getS3Url(path) {
+  if (!path) return ''
+  if (path.startsWith('http://') || path.startsWith('https://')) return path
+  const cleanPath = path.startsWith('/') ? path : '/' + path
+  return S3_BASE + cleanPath
+}
+
 function formatDate(date) {
   if (!date) return '-'
   return new Date(date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -150,5 +159,35 @@ defineEmits(['view'])
 body.dark-theme .badge-masterclass {
   background: rgba(40, 167, 69, 0.2);
   color: #4ade80;
+}
+
+.mc-state-box {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  gap: 12px;
+  color: var(--text-muted);
+}
+
+.mc-state-text {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.mc-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border-color);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: mc-spin 0.8s linear infinite;
+}
+
+@keyframes mc-spin {
+  to { transform: rotate(360deg); }
 }
 </style>

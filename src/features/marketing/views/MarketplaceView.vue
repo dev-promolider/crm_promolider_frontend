@@ -84,7 +84,7 @@
                   <div class="c-card-img-wrapper">
                     <img
                       v-if="item.image"
-                      :src="item.image"
+                      :src="getS3Url(item.image)"
                       class="c-card-img"
                       :alt="item.title"
                     />
@@ -124,6 +124,15 @@ import {
   PlayCircle, BookOpen, Film, Megaphone, Search, Loader2,
   Grid, Monitor
 } from 'lucide-vue-next'
+
+const S3_BASE = 'https://promolider-storage-user.s3-accelerate.amazonaws.com'
+
+function getS3Url(path) {
+  if (!path) return ''
+  if (path.startsWith('http://') || path.startsWith('https://')) return path
+  const cleanPath = path.startsWith('/') ? path : '/' + path
+  return S3_BASE + cleanPath
+}
 
 const router = useRouter()
 const store = useMarketplaceStore()
