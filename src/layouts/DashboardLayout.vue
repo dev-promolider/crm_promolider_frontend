@@ -631,7 +631,9 @@ const isOpcActive = computed(() => {
   if (!user.value) return false;
   
   if (user.value.expiration_date) {
-    const dateStr = user.value.expiration_date.replace(' ', 'T') + 'Z';
+    let dateStr = user.value.expiration_date;
+    if (!dateStr.includes('T')) dateStr = dateStr.replace(' ', 'T');
+    if (!dateStr.endsWith('Z')) dateStr += 'Z';
     const expiration = new Date(dateStr).getTime();
     if (expiration > new Date().getTime()) {
       return true;
@@ -652,9 +654,13 @@ const isOpcActive = computed(() => {
   const maxOpcCuotas = computed(() => {
     if (!user.value || !user.value.expiration_membership_date || !user.value.expiration_date) return 12;
     
-    const mStr = user.value.expiration_membership_date.replace(' ', 'T') + 'Z';
+    let mStr = user.value.expiration_membership_date;
+      if (!mStr.includes('T')) mStr = mStr.replace(' ', 'T');
+      if (!mStr.endsWith('Z')) mStr += 'Z';
     const mEnd = new Date(mStr);
-    const oStr = user.value.expiration_date.replace(' ', 'T') + 'Z';
+    let oStr = user.value.expiration_date;
+      if (!oStr.includes('T')) oStr = oStr.replace(' ', 'T');
+      if (!oStr.endsWith('Z')) oStr += 'Z';
     const oEnd = new Date(oStr);
     
     if (oEnd >= mEnd) return 0;
@@ -673,7 +679,9 @@ let countdownInterval = null;
 const calculateTimeLeft = () => {
   if (!user.value || !user.value.expiration_date) return null;
   
-  const dateStr = user.value.expiration_date.replace(' ', 'T') + 'Z';
+  let dateStr = user.value.expiration_date;
+      if (!dateStr.includes('T')) dateStr = dateStr.replace(' ', 'T');
+      if (!dateStr.endsWith('Z')) dateStr += 'Z';
     const expiration = new Date(dateStr).getTime();
   const now = new Date().getTime();
   const distance = expiration - now;
