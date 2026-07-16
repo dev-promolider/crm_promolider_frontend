@@ -178,24 +178,259 @@
           <div v-else-if="activeTab === 'membresias'" key="membresias" class="tab-content membership-tab">
             <div class="tab-top-border"></div>
             
+            <CustomAlert :message="profileAlert.message" :type="profileAlert.type" />
+            
             <VipMembershipCard :membership="activeMembership" :user="user" />
             
             <div class="membership-progress-container">
               <div class="progress-labels">
                 <span>Días</span>
-                <span>Expirado</span>
+                <span>{{ membershipStatus.labelRight }}</span>
               </div>
               <div class="progress-bar-bg">
-                <div class="progress-bar-fill" style="width: 100%;"></div>
+                <div 
+                  class="progress-bar-fill" 
+                  :style="{ 
+                    width: membershipStatus.percent + '%', 
+                    backgroundColor: membershipStatus.isExpired ? '#ef4444' : 'var(--primary-color)' 
+                  }"
+                ></div>
               </div>
-              <p class="text-muted" style="font-size: 13px; margin-top: 8px;">Su membresía ha expirado</p>
+              <p class="text-muted" style="font-size: 13px; margin-top: 8px;">{{ membershipStatus.text }}</p>
             </div>
             
             <div class="membership-actions">
-              <AnimatedButton>Plan de actualización</AnimatedButton>
-              <AnimatedButton>Historial de membresía</AnimatedButton>
+              <AnimatedButton @click="showUpgradeModal = true">
+                {{ membershipStatus.isExpired ? 'Renovar Membresía' : 'Mejorar Membresía' }}
+              </AnimatedButton>
+              <AnimatedButton @click="openHistoryModal">Historial de membresía</AnimatedButton>
             </div>
-            
+
+            <!-- Upgrade / Renew Modal -->
+            <Teleport to="body">
+              <div v-if="showUpgradeModal" class="custom-modal-overlay">
+              <div class="custom-modal-content fade-in-up">
+                <div class="modal-header">
+                  <h4>{{ membershipStatus.isExpired ? 'Renueva tu membresía' : 'Adquiere una nueva membresía' }}</h4>
+                  <button class="close-btn" @click="showUpgradeModal = false"><X :size="20" /></button>
+                </div>
+                <div class="modal-body">
+                  <p v-if="upgradeableMemberships.length === 0" class="text-muted">
+                    No hay planes superiores disponibles en este momento.
+                  </p>
+                  <div class="table-responsive" v-else>
+                    <table class="custom-table">
+                      <thead>
+                        <tr>
+                          <th>Membresía</th>
+                          <th>Precio</th>
+                          <th>Acción</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr v-for="plan in upgradeableMemberships" :key="plan.id">
+                          <td>{{ plan.account }}</td>
+                          <td>
+                            <span v-if="membershipStatus.isExpired || !activeMembership">
+                              ${{ parseFloat(plan.price).toFixed(2) }} + IVA ({{ plan.iva }}%)
+                            </span>
+                            <span v-else>
+                              ${{ (parseFloat(plan.price) - parseFloat(activeMembership.price)).toFixed(2) }} 
+                              <small class="text-muted" style="display:block; font-size: 11px;">(Diferencia a pagar)</small>
+                            </span>
+                          </td>
+                          <td>
+                            <button class="btn-select-plan" @click="selectPlan(plan)">Seleccionar</button>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+              </div>
+            </Teleport>
+
+            <!-- Membership History Modal -->
+            <Teleport to="body">
+              <div v-if="showHistoryModal" class="custom-modal-overlay">
+              <div class="custom-modal-content fade-in-up">
+                <div class="modal-header">
+                  <h4>Historial de Membresías</h4>
+                  <button class="close-btn" @click="showHistoryModal = false"><X :size="20" /></button>
+                </div>
+                <div class="modal-body">
+                  <div class="table-responsive">
+                    <table class="custom-table">
+                      <thead>
+                        <tr>
+                          <th>Fecha Compra</th>
+                          <th>Fecha Expiración</th>
+                          <th>Plan</th>
+                          <th>Estado</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr v-if="loadingHistory">
+                          <td colspan="4" class="text-center" style="padding: 24px;">
+                            <div class="spinner"></div>
+                            <span style="display: block; margin-top: 8px; font-size: 13px; color: var(--text-light);">Cargando historial...</span>
+                          </td>
+                        </tr>
+                        <tr v-else-if="membershipHistory.length === 0">
+                          <td colspan="4" class="text-center text-muted" style="padding: 24px;">No se encontraron registros de membresías pasadas.</td>
+                        </tr>
+                        <tr v-for="record in membershipHistory" :key="record.id" v-else>
+                          <td>{{ formatHistoryDate(record.purchase_date) }}</td>
+                          <td>{{ formatHistoryDate(record.expiration_date) }}</td>
+                          <td>
+                            <span class="status-badge plan-badge">
+                              {{ record.account_type_name }}
+                            </span>
+                          </td>
+                          <td>
+                            <span :class="getHistoryStatus(record).class">
+                              {{ getHistoryStatus(record).text }}
+                            </span>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+              </div>
+            </Teleport>
+
+            <!-- Payment Modal -->
+            <Teleport to="body">
+              <div v-if="showPaymentModal" class="custom-modal-overlay">
+                <div class="custom-modal-content fade-in-up" style="max-width: 450px;">
+                  <div class="modal-header">
+                    <h4 style="color: var(--primary-color);">Membresía</h4>
+                    <button class="close-btn" @click="showPaymentModal = false"><X :size="20" /></button>
+                  </div>
+                  <div class="modal-body" style="padding: 24px;">
+                    <CustomAlert :message="paymentAlert.message" :type="paymentAlert.type" />
+                    <div class="form-group" style="margin-bottom: 24px;">
+                      <select v-model="selectedPaymentMethod" class="form-control payment-select" @change="paymentAlert.message = ''">
+                        <option value="" disabled>Seleccione método de pago</option>
+                        <option value="card">Tarjeta crédito / débito</option>
+                        <option value="wallet">Billetera (Saldo: ${{ walletBalance.toFixed(2) }})</option>
+                      </select>
+                    </div>
+
+                    <p style="margin-bottom: 16px; font-size: 14px; color: var(--text-bold);">
+                      Ha seleccionado la membresía <strong>{{ selectedPlanToBuy?.account }}</strong>
+                    </p>
+
+                    <!-- Wallet Info Box -->
+                    <div v-if="selectedPaymentMethod === 'wallet'" class="wallet-info-box fade-in-up" style="margin-bottom: 24px; padding: 16px; background-color: rgba(24, 214, 0, 0.05); border-left: 4px solid var(--primary-color); border-radius: 6px;">
+                      <h5 style="margin-top: 0; margin-bottom: 12px; color: var(--primary-color);">Resumen de Billetera</h5>
+                      <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;">
+                        <span class="text-muted">Saldo actual:</span>
+                        <span style="color: var(--text-bold);">${{ walletBalance.toFixed(2) }}</span>
+                      </div>
+                      <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;">
+                        <span class="text-muted">Monto a descontar (inc. IVA):</span>
+                        <span style="color: #ef4444;">-${{ amountToPay.toFixed(2) }}</span>
+                      </div>
+                      <div style="display: flex; justify-content: space-between; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1); font-weight: bold; font-size: 15px;">
+                        <span>Saldo final:</span>
+                        <span :style="{ color: isWalletSufficient ? 'var(--primary-color)' : '#ef4444' }">
+                          ${{ (walletBalance - amountToPay).toFixed(2) }}
+                        </span>
+                      </div>
+                      <p v-if="!isWalletSufficient" style="color: #ef4444; font-size: 13px; margin-top: 12px; margin-bottom: 0;">
+                        Saldo insuficiente para realizar esta compra.
+                      </p>
+                    </div>
+
+                    <div class="terms-toggle-wrapper" style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+                      <label class="toggle-switch">
+                        <input type="checkbox" v-model="acceptTerms" :disabled="isProcessingPayment">
+                        <span class="slider round"></span>
+                      </label>
+                      <span class="terms-text" style="font-size: 13px; color: var(--text-light);">
+                        He leído y acepto los 
+                        <a href="#" @click.prevent="showTermsModal = true" style="color: var(--primary-color); font-weight: bold; text-decoration: none;">términos y condiciones.</a>
+                      </span>
+                    </div>
+
+                    <button 
+                      class="btn-select-plan" 
+                      :disabled="!acceptTerms || (selectedPaymentMethod === 'wallet' && !isWalletSufficient) || isProcessingPayment"
+                      :style="{ 
+                        opacity: (acceptTerms && (selectedPaymentMethod !== 'wallet' || isWalletSufficient) && !isProcessingPayment) ? '1' : '0.5', 
+                        cursor: (acceptTerms && (selectedPaymentMethod !== 'wallet' || isWalletSufficient) && !isProcessingPayment) ? 'pointer' : 'not-allowed',
+                        width: '100%', padding: '12px', fontSize: '15px'
+                      }" 
+                      @click="processPayment"
+                    >
+                      <span v-if="isProcessingPayment">Procesando...</span>
+                      <span v-else>Comprar</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </Teleport>
+
+            <!-- Terms Modal -->
+            <Teleport to="body">
+              <div v-if="showTermsModal" class="custom-modal-overlay" style="z-index: 1050;">
+                <div class="custom-modal-content fade-in-up" style="max-width: 700px; max-height: 90vh; display: flex; flex-direction: column;">
+                  <div class="modal-header">
+                    <h4 style="color: var(--primary-color);">Términos y Condiciones</h4>
+                    <button class="close-btn" @click="showTermsModal = false"><X :size="20" /></button>
+                  </div>
+                  <div class="modal-body" style="padding: 24px; overflow-y: auto; flex: 1;">
+                    <div class="terms-content text-muted" style="font-size: 14px; line-height: 1.6;">
+                      <h5 style="color: var(--text-bold); margin-bottom: 16px;">Términos y condiciones de transacciones Virtuales Promolider org SAC</h5>
+                      
+                      <p style="margin-bottom: 12px;">Las transacciones que se efectúen a través plataforma educativa de Promolider org SAC, se sujetan a los presentes términos y condiciones (en lo sucesivo, Términos y Condiciones), así como a la legislación peruana vigente, y se entienden celebradas en el distrito La Molina, provincia y departamento de Lima, República del Perú.</p>
+                      
+                      <p style="margin-bottom: 12px;">Promolider se reserva el derecho de actualizar y/o modificar los Términos y Condiciones que detallamos a continuación en cualquier momento, sin previo aviso. Por esta razón recomendamos revisar los Términos y Condiciones cada vez que utilice la página web.</p>
+                      
+                      <p style="margin-bottom: 12px;">Es requisito para comprar en el marketplace de Promolider la aceptación de los términos y condiciones descritas a continuación. Cualquier persona que realice una transacción mediante este canal, declara conocer y aceptar todas y cada uno de los términos y condiciones descritos a continuación. Asimismo, el acceso a los servicios de la Tienda Virtual Promolider podría ocasionalmente verse suspendido o restringido por la realización de trabajos de mantenimiento o administración de los productos ofertados.</p>
+                      
+                      <p style="margin-bottom: 24px;">Tienda Virtual Promolider se compromete a realizar su mejor esfuerzo para asegurar la disponibilidad de sus servicios durante las 24 horas del día así como para asegurar la ausencia de errores en cualquier transmisión de información que pudiera tener lugar en las transacciones; sin embargo, Tienda Virtual Promolider no se hace responsable cuando sus servicios se vean afectados por la naturaleza misma del internet.</p>
+
+                      <strong style="display: block; margin-bottom: 8px; color: var(--text-bold);">1. REGISTRO DEL CLIENTE O USUARIO (CLIENTE)</strong>
+                      <p style="margin-bottom: 24px;">El registro del cliente en este sitio, para comprar a través la tienda virtual constituye una condición indispensable. Para el registro, el cliente debe proporcionar sus datos de identificación fidedignos y necesarios (como nombre completo, número de documento oficial de identidad, correo electrónico, teléfonos, entre otros) los cuales podrán ser validados posteriormente.</p>
+
+                      <strong style="display: block; margin-bottom: 8px; color: var(--text-bold);">2. CLAVE SECRETA</strong>
+                      <p style="margin-bottom: 24px;">Una vez registrado, el cliente deberá ingresar su número de DNI y clave de acceso para compras en Tienda Virtual Promolider, la que deberá ser de 6 dígitos alfa-numérico y que será solicitada antes de efectuar una transacción. Esta clave de acceso es personal e intransferible y será necesaria de acuerdo al canal de compras elegido por el cliente.</p>
+
+                      <strong style="display: block; margin-bottom: 8px; color: var(--text-bold);">3. MEDIOS DE PAGOS</strong>
+                      <p style="margin-bottom: 8px;">Los medios de pago que se pueden utilizar para compras en la Tienda Virtual Promolider son:</p>
+                      <ul style="margin-bottom: 12px; padding-left: 20px;">
+                        <li>a.- Tarjeta crédito y débito nacionales.</li>
+                        <li>b.- Tarjetas de crédito y débito Visa.</li>
+                        <li>c.- Tarjetas de crédito MasterCard, American Express y Diners. (Nacionales e internacionales)</li>
+                      </ul>
+                      <p style="margin-bottom: 12px;">Promolider considerará como no válida la transacción cuando se evidencie o notifique algún tipo de fraude, cuando se produzca un error sistémico que distorsione el precio de las ofertas o cuando concurra alguna otra causa justificada, y procederá a anular la transacción, cancelar el producto y solicitar al banco emisor de la tarjeta para que la devolución del importe comprometido.</p>
+                      <p style="margin-bottom: 12px;">Los aspectos relativos al funcionamiento de las tarjetas de crédito aceptadas en la Tienda Virtual Promolider están sujetos al contrato existente entre el cliente y el banco emisor de esta, sin que Promolider tenga responsabilidad alguna sobre los aspectos señalados en dichos contratos. Sin perjuicio de lo antes señalado, para efectos de las transacciones que se realicen a través de la Tienda Virtual Promolider, el cliente declara que las órdenes de pago se emitieron y se ejecutaron en el distrito de La Molina, provincia y departamento de Lima, República del Perú.</p>
+                      <p style="margin-bottom: 24px;">La pasarela de pagos usada por Promolider en la tienda Virtual es Openpay.</p>
+
+                      <strong style="display: block; margin-bottom: 8px; color: var(--text-bold);">4. VALIDEZ Y PRECIO</strong>
+                      <p style="margin-bottom: 12px;">Los precios exhibidos en www.promolider.org son exclusivos para las compras efectuadas en Tienda Virtual Promolider.</p>
+                      <p style="margin-bottom: 24px;">Los precios de los productos consignados en la Tienda Virtual Promolider son en moneda Dólar Americano (USD.), y de igual manera los comprobantes de pago que se emiten.</p>
+
+                      <strong style="display: block; margin-bottom: 8px; color: var(--text-bold);">5. COMPROBANTES DE PAGO</strong>
+                      <p style="margin-bottom: 12px;">El cliente deberá decidir correctamente el tipo de documento electrónico que solicitará como comprobante de pago de su compra, ya que de acuerdo al Reglamento de Comprobantes de Pago aprobado por Resolución de Superintendencia N° 007-99/SUNAT (RCP) y al Texto Único Ordenado de la Ley del Impuesto General a las Ventas e Impuesto Selectivo al Consumo, aprobado mediante Decreto Supremo N° 055-99-EF y normas modificatorias, no procederá cambio alguno:</p>
+                      <p style="margin-bottom: 12px; font-style: italic;">“No existe ningún procedimiento vigente que permita el canje de boletas de venta por facturas, más aún las notas de crédito no se encuentran previstas para modificar al adquirente o usuario que figura en el comprobante de pago original”.</p>
+                      <p style="margin-bottom: 12px;">Al aceptar estos términos y condiciones, el cliente autoriza a Promolider a que envíe el comprobante electrónico al correo electrónico consignado en el proceso de compra.</p>
+                    </div>
+                  </div>
+                  <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end;">
+                    <button class="btn-select-plan" style="padding: 8px 24px;" @click="acceptAndCloseTerms">Aceptar</button>
+                  </div>
+                </div>
+              </div>
+            </Teleport>
+
+
+
             <div class="all-memberships-section">
               <div class="am-header-row">
                 <h4 class="form-title" style="margin: 0;">Ver Todas las Membresías</h4>
@@ -270,13 +505,14 @@
 import { ref, onMounted, computed } from 'vue';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import api from '@/services/apiClient';
-import { User, Lock, Bookmark, Info, CheckCircle2, Eye, EyeOff } from 'lucide-vue-next';
+import { User, Lock, Bookmark, Info, CheckCircle2, Eye, EyeOff, X } from 'lucide-vue-next';
 import VipMembershipCard from '@/components/VipMembershipCard.vue';
 import AnimatedButton from '@/components/AnimatedButton.vue';
 import CustomAlert from '@/components/CustomAlert.vue';
 
 const authStore = useAuthStore();
 const activeTab = ref('cuenta');
+const realWalletBalance = ref(0);
 
 const user = computed(() => authStore.user || {});
 const roles = computed(() => authStore.userRoles || []);
@@ -303,8 +539,113 @@ const showHelpInfo = ref(false);
 const countries = ref([]);
 const availableMemberships = ref([]);
 
+const showUpgradeModal = ref(false);
+const showPaymentModal = ref(false);
+const showTermsModal = ref(false);
+const showHistoryModal = ref(false);
+const loadingHistory = ref(false);
+const acceptTerms = ref(false);
+const selectedPlanToBuy = ref(null);
+const selectedPaymentMethod = ref('');
+const isProcessingPayment = ref(false);
+const membershipHistory = ref([]); // Se poblará desde el backend
+
+const selectPlan = (plan) => {
+  selectedPlanToBuy.value = plan;
+  showUpgradeModal.value = false;
+  selectedPaymentMethod.value = '';
+  acceptTerms.value = false;
+  paymentAlert.value.message = ''; // Reset alert
+  showPaymentModal.value = true;
+};
+
+const acceptAndCloseTerms = () => {
+  acceptTerms.value = true;
+  showTermsModal.value = false;
+};
+
+const processPayment = async () => {
+  paymentAlert.value.message = '';
+  if (!acceptTerms.value) {
+    showPaymentAlert('Debe aceptar los términos y condiciones antes de comprar.', 'warning');
+    return;
+  }
+  if (!selectedPaymentMethod.value) {
+    showPaymentAlert('Por favor seleccione un método de pago', 'warning');
+    return;
+  }
+  
+  if (selectedPaymentMethod.value === 'wallet' && !isWalletSufficient.value) {
+    showPaymentAlert('No tienes saldo suficiente en tu billetera.', 'error');
+    return;
+  }
+  
+  if (selectedPaymentMethod.value === 'wallet') {
+    isProcessingPayment.value = true;
+    try {
+      const response = await api.post('/marketing/membership/purchase-wallet', {
+        plan_id: selectedPlanToBuy.value.id
+      });
+      if(response.data.success) {
+        showPaymentAlert('¡Transacción aprobada! Actualizando su membresía...', 'success');
+        
+        // Simular tiempo de procesamiento tipo banco para mejor UX
+        setTimeout(() => {
+          authStore.user = response.data.user;
+          realWalletBalance.value = response.data.new_balance;
+          showPaymentModal.value = false;
+          showProfileAlert(response.data.message, 'success');
+          isProcessingPayment.value = false;
+        }, 2000);
+      }
+    } catch (e) {
+      isProcessingPayment.value = false;
+      showPaymentAlert(e.response?.data?.error || 'Ocurrió un error procesando el pago.', 'error');
+    }
+  } else {
+    showProfileAlert(`Procesando pago de $${amountToPay.value.toFixed(2)} para ${selectedPlanToBuy.value?.account} con Tarjeta. (Pronto)`, 'info');
+    showPaymentModal.value = false;
+  }
+};
+
+const openHistoryModal = async () => {
+  showHistoryModal.value = true;
+  loadingHistory.value = true;
+  try { 
+    const res = await api.get('/profile/membership-history'); 
+    membershipHistory.value = res.data; 
+  } catch(e) {
+    console.error('Error fetching membership history:', e);
+  } finally {
+    loadingHistory.value = false;
+  }
+};
+
+const formatHistoryDate = (dateString) => {
+  if (!dateString) return '-';
+  const d = new Date(dateString);
+  return d.toLocaleDateString();
+};
+
+const getHistoryStatus = (record) => {
+  if (record.status != 1) {
+    return { text: 'Fallido/Cancelado', class: 'status-badge danger' };
+  }
+  const exp = new Date(record.expiration_date);
+  if (exp < new Date()) {
+    return { text: 'Expirado', class: 'status-badge danger' };
+  }
+  return { text: 'Activo', class: 'status-badge success' };
+};
+
 const securityAlert = ref({ message: '', type: 'error' });
 const profileAlert = ref({ message: '', type: 'error' });
+const paymentAlert = ref({ message: '', type: 'error' });
+
+const showPaymentAlert = (msg, type = 'error') => {
+  paymentAlert.value = { message: msg, type };
+  // The modal might stay open, no timeout to hide it immediately so the user can see it
+};
 
 const showSecurityAlert = (msg, type = 'error') => {
   securityAlert.value = { message: msg, type };
@@ -319,6 +660,83 @@ const showProfileAlert = (msg, type = 'error') => {
 const activeMembership = computed(() => {
   if (!availableMemberships.value.length || !user.value) return null;
   return availableMemberships.value.find(m => m.id === user.value.id_account_type) || null;
+});
+
+const membershipStatus = computed(() => {
+  if (!user.value || !user.value.expiration_membership_date) {
+    return {
+      daysLeft: 0,
+      percent: 0,
+      text: 'Su membresía ha expirado o no tiene fecha límite',
+      labelRight: 'Expirado',
+      isExpired: true
+    };
+  }
+
+  const expireDate = new Date(user.value.expiration_membership_date);
+  const now = new Date();
+  const diffTime = expireDate - now;
+  const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  if (daysLeft <= 0) {
+    return {
+      daysLeft: 0,
+      percent: 0,
+      text: 'Su membresía ha expirado',
+      labelRight: 'Expirado',
+      isExpired: true
+    };
+  }
+
+  // Asumir que una membresía dura 365 días como base del progreso.
+  const percent = Math.min((daysLeft / 365) * 100, 100);
+
+  return {
+    daysLeft,
+    percent,
+    text: `Le quedan ${daysLeft} días de membresía`,
+    labelRight: `${daysLeft} días`,
+    isExpired: false
+  };
+});
+
+const upgradeableMemberships = computed(() => {
+  if (!availableMemberships.value) return [];
+  
+  const isCurrentlyExpired = membershipStatus.value.isExpired;
+  
+  if (isCurrentlyExpired) {
+    // Si está expirado, puede comprar cualquier plan de pago (precio > 0)
+    return availableMemberships.value.filter(plan => parseFloat(plan.price) > 0);
+  } else {
+    // Si está activo, solo puede hacer UPGRADE a planes de mayor precio
+    const currentPrice = activeMembership.value ? parseFloat(activeMembership.value.price) : 0;
+    return availableMemberships.value.filter(plan => parseFloat(plan.price) > currentPrice);
+  }
+});
+
+const walletBalance = computed(() => {
+  return realWalletBalance.value ? parseFloat(realWalletBalance.value) : 0;
+});
+
+const amountToPay = computed(() => {
+  if (!selectedPlanToBuy.value) return 0;
+  
+  let baseAmount = 0;
+  if (membershipStatus.value.isExpired || !activeMembership.value) {
+    baseAmount = parseFloat(selectedPlanToBuy.value.price);
+  } else {
+    baseAmount = parseFloat(selectedPlanToBuy.value.price) - parseFloat(activeMembership.value.price);
+  }
+  
+  const ivaPercentage = selectedPlanToBuy.value.iva ? parseFloat(selectedPlanToBuy.value.iva) : 18;
+  const total = baseAmount * (1 + (ivaPercentage / 100));
+  
+  return total > 0 ? total : 0;
+});
+
+const isWalletSufficient = computed(() => {
+  return walletBalance.value >= amountToPay.value;
 });
 
 const loadCountries = async () => {
@@ -348,6 +766,13 @@ const getCountryName = (id) => {
 onMounted(async () => {
   await loadCountries();
   await loadMemberships();
+  
+  try {
+    const response = await api.get('/marketing/reports/wallet/balance');
+    realWalletBalance.value = response.data?.total_balance || 0;
+  } catch (error) {
+    console.error('Error fetching wallet balance:', error);
+  }
   if (user.value) {
     formData.value = {
       name: user.value.name || '',
@@ -1223,5 +1648,206 @@ const changePassword = async () => {
   font-size: 13px;
   color: var(--text-light);
   line-height: 1.4;
+}
+
+/* --- Modal Styles --- */
+.custom-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.custom-modal-content {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  width: 90%;
+  max-width: 600px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  overflow: hidden;
+}
+
+.modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h4 {
+  margin: 0;
+  color: var(--primary-color);
+  font-weight: 600;
+  font-size: 18px;
+}
+
+.close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+}
+
+.close-btn:hover {
+  color: #ef4444;
+}
+
+.modal-body {
+  padding: 20px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.custom-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.custom-table th {
+  padding: 12px 16px;
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: 14px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.custom-table td {
+  padding: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 14px;
+  color: var(--text-bold);
+  vertical-align: middle;
+}
+
+.btn-select-plan {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.3s ease;
+}
+
+.btn-select-plan:hover {
+  background-color: #14b800;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(24, 214, 0, 0.3);
+}
+
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.status-badge.success {
+  background-color: rgba(74, 222, 128, 0.1);
+  color: #4ade80;
+}
+
+.status-badge.danger {
+  background-color: rgba(248, 113, 113, 0.1);
+  color: #f87171;
+}
+
+.status-badge.warning {
+  background-color: rgba(250, 204, 21, 0.1);
+  color: #facc15;
+}
+
+.status-badge.plan-badge {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.payment-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+  cursor: pointer;
+}
+
+/* --- Toggle Switch Styles --- */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-switch .slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--border-color);
+  transition: .4s;
+  border-radius: 34px;
+}
+
+.toggle-switch .slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+.toggle-switch input:checked + .slider {
+  background-color: var(--primary-color);
+}
+
+.toggle-switch input:checked + .slider:before {
+  transform: translateX(20px);
 }
 </style>

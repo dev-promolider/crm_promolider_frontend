@@ -186,8 +186,10 @@
             <tbody>
               <tr v-for="movement in movements" :key="movement.id">
                 <td>{{ formatDateString(movement.created_at) }}</td>
-                <td class="font-weight-bolder" :class="getMovementClass(movement)">
-                  {{ getMovementPrefix(movement) }}{{ formatMoney(movement.amount) }}
+                <td>
+                  <span class="badge-status font-weight-bolder" :class="getMovementBadgeClass(movement)">
+                    {{ getMovementFormatted(movement) }}
+                  </span>
                 </td>
                 <td>{{ movement.reason }}</td>
                 <td>
@@ -1454,6 +1456,19 @@ function getMovementPrefix(m) {
     return m.id_receiver === userId.value ? '+' : '-';
   }
   return '+';
+}
+
+function getMovementFormatted(m) {
+  const amount = Math.abs(m.amount);
+  const prefix = getMovementPrefix(m);
+  return prefix + formatMoney(amount);
+}
+
+function getMovementBadgeClass(m) {
+  if (m.status === 2) return 'badge-danger';
+  if (m.status === 0) return 'badge-warning';
+  if (m.type === 0 && m.id_receiver !== userId.value) return 'badge-danger';
+  return 'badge-success';
 }
 
 function getMovementClass(m) {

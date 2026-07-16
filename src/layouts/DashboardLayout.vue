@@ -395,33 +395,47 @@
           
           <div class="opc-counter-section">
             <label>Cantidad de Cuotas</label>
-            <div class="opc-counter">
-              <button @click="cuotasToPay = Math.max(1, cuotasToPay - 1)" class="counter-btn">
-                <Minus :size="18" />
-              </button>
-              <div class="counter-display">
-                {{ cuotasToPay }}
+              <div class="opc-counter">
+                <button @click="cuotasToPay = Math.max(1, cuotasToPay - 1)" class="counter-btn" :disabled="cuotasToPay <= 1">
+                  <Minus :size="18" />
+                </button>
+                <div class="counter-display">
+                  {{ cuotasToPay }}
+                </div>
+                <button @click="cuotasToPay = Math.min(maxOpcCuotas, cuotasToPay + 1)" class="counter-btn" :disabled="cuotasToPay >= maxOpcCuotas">
+                  <Plus :size="18" />
+                </button>
               </div>
-              <button @click="cuotasToPay = Math.min(12, cuotasToPay + 1)" class="counter-btn">
-                <Plus :size="18" />
-              </button>
+              <small class="text-muted d-block mt-2" v-if="maxOpcCuotas > 0">
+                Puedes pagar un máximo de {{ maxOpcCuotas }} cuotas.
+              </small>
+              <small class="text-warning d-block mt-2" v-else>
+                Has alcanzado el límite máximo de cuotas permitidas para tu membresía actual.
+              </small>
             </div>
-          </div>
+            
+            <div class="opc-payment-method mt-4">
+              <label>Método de Pago</label>
+              <select v-model="opcPaymentMethod" class="form-control">
+                <option value="openpay">Tarjeta de crédito / débito</option>
+                <option value="wallet">Mi Billetera</option>
+              </select>
+            </div>
           
           <div v-if="opcError" class="opc-error">
             {{ opcError }}
           </div>
         </div>
 
-        <div class="opc-modal-footer">
-          <button @click="closeOpcModal" class="opc-btn-cancel">
-            Cancelar
-          </button>
-          <button @click="handleOpcPayment" :disabled="isOpcLoading" class="opc-btn-submit">
-            <Loader2 v-if="isOpcLoading" class="animate-spin opc-loader" :size="18" />
-            <span>{{ isOpcLoading ? 'Procesando...' : 'Pagar con Openpay' }}</span>
-          </button>
-        </div>
+          <div class="opc-modal-footer">
+            <button @click="closeOpcModal" class="opc-btn-cancel">
+              Cancelar
+            </button>
+            <button @click="handleOpcPayment" :disabled="isOpcLoading || maxOpcCuotas === 0" class="opc-btn-submit">
+              <Loader2 v-if="isOpcLoading" class="animate-spin opc-loader" :size="18" />
+              <span>{{ isOpcLoading ? 'Procesando...' : (opcPaymentMethod === 'wallet' ? 'Pagar con Billetera' : 'Pagar con Tarjeta') }}</span>
+            </button>
+          </div>
       </div>
     </div>
 
@@ -436,6 +450,9 @@ import api from '@/services/apiClient';
 import PageLoader from '@/components/PageLoader.vue';
 import AnimatedButton from '@/components/AnimatedButton.vue';
 import { globalLoading } from '@/utils/loaderState';
+import { ElMessage } from 'element-plus';
+import 'element-plus/theme-chalk/el-message.css';
+
 
 const isLoading = computed(() => globalLoading.value > 0);
 import { 
@@ -614,7 +631,8 @@ const isOpcActive = computed(() => {
   if (!user.value) return false;
   
   if (user.value.expiration_date) {
-    const expiration = new Date(user.value.expiration_date).getTime();
+    const dateStr = user.value.expiration_date.replace(' ', 'T') + 'Z';
+    const expiration = new Date(dateStr).getTime();
     if (expiration > new Date().getTime()) {
       return true;
     }
@@ -623,11 +641,30 @@ const isOpcActive = computed(() => {
   return false; // Fallback
 });
 
-// --- OPC Modal State ---
-const isOpcModalOpen = ref(false);
-const cuotasToPay = ref(1);
-const isOpcLoading = ref(false);
-const opcError = ref('');
+  // --- OPC Modal State ---
+  const isOpcModalOpen = ref(false);
+  const cuotasToPay = ref(1);
+  const isOpcLoading = ref(false);
+  const opcError = ref('');
+  const opcPaymentMethod = ref('openpay');
+  
+  // Calcular tope maximo de cuotas
+  const maxOpcCuotas = computed(() => {
+    if (!user.value || !user.value.expiration_membership_date || !user.value.expiration_date) return 12;
+    
+    const mStr = user.value.expiration_membership_date.replace(' ', 'T') + 'Z';
+    const mEnd = new Date(mStr);
+    const oStr = user.value.expiration_date.replace(' ', 'T') + 'Z';
+    const oEnd = new Date(oStr);
+    
+    if (oEnd >= mEnd) return 0;
+    
+    let months = (mEnd.getFullYear() - oEnd.getFullYear()) * 12;
+    months -= oEnd.getMonth();
+    months += mEnd.getMonth();
+    
+    return Math.max(0, months);
+  });
 
 // --- OPC Countdown Timer ---
 const timeLeft = ref(null);
@@ -636,7 +673,8 @@ let countdownInterval = null;
 const calculateTimeLeft = () => {
   if (!user.value || !user.value.expiration_date) return null;
   
-  const expiration = new Date(user.value.expiration_date).getTime();
+  const dateStr = user.value.expiration_date.replace(' ', 'T') + 'Z';
+    const expiration = new Date(dateStr).getTime();
   const now = new Date().getTime();
   const distance = expiration - now;
   
@@ -663,8 +701,9 @@ const updateCountdown = () => {
 };
 
 const openOpcModal = () => {
-  cuotasToPay.value = 1;
+  cuotasToPay.value = Math.min(1, maxOpcCuotas.value);
   opcError.value = '';
+  opcPaymentMethod.value = 'openpay';
   isOpcModalOpen.value = true;
   updateCountdown();
   if (countdownInterval) clearInterval(countdownInterval);
@@ -677,16 +716,39 @@ const closeOpcModal = () => {
 };
 
 const handleOpcPayment = async () => {
+  if (maxOpcCuotas.value === 0) {
+      opcError.value = "No puedes pagar más cuotas porque ya alcanzaste el límite de tu membresía.";
+      return;
+  }
+
   isOpcLoading.value = true;
   opcError.value = '';
   
   try {
-    const response = await api.post('/opc/init-payment', { cuotas: cuotasToPay.value });
-    
-    if (response.data && response.data.data && response.data.data.payment_url) {
-      window.location.href = response.data.data.payment_url;
+    if (opcPaymentMethod.value === 'wallet') {
+      const response = await api.post('/opc/purchase-wallet', { cuotas: cuotasToPay.value });
+      if (response.data && response.data.success) {
+          ElMessage.success(response.data.message || 'Mantenimiento OPC pagado exitosamente');
+          await authStore.fetchUser();
+          
+          // Re-evaluar limite
+          if (maxOpcCuotas.value === 0) {
+              closeOpcModal();
+          } else {
+              cuotasToPay.value = 1;
+              updateCountdown();
+          }
+      } else {
+          throw new Error('Respuesta inválida del servidor');
+      }
     } else {
-      throw new Error('Respuesta inválida del servidor');
+      const response = await api.post('/opc/init-payment', { cuotas: cuotasToPay.value });
+      
+      if (response.data && response.data.data && response.data.data.payment_url) {
+        window.location.href = response.data.data.payment_url;
+      } else {
+        throw new Error('Respuesta inválida del servidor');
+      }
     }
   } catch (error) {
     console.error('Error iniciando pago OPC:', error);
@@ -1307,5 +1369,6 @@ onBeforeUnmount(() => {
   to { transform: rotate(360deg); }
 }
 
+.opc-payment-method select { width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--main-bg); color: var(--text-main); font-size: 1rem; }
 </style>
 
