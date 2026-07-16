@@ -2,9 +2,6 @@
   <div class="binary-container">
     <div class="header-section">
       <div class="title-wrapper">
-        <div class="icon-bg">
-          <Activity :size="24" class="text-cyan-400" />
-        </div>
         <div>
           <h1 class="page-title">Historial de Corte Binario</h1>
           <p class="page-subtitle">Historial detallado y estadísticas de tus cortes binarios por rangos y puntos</p>
@@ -14,31 +11,51 @@
 
     <!-- Quick Stats -->
     <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-icon-wrapper bg-cyan-500/10">
-          <Activity :size="20" class="text-cyan-400" />
+      <div class="card">
+        <div class="title">
+          <span style="background-color: #06b6d4;">
+            <Activity :size="18" color="#ffffff" />
+          </span>
+          <p class="title-text">Total de Cortes</p>
         </div>
-        <div class="stat-info">
-          <span class="stat-label">Total de Cortes</span>
-          <span class="stat-value">{{ totalHistories }}</span>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon-wrapper bg-amber-500/10">
-          <Calendar :size="20" class="text-amber-400" />
-        </div>
-        <div class="stat-info">
-          <span class="stat-label">Último Corte</span>
-          <span class="stat-value">{{ lastCutDate ? formatDate(lastCutDate) : 'N/A' }}</span>
+        <div class="data">
+          <p>{{ totalHistories }}</p>
+          <div class="range">
+            <div class="fill" style="background-color: #06b6d4; width: 100%;"></div>
+          </div>
         </div>
       </div>
-      <div class="stat-card">
-        <div class="stat-icon-wrapper bg-blue-500/10">
-          <Award :size="20" class="text-blue-400" />
+      
+      <div class="card">
+        <div class="title">
+          <span style="background-color: #f59e0b;">
+            <Calendar :size="18" color="#ffffff" />
+          </span>
+          <p class="title-text">Último Corte</p>
         </div>
-        <div class="stat-info">
-          <span class="stat-label">Rango Actual</span>
-          <span class="stat-value">{{ currentRank || 'University' }}</span>
+        <div class="data">
+          <p style="font-size: 1.5rem; line-height: 2.5rem;">{{ lastCutDate ? formatDate(lastCutDate) : 'N/A' }}</p>
+          <div class="range">
+            <div class="fill" style="background-color: #f59e0b; width: 100%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="title">
+          <span style="background-color: #3b82f6;">
+            <Award :size="18" color="#ffffff" />
+          </span>
+          <p class="title-text">Rango Actual</p>
+        </div>
+        <div class="data">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 1rem;">
+            <img v-if="currentRank?.icon" :src="getS3Url(currentRank.icon)" alt="Medalla" style="width:40px; height:40px; object-fit:contain;" />
+            <p style="font-size: 1.5rem; line-height: 2.5rem; margin: 0;">{{ currentRank?.name || 'University' }}</p>
+          </div>
+          <div class="range">
+            <div class="fill" style="background-color: #3b82f6; width: 100%;"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -109,7 +126,10 @@
             <tbody>
               <tr v-for="history in histories" :key="history.id">
                 <td>
-                  <span class="rank-name">{{ history.rank?.name || 'N/A' }}</span>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <img v-if="history.rank?.icon" :src="getS3Url(history.rank.icon)" alt="Medalla" style="width: 24px; height: 24px; object-fit: contain;" />
+                    <span class="rank-name">{{ history.rank?.name || 'N/A' }}</span>
+                  </div>
                 </td>
                 <td>{{ formatNumber(history.left_points) }}</td>
                 <td>{{ formatNumber(history.right_points) }}</td>
@@ -196,6 +216,18 @@ const totalHistories = ref(0);
 const lastCutDate = ref(null);
 const currentRank = ref(null);
 
+const S3_BASE = 'https://promolider-storage-user.s3.amazonaws.com'
+
+function getS3Url(path) {
+  if (!path) return ''
+  if (path.includes('api.promolider.email')) {
+    path = path.replace(/https?:\/\/api\.promolider\.email/g, '');
+  }
+  if (path.startsWith('http://') || path.startsWith('https://')) return path
+  const cleanPath = path.startsWith('/') ? path : '/' + path
+  return S3_BASE + cleanPath
+}
+
 // Methods
 const fetchHistory = async (page = 1) => {
   loading.value = true;
@@ -221,7 +253,7 @@ const fetchHistory = async (page = 1) => {
     // Stats
     totalHistories.value = resData.total || 0;
     lastCutDate.value = histories.value.length > 0 ? histories.value[0].created_at : null;
-    currentRank.value = histories.value.length > 0 ? histories.value[0].rank?.name : null;
+    currentRank.value = histories.value.length > 0 ? histories.value[0].rank : null;
   } catch (error) {
     console.error('Error fetching binary history:', error);
   } finally {
@@ -301,7 +333,7 @@ const formatDate = (dateString) => {
   padding: 1.5rem;
   max-width: 1200px;
   margin: 0 auto;
-  color: #f8fafc;
+  color: var(--text-main);
 }
 
 .header-section {
@@ -314,28 +346,15 @@ const formatDate = (dateString) => {
   gap: 1rem;
 }
 
-.icon-bg {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  background: rgba(34, 211, 238, 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(34, 211, 238, 0.2);
-}
-
 .page-title {
   font-size: 1.75rem;
   font-weight: 700;
   margin: 0;
-  background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--text-bold);
 }
 
 .page-subtitle {
-  color: #94a3b8;
+  color: var(--text-muted);
   font-size: 0.875rem;
   margin: 0.25rem 0 0 0;
 }
@@ -348,57 +367,75 @@ const formatDate = (dateString) => {
   margin-bottom: 2rem;
 }
 
-.stat-card {
-  background: rgba(30, 41, 59, 0.7);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 16px;
+.card {
   padding: 1.25rem;
+  background-color: var(--card-bg, #fff);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  border-radius: 20px;
+  border: 1px solid var(--border-color, rgba(0,0,0,0.05));
+  width: 100%;
+}
+
+.card .title {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
-.stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-.stat-icon-wrapper {
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
+.card .title span {
+  position: relative;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.stat-info {
+.card .title-text {
+  margin-left: 0.75rem;
+  color: var(--text-muted, #374151);
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0;
+}
+
+.card .data {
   display: flex;
   flex-direction: column;
+  justify-content: flex-start;
+  margin-top: 1rem;
 }
 
-.stat-label {
-  font-size: 0.75rem;
-  color: #94a3b8;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.stat-value {
-  font-size: 1.25rem;
+.card .data p {
+  margin: 0 0 1rem 0;
+  color: var(--text-bold, #1F2937);
+  font-size: 2rem;
+  line-height: 2.5rem;
   font-weight: 700;
-  color: #f1f5f9;
-  margin-top: 0.125rem;
+  text-align: left;
+}
+
+.card .data .range {
+  position: relative;
+  background-color: var(--bg-main, #E5E7EB);
+  width: 100%;
+  height: 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.card .data .range .fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  border-radius: 0.25rem;
 }
 
 /* Content card */
 .content-card {
-  background: rgba(30, 41, 59, 0.5);
+  background: var(--card-bg);
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
   border-radius: 20px;
   padding: 1.5rem;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
@@ -430,10 +467,10 @@ const formatDate = (dateString) => {
 .search-input {
   width: 100%;
   padding: 0.625rem 1rem 0.625rem 2.5rem;
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
-  color: #f1f5f9;
+  color: var(--text-bold);
   font-size: 0.875rem;
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
@@ -446,10 +483,10 @@ const formatDate = (dateString) => {
 
 .premium-select {
   padding: 0.625rem 1rem;
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
-  color: #f1f5f9;
+  color: var(--text-bold);
   font-size: 0.875rem;
   outline: none;
 }
@@ -459,8 +496,8 @@ const formatDate = (dateString) => {
   width: 100%;
   overflow-x: auto;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  background: rgba(15, 23, 42, 0.3);
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
 }
 
 .premium-table {
@@ -471,11 +508,11 @@ const formatDate = (dateString) => {
 }
 
 .premium-table th {
-  background: rgba(15, 23, 42, 0.5);
+  background: rgba(0, 0, 0, 0.05);
   padding: 1rem;
-  color: #94a3b8;
+  color: var(--text-muted);
   font-weight: 600;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .sortable-header {
@@ -485,7 +522,7 @@ const formatDate = (dateString) => {
 }
 
 .sortable-header:hover {
-  background-color: rgba(255, 255, 255, 0.03);
+  background-color: rgba(0, 0, 0, 0.025);
 }
 
 .sort-icon {
@@ -501,8 +538,8 @@ const formatDate = (dateString) => {
 
 .premium-table td {
   padding: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  color: #cbd5e1;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-main);
 }
 
 .premium-table tbody tr {
@@ -510,12 +547,12 @@ const formatDate = (dateString) => {
 }
 
 .premium-table tbody tr:hover {
-  background-color: rgba(255, 255, 255, 0.02);
+  background-color: rgba(0, 0, 0, 0.025);
 }
 
 .rank-name {
   font-weight: 600;
-  color: #e2e8f0;
+  color: var(--text-bold);
 }
 
 .amount-text {
@@ -523,7 +560,7 @@ const formatDate = (dateString) => {
 }
 
 .date-text {
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 /* Pagination */
@@ -538,7 +575,7 @@ const formatDate = (dateString) => {
 
 .pagination-info {
   font-size: 0.875rem;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .pagination-buttons {
@@ -547,9 +584,9 @@ const formatDate = (dateString) => {
 }
 
 .pag-btn {
-  background: rgba(30, 41, 59, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  color: #cbd5e1;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
   width: 36px;
   height: 36px;
   border-radius: 8px;
@@ -563,15 +600,15 @@ const formatDate = (dateString) => {
 }
 
 .pag-btn:hover:not(:disabled) {
-  background: rgba(34, 211, 238, 0.1);
-  color: #22d3ee;
-  border-color: rgba(34, 211, 238, 0.2);
+  background: var(--indicator-green);
+  color: var(--primary-color);
+  border-color: var(--primary-color);
 }
 
 .pag-btn.active {
-  background: #22d3ee;
-  color: #0f172a;
-  border-color: #22d3ee;
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
   font-weight: 600;
 }
 
@@ -592,18 +629,18 @@ const formatDate = (dateString) => {
 
 .loading-state span {
   margin-top: 1rem;
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 .empty-state h3 {
   font-size: 1.125rem;
   font-weight: 600;
   margin: 0.5rem 0 0.25rem 0;
-  color: #f1f5f9;
+  color: var(--text-bold);
 }
 
 .empty-state p {
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 0.875rem;
   margin: 0;
   max-width: 300px;

@@ -129,7 +129,7 @@ const routes = [
       {
         path: '/perfil',
         name: 'dashboard-perfil',
-        component: { template: '<div class="p-6"><h2>Mi Perfil (En construcción)</h2></div>' }
+        component: () => import('@/features/profile/views/ProfileView.vue')
       },
       {
         path: '/logros',
@@ -139,7 +139,7 @@ const routes = [
       {
         path: '/configuracion',
         name: 'dashboard-configuracion',
-        component: { template: '<div class="p-6"><h2>Configuración (En construcción)</h2></div>' }
+        component: () => import('@/features/profile/views/ProfileView.vue')
       }
     ]
   },

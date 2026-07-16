@@ -214,7 +214,15 @@
       </div>
 
       <div class="sidebar-bottom" v-if="!isSidebarCollapsed">
-        <button class="recomprar-btn">Recomprar OPC</button>
+        <div v-if="user" class="opc-status-container">
+          <span class="status-indicator" :class="{ 'is-active': isOpcActive, 'is-inactive': !isOpcActive }">
+            <span class="status-dot"></span>
+            {{ isOpcActive ? 'OPC Activo' : 'OPC Inactivo' }}
+          </span>
+        </div>
+        <AnimatedButton style="width: 100%;" @click="openOpcModal">
+          Recomprar OPC
+        </AnimatedButton>
       </div>
     </aside>
 
@@ -346,6 +354,77 @@
       </footer>
     </main>
 
+    <!-- OPC Modal -->
+    <div v-if="isOpcModalOpen" class="opc-modal-overlay">
+      <div class="opc-modal-container">
+        <div class="opc-modal-header">
+          <h2>Recomprar OPC</h2>
+          <button @click="closeOpcModal" class="opc-modal-close">
+            <X :size="24" />
+          </button>
+        </div>
+        
+        <div class="opc-modal-body">
+          <p class="opc-modal-description">
+            Selecciona la cantidad de cuotas (meses) que deseas pagar por adelantado para el mantenimiento de tu plataforma.
+          </p>
+          <div class="opc-countdown-container" v-if="timeLeft">
+            <h3 class="countdown-title">Tiempo restante para la expiración de su estado activo</h3>
+            <div class="countdown-boxes">
+              <div class="countdown-box">
+                <span class="countdown-value">{{ timeLeft.days }}</span>
+                <span class="countdown-label">Días</span>
+              </div>
+              <span class="countdown-separator">:</span>
+              <div class="countdown-box">
+                <span class="countdown-value">{{ timeLeft.hours }}</span>
+                <span class="countdown-label">Horas</span>
+              </div>
+              <span class="countdown-separator">:</span>
+              <div class="countdown-box">
+                <span class="countdown-value">{{ timeLeft.minutes }}</span>
+                <span class="countdown-label">Minutos</span>
+              </div>
+              <span class="countdown-separator">:</span>
+              <div class="countdown-box">
+                <span class="countdown-value">{{ timeLeft.seconds }}</span>
+                <span class="countdown-label">Segundos</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="opc-counter-section">
+            <label>Cantidad de Cuotas</label>
+            <div class="opc-counter">
+              <button @click="cuotasToPay = Math.max(1, cuotasToPay - 1)" class="counter-btn">
+                <Minus :size="18" />
+              </button>
+              <div class="counter-display">
+                {{ cuotasToPay }}
+              </div>
+              <button @click="cuotasToPay = Math.min(12, cuotasToPay + 1)" class="counter-btn">
+                <Plus :size="18" />
+              </button>
+            </div>
+          </div>
+          
+          <div v-if="opcError" class="opc-error">
+            {{ opcError }}
+          </div>
+        </div>
+
+        <div class="opc-modal-footer">
+          <button @click="closeOpcModal" class="opc-btn-cancel">
+            Cancelar
+          </button>
+          <button @click="handleOpcPayment" :disabled="isOpcLoading" class="opc-btn-submit">
+            <Loader2 v-if="isOpcLoading" class="animate-spin opc-loader" :size="18" />
+            <span>{{ isOpcLoading ? 'Procesando...' : 'Pagar con Openpay' }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -355,13 +434,14 @@ import { RouterLink, RouterView, useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import api from '@/services/apiClient';
 import PageLoader from '@/components/PageLoader.vue';
+import AnimatedButton from '@/components/AnimatedButton.vue';
 import { globalLoading } from '@/utils/loaderState';
 
 const isLoading = computed(() => globalLoading.value > 0);
 import { 
   LayoutDashboard, UserPlus, Database, MonitorPlay, Star, Send, PieChart, ChevronRight, ChevronDown, Menu, 
   Search, Bell, Moon, Sun, Award, Apple, User, Medal, Settings, LogOut, Loader2,
-  BookOpen, Store, Users, Bot, Wallet
+  BookOpen, Store, Users, Bot, Wallet, X, Minus, Plus
 } from 'lucide-vue-next';
 
 const router = useRouter();
@@ -530,6 +610,92 @@ const listenNotifications = () => {
   // La inicialización de Echo ya está en main.js
 };
 
+const isOpcActive = computed(() => {
+  if (!user.value) return false;
+  
+  if (user.value.expiration_date) {
+    const expiration = new Date(user.value.expiration_date).getTime();
+    if (expiration > new Date().getTime()) {
+      return true;
+    }
+  }
+  
+  return false; // Fallback
+});
+
+// --- OPC Modal State ---
+const isOpcModalOpen = ref(false);
+const cuotasToPay = ref(1);
+const isOpcLoading = ref(false);
+const opcError = ref('');
+
+// --- OPC Countdown Timer ---
+const timeLeft = ref(null);
+let countdownInterval = null;
+
+const calculateTimeLeft = () => {
+  if (!user.value || !user.value.expiration_date) return null;
+  
+  const expiration = new Date(user.value.expiration_date).getTime();
+  const now = new Date().getTime();
+  const distance = expiration - now;
+  
+  if (distance < 0) {
+    return { days: '00', hours: '00', minutes: '00', seconds: '00', expired: true };
+  }
+  
+  const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+  
+  return {
+    days: days.toString().padStart(2, '0'),
+    hours: hours.toString().padStart(2, '0'),
+    minutes: minutes.toString().padStart(2, '0'),
+    seconds: seconds.toString().padStart(2, '0'),
+    expired: false
+  };
+};
+
+const updateCountdown = () => {
+  timeLeft.value = calculateTimeLeft();
+};
+
+const openOpcModal = () => {
+  cuotasToPay.value = 1;
+  opcError.value = '';
+  isOpcModalOpen.value = true;
+  updateCountdown();
+  if (countdownInterval) clearInterval(countdownInterval);
+  countdownInterval = setInterval(updateCountdown, 1000);
+};
+
+const closeOpcModal = () => {
+  isOpcModalOpen.value = false;
+  if (countdownInterval) clearInterval(countdownInterval);
+};
+
+const handleOpcPayment = async () => {
+  isOpcLoading.value = true;
+  opcError.value = '';
+  
+  try {
+    const response = await api.post('/opc/init-payment', { cuotas: cuotasToPay.value });
+    
+    if (response.data && response.data.data && response.data.data.payment_url) {
+      window.location.href = response.data.data.payment_url;
+    } else {
+      throw new Error('Respuesta inválida del servidor');
+    }
+  } catch (error) {
+    console.error('Error iniciando pago OPC:', error);
+    opcError.value = error.response?.data?.message || 'Hubo un error al iniciar el pago. Inténtalo de nuevo.';
+  } finally {
+    isOpcLoading.value = false;
+  }
+};
+
 onMounted(() => {
   const savedTheme = localStorage.getItem('theme');
   if (savedTheme === 'dark') {
@@ -555,6 +721,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  if (countdownInterval) clearInterval(countdownInterval);
   window.removeEventListener('click', closeDropdown);
 });
 </script>
@@ -739,6 +906,61 @@ onBeforeUnmount(() => {
   box-shadow: 0 0 6px var(--primary-color);
 }
 
+/* OPC Status Badge */
+.opc-status-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+}
+
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.status-indicator.is-active {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.status-indicator.is-active .status-dot {
+  background-color: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+}
+
+.status-indicator.is-inactive {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.status-indicator.is-inactive .status-dot {
+  background-color: #ef4444;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* Animations */
+.slide-fade-enter-active {
+  transition: all 0.3s ease-out;
+}
+
 /* Submenu animation */
 .submenu-slide-enter-active {
   transition: all 0.25s ease-out;
@@ -848,5 +1070,242 @@ onBeforeUnmount(() => {
   opacity: 0;
   transform: translateY(-10px);
 }
+
+/* OPC Modal Styles */
+.opc-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.opc-modal-container {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  width: 90%;
+  max-width: 450px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  animation: modal-pop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+@keyframes modal-pop {
+  0% { transform: scale(0.95); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.opc-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.opc-modal-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-bold);
+}
+
+.opc-modal-close {
+  background: transparent;
+  border: none;
+  color: var(--text-main);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  transition: color 0.2s;
+}
+
+.opc-modal-close:hover {
+  color: var(--primary-color);
+}
+
+.opc-modal-body {
+  padding: 1.5rem;
+}
+
+.opc-modal-description {
+  margin: 0 0 1.25rem 0;
+  font-size: 0.9rem;
+  color: var(--text-main);
+  line-height: 1.5;
+}
+
+.opc-countdown-container {
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.countdown-title {
+  font-size: 0.85rem;
+  color: var(--text-main);
+  margin-bottom: 0.75rem;
+}
+
+.countdown-boxes {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.countdown-box {
+  background-color: var(--main-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.75rem 0.5rem;
+  min-width: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.countdown-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-bold);
+  line-height: 1;
+  margin-bottom: 0.25rem;
+}
+
+.countdown-label {
+  font-size: 0.65rem;
+  color: var(--text-main);
+  text-transform: uppercase;
+}
+
+.countdown-separator {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-bold);
+  padding-bottom: 1rem;
+}
+
+.opc-counter-section label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-bold);
+  margin-bottom: 0.75rem;
+}
+
+.opc-counter {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.counter-btn {
+  background-color: var(--main-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-bold);
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.counter-btn:hover {
+  background-color: var(--border-color);
+  color: var(--primary-color);
+}
+
+.counter-display {
+  flex: 1;
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-bold);
+  background-color: var(--main-bg);
+  border: 1px solid var(--border-color);
+  padding: 0.5rem;
+  border-radius: 12px;
+}
+
+.opc-error {
+  margin-top: 1.5rem;
+  padding: 0.75rem;
+  background-color: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.opc-modal-footer {
+  padding: 1.25rem 1.5rem;
+  border-top: 1px solid var(--border-color);
+  background-color: var(--main-bg);
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.opc-btn-cancel {
+  background: transparent;
+  border: none;
+  color: var(--text-main);
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.opc-btn-cancel:hover {
+  color: var(--text-bold);
+  background-color: var(--border-color);
+}
+
+.opc-btn-submit {
+  background-color: var(--primary-color);
+  color: #fff;
+  border: none;
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.opc-btn-submit:hover:not(:disabled) {
+  background-color: #0c9b6b; /* Lighter shade based on Promolider green */
+}
+
+.opc-btn-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.opc-loader {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 </style>
 

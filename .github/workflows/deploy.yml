@@ -34,9 +34,7 @@ jobs:
       - name: Deploy via rsync
         uses: burnett01/rsync-deployments@7.0.1
         with:
-          switches: -avzr --delete
-          exclude: |
-            .htaccess
+          switches: -avzr --delete --exclude='.htaccess'
           path: dist/
           remote_path: ${{ secrets.SSH_REMOTE_PATH_FRONTEND }}
           remote_host: ${{ secrets.SSH_HOST }}
