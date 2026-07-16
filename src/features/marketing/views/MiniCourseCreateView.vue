@@ -1,11 +1,11 @@
 <template>
   <div class="create-minicourse-view">
-    <div class="card">
-      <div class="card-body">
-        <div class="card-header">
+    <div class="view-card">
+      <div class="view-card-body">
+        <div class="view-header">
           <div>
-            <h4 class="card-title">Crear Mini Curso</h4>
-            <span class="card-meta">Completa los datos para crear un nuevo mini curso</span>
+            <h4 class="view-title">Crear Mini Curso</h4>
+            <span class="view-meta">Completa los datos para crear un nuevo mini curso</span>
           </div>
           <router-link to="/marketing/herramientas" class="nav-back">
             <ArrowLeft :size="15" /> Volver
@@ -15,19 +15,19 @@
         <form @submit.prevent="submitForm" class="create-form">
           <div class="form-grid">
             <div class="form-column">
-              <div class="form-group">
-                <label>Título del Mini Curso <span class="required">*</span></label>
-                <input type="text" class="form-control" v-model="form.title" placeholder="Ej: Introducción al Marketing Digital" required />
+              <div class="field-group">
+                <label>Título del Mini Curso <span class="required-mark">*</span></label>
+                <input type="text" class="field-input" v-model="form.title" placeholder="Ej: Introducción al Marketing Digital" required />
               </div>
 
-              <div class="form-row">
+              <div class="field-row">
                 <div class="form-group flex-1">
-                  <label>Duración (minutos) <span class="required">*</span></label>
-                  <input type="number" class="form-control" v-model.number="form.duration" min="1" placeholder="60" required />
+                  <label>Duración (minutos) <span class="required-mark">*</span></label>
+                  <input type="number" class="field-input" v-model.number="form.duration" min="1" placeholder="60" required />
                 </div>
                 <div class="form-group flex-1">
-                  <label>Nivel <span class="required">*</span></label>
-                  <select class="form-control" v-model="form.level" required>
+                  <label>Nivel <span class="required-mark">*</span></label>
+                  <select class="field-input" v-model="form.level" required>
                     <option value="">Seleccionar</option>
                     <option value="Principiante">Principiante</option>
                     <option value="Intermedio">Intermedio</option>
@@ -36,23 +36,23 @@
                 </div>
               </div>
 
-              <div class="form-group">
-                <label>Categoría <span class="required">*</span></label>
-                <select class="form-control" v-model="form.category_id" required>
+              <div class="field-group">
+                <label>Categoría <span class="required-mark">*</span></label>
+                <select class="field-input" v-model="form.category_id" required>
                   <option value="">Seleccionar categoría</option>
                   <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
                 </select>
               </div>
 
-              <div class="form-group">
-                <label>Descripción <span class="required">*</span></label>
-                <textarea class="form-control" v-model="form.description" rows="4" placeholder="Describe el contenido del mini curso..." required></textarea>
+              <div class="field-group">
+                <label>Descripción <span class="required-mark">*</span></label>
+                <textarea class="field-input" v-model="form.description" rows="4" placeholder="Describe el contenido del mini curso..." required></textarea>
               </div>
             </div>
 
             <div class="form-column">
-              <div class="form-group">
-                <label>Imagen del curso <span class="required">*</span></label>
+              <div class="field-group">
+                <label>Imagen del curso <span class="required-mark">*</span></label>
                 <div class="file-dropzone" @click="imageInput?.click()" @dragover.prevent @drop.prevent="handleDrop">
                   <Image :size="28" class="dropzone-icon" />
                   <span v-if="!form.image">Arrastra o haz clic para subir imagen</span>
@@ -100,6 +100,18 @@ const form = ref({ title: '', duration: '', level: '', category_id: '', descript
 const imagePreview = ref(null)
 const imageInput = ref(null)
 
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+const ALLOWED_IMAGE_EXT = ['.jpg', '.jpeg', '.png', '.webp']
+
+function getFileExtension(filename) {
+  return filename ? '.' + filename.split('.').pop().toLowerCase() : ''
+}
+
+function isValidImageFile(file) {
+  if (!file) return false
+  return ALLOWED_IMAGE_TYPES.includes(file.type) && ALLOWED_IMAGE_EXT.includes(getFileExtension(file.name))
+}
+
 watch(() => form.value.image, (file) => {
   if (!file) { imagePreview.value = null; return }
   const r = new FileReader(); r.onload = e => imagePreview.value = e.target.result; r.readAsDataURL(file)
@@ -107,7 +119,11 @@ watch(() => form.value.image, (file) => {
 
 function handleDrop(e) {
   const file = e.dataTransfer.files[0]
-  if (file) form.value.image = file
+  if (file && isValidImageFile(file)) {
+    form.value.image = file
+  } else if (file) {
+    errors.value.push('Formato de imagen no válido. Arrastra JPG, PNG o WEBP')
+  }
 }
 
 function removeImage() { form.value.image = null; imagePreview.value = null; if (imageInput.value) imageInput.value.value = '' }
@@ -121,6 +137,9 @@ function validateForm() {
   if (!f.category_id) errors.value.push('La categoría es requerida')
   if (!f.description?.trim()) errors.value.push('La descripción es requerida')
   if (!f.image) errors.value.push('La imagen es requerida')
+  else if (!isValidImageFile(f.image)) {
+    errors.value.push('Formato de imagen no válido. Usa JPG, PNG o WEBP')
+  }
   return errors.value.length === 0
 }
 
@@ -153,9 +172,9 @@ onMounted(async () => {
 <style scoped>
 .create-minicourse-view { animation: fadeIn 0.4s ease; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-.card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
-.card-meta { font-size: 12px; color: var(--text-muted); display: block; margin-top: 2px; }
-.required { color: var(--danger-color); }
+.view-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+.view-meta { font-size: 12px; color: var(--text-muted); display: block; margin-top: 2px; }
+.required-mark { color: var(--danger-color); }
 
 .nav-back {
   display: inline-flex; align-items: center; gap: 5px;
@@ -168,15 +187,16 @@ onMounted(async () => {
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
 @media (max-width: 768px) { .form-grid { grid-template-columns: 1fr; } }
 
-.form-group { margin-bottom: 16px; }
-.form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: var(--text-bold); }
-.form-control {
+.field-group { margin-bottom: 16px; }
+.field-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: var(--text-bold); }
+.field-input {
   width: 100%; padding: 9px 12px; border: 1px solid var(--border-color);
   border-radius: 8px; font-size: 13px; background: var(--card-bg);
   color: var(--text-main); transition: border-color 0.2s; font-family: inherit;
 }
-.form-control:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(24,214,0,0.08); }
-.form-row { display: flex; gap: 12px; }
+.field-input:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(24,214,0,0.08); }
+select.field-input, textarea.field-input { font-family: inherit; }
+.field-row { display: flex; gap: 12px; }
 .flex-1 { flex: 1; }
 
 .file-dropzone {

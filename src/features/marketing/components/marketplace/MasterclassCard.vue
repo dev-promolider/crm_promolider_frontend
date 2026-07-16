@@ -10,8 +10,8 @@
       <p class="text-muted">No se encontraron masterclasses</p>
     </div>
   </template>
-  <div v-for="item in items" :key="item.id" class="col-md-4 mb-4 grid-col">
-    <div class="card marketplace-card" @click="$emit('view', item)">
+  <div v-for="item in items" :key="item.id" class="grid-col">
+    <div class="marketplace-card" @click="$emit('view', item)">
       <div class="card-img-wrapper">
         <img
           v-if="item.image"
@@ -23,14 +23,14 @@
           <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:#ccc"><polygon points="5 3 19 12 5 21 5 3"/></svg>
         </div>
       </div>
-      <div class="card-body">
-        <h5 class="card-title">{{ item.title }}</h5>
-        <p class="card-text">
+      <div class="marketplace-card-body">
+        <h5 class="marketplace-card-title">{{ item.title }}</h5>
+        <p class="marketplace-card-text">
           <strong>Categoría:</strong> {{ item.category_name || '-' }} <br>
           <strong>Fecha:</strong> {{ formatDate(item.date || item.event_date) }}
         </p>
-        <div class="card-footer-info">
-          <span class="badge badge-masterclass">Masterclass</span>
+        <div class="marketplace-card-footer">
+          <span class="marketplace-badge badge-masterclass">Masterclass</span>
         </div>
       </div>
     </div>
@@ -53,7 +53,25 @@ defineEmits(['view'])
 
 <style scoped>
 .grid-col {
+  flex: 0 0 33.333%;
+  max-width: 33.333%;
   display: flex;
+  padding: 0 12px;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 992px) {
+  .grid-col {
+    flex: 0 0 50%;
+    max-width: 50%;
+  }
+}
+
+@media (max-width: 768px) {
+  .grid-col {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
 }
 
 .marketplace-card {
@@ -105,7 +123,7 @@ defineEmits(['view'])
   background: var(--bg-main);
 }
 
-.card-body {
+.marketplace-card-body {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -113,7 +131,7 @@ defineEmits(['view'])
   gap: 8px;
 }
 
-.card-title {
+.marketplace-card-title {
   font-size: 1rem;
   font-weight: 700;
   color: var(--text-bold);
@@ -125,14 +143,14 @@ defineEmits(['view'])
   overflow: hidden;
 }
 
-.card-text {
+.marketplace-card-text {
   font-size: 0.82rem;
   color: var(--text-muted);
   line-height: 1.5;
   flex: 1;
 }
 
-.card-footer-info {
+.marketplace-card-footer {
   margin-top: auto;
   padding-top: 8px;
 }

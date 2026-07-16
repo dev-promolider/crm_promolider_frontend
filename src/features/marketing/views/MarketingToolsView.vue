@@ -1,23 +1,23 @@
 <template>
   <div class="marketing-tools-view">
-    <div class="card">
-      <div class="card-body">
-        <div class="card-header">
+    <div class="view-card">
+      <div class="view-card-body">
+        <div class="view-header">
           <div>
-            <h4 class="card-title">Herramientas de Marketing</h4>
-            <span class="card-meta">Gestiona tus herramientas promocionales</span>
+            <h4 class="view-title">Herramientas de Marketing</h4>
+            <span class="view-meta">Gestiona tus herramientas promocionales</span>
           </div>
           <div class="create-buttons">
-            <button class="stats-tab-btn" @click="createTool('Masterclass')">
+            <button class="action-btn" @click="createTool('Masterclass')">
               <Plus :size="14" /> Masterclass
             </button>
-            <button class="stats-tab-btn" @click="createTool('Mini Curso')">
+            <button class="action-btn" @click="createTool('Mini Curso')">
               <Plus :size="14" /> Mini-Curso
             </button>
-            <button class="stats-tab-btn" @click="createTool('E-book')">
+            <button class="action-btn" @click="createTool('E-book')">
               <Plus :size="14" /> E-book
             </button>
-            <button class="stats-tab-btn" @click="createTool('Dinamica')">
+            <button class="action-btn" @click="createTool('Dinamica')">
               <Zap :size="14" /> Dinámica
             </button>
           </div>
@@ -31,7 +31,7 @@
           <div class="table-toolbar">
             <div class="show-entries">
               <span>Mostrar</span>
-              <select class="table-page-select" v-model.number="perPage">
+              <select class="page-size-select" v-model.number="perPage">
                 <option :value="10">10</option>
                 <option :value="25">25</option>
                 <option :value="50">50</option>
@@ -41,12 +41,12 @@
             </div>
             <div class="search-wrapper">
               <Search :size="16" class="search-icon" />
-              <input type="text" class="table-search" v-model="searchQuery" placeholder="Buscar..." />
+              <input type="text" class="search-input" v-model="searchQuery" placeholder="Buscar..." />
             </div>
           </div>
 
-          <div class="table-responsive">
-            <table class="table table-hover-animation table-striped table-bordered mb-0">
+          <div class="table-wrap">
+            <table class="tools-table">
               <thead>
                 <tr>
                   <th>#</th>
@@ -62,12 +62,13 @@
               <tbody>
                 <tr v-for="(item, index) in paginatedTools" :key="item.id">
                   <td>{{ (currentPage - 1) * perPage + index + 1 }}</td>
-                  <td><span class="badge" :class="getTipoClass(item)" :style="getTipoStyle(item)">{{ getTipoLabel(item) }}</span></td>
+                  <td><span class="tipo-badge" :class="getTipoClass(item)" :style="getTipoStyle(item)">{{ getTipoLabel(item) }}</span></td>
                   <td class="cell-name">{{ item.nombre || item.title }}</td>
                   <td>{{ item.category_name || item.category?.name || '-' }}</td>
                   <td>{{ formatDate(item.fecha || item.created_at) }}</td>
                   <td class="cell-dist">{{ item.distribuidores || item.distributors_count || 0 }}</td>
-                  <td><span class="badge-status" :class="getEstadoClass(item)">{{ getEstadoLabel(item) }}</span></td>                    <td>
+                  <td><span class="status-badge" :class="getEstadoClass(item)">{{ getEstadoLabel(item) }}</span></td>
+                  <td>
                     <select class="action-select" :value="actionSelect" @change="handleAction(item, $event)">
                       <option value="">Acciones</option>
                       <option value="edit">Editar</option>
@@ -79,16 +80,16 @@
                   </td>
                 </tr>
                 <tr v-if="filteredTools.length === 0">
-                  <td colspan="8" class="text-center text-muted">No hay herramientas registradas</td>
+                  <td colspan="8" class="empty-cell">No hay herramientas registradas</td>
                 </tr>
               </tbody>
             </table>
           </div>
 
           <div class="table-footer">
-            <small>Mostrando {{ filteredTools.length }} registros</small>
+            <small class="footer-info">Mostrando {{ filteredTools.length }} registros</small>
             <nav>
-              <ul class="pagination-custom">
+              <ul class="pagination-list">
                 <li :class="{ disabled: currentPage <= 1 }">
                   <a href="#" @click.prevent="currentPage > 1 && currentPage--">&laquo;</a>
                 </li>
@@ -109,88 +110,88 @@
 
     <!-- Edit Masterclass Modal -->
     <div v-if="showEditMasterclassModal" class="modal-overlay" @click.self="closeEditModals">
-      <div class="modal-card modal-lg-wide" @click.stop>
-        <div class="modal-header">
-          <h5 class="modal-title"><Edit3 :size="18" /> Editar Masterclass: <u>{{ editTarget?.nombre || editTarget?.title }}</u></h5>
-          <button class="close-btn" @click="closeEditModals"><X :size="20" /></button>
+      <div class="modal-card modal-wide" @click.stop>
+        <div class="modal-card-header">
+          <h5 class="modal-card-title"><Edit3 :size="18" /> Editar Masterclass: <u>{{ editTarget?.nombre || editTarget?.title }}</u></h5>
+          <button class="modal-close-btn" @click="closeEditModals"><X :size="20" /></button>
         </div>
-        <div class="modal-body">
+        <div class="modal-card-body">
           <form @submit.prevent="submitEditMasterclass">
-            <div class="row">
-              <div class="col-md-8">
-                <div class="form-group">
-                  <label>Título <span class="text-danger">*</span></label>
-                  <input type="text" class="form-control" v-model="editForm.title" required />
+            <div class="field-row">
+              <div class="field-col field-col-8">
+                <div class="field-group">
+                  <label>Título <span class="required-mark">*</span></label>
+                  <input type="text" class="field-input" v-model="editForm.title" required />
                 </div>
               </div>
-              <div class="col-md-4">
-                <div class="form-group">
-                  <label>Categoría <span class="text-danger">*</span></label>
-                  <select class="form-control" v-model="editForm.id_categories" required>
+              <div class="field-col field-col-4">
+                <div class="field-group">
+                  <label>Categoría <span class="required-mark">*</span></label>
+                  <select class="field-input" v-model="editForm.id_categories" required>
                     <option value="">Seleccionar</option>
                     <option v-for="cat in store.categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
                   </select>
                 </div>
               </div>
             </div>
-            <div class="form-group">
+            <div class="field-group">
               <label>Descripción</label>
-              <textarea class="form-control" rows="3" v-model="editForm.description"></textarea>
+              <textarea class="field-input" rows="3" v-model="editForm.description"></textarea>
             </div>
-            <div class="form-group">
+            <div class="field-group">
               <label>Objetivos</label>
-              <textarea class="form-control" rows="2" v-model="editForm.objective"></textarea>
+              <textarea class="field-input" rows="2" v-model="editForm.objective"></textarea>
             </div>
-            <div class="row">
-              <div class="col-md-4">
-                <div class="form-group">
+            <div class="field-row">
+              <div class="field-col field-col-4">
+                <div class="field-group">
                   <label>Fecha</label>
-                  <input type="date" class="form-control" v-model="editForm.date" />
+                  <input type="date" class="field-input" v-model="editForm.date" />
                 </div>
               </div>
-              <div class="col-md-4">
-                <div class="form-group">
+              <div class="field-col field-col-4">
+                <div class="field-group">
                   <label>Email de contacto</label>
-                  <input type="email" class="form-control" v-model="editForm.email_contact" />
+                  <input type="email" class="field-input" v-model="editForm.email_contact" />
                 </div>
               </div>
-              <div class="col-md-4">
-                <div class="form-group">
+              <div class="field-col field-col-4">
+                <div class="field-group">
                   <label>Teléfono</label>
-                  <input type="text" class="form-control" v-model="editForm.phone_contact" />
+                  <input type="text" class="field-input" v-model="editForm.phone_contact" />
                 </div>
               </div>
             </div>
-            <div class="form-group">
+            <div class="field-group">
               <label>Meeting Link</label>
-              <input type="url" class="form-control" v-model="editForm.meeting_link" placeholder="https://zoom.us/j/..." />
+              <input type="url" class="field-input" v-model="editForm.meeting_link" placeholder="https://zoom.us/j/..." />
             </div>
             <!-- Imágenes actuales -->
-            <div v-if="editImages && editImages.length" class="mb-2">
-              <small class="text-muted">Imágenes actuales:</small>
-              <div class="d-flex flex-wrap gap-2 mt-1">
-                <div v-for="(img, i) in editImages" :key="i" class="img-preview-wrapper">
-                  <img :src="img.image || img.url" class="img-thumbnail-sm" />
+            <div v-if="editImages && editImages.length" class="section-spacer">
+              <small class="field-hint">Imágenes actuales:</small>
+              <div class="image-row">
+                <div v-for="(img, i) in editImages" :key="i" class="img-preview-wrap">
+                  <img :src="img.image || img.url" class="preview-thumb" />
                 </div>
               </div>
             </div>
-            <div class="row">
-              <div class="col-md-6">
-                <div class="form-group">
+            <div class="field-row">
+              <div class="field-col field-col-6">
+                <div class="field-group">
                   <label>Nuevas imágenes</label>
-                  <input type="file" class="form-control-file" multiple accept="image/jpeg,image/png,image/jpg" @change="e => editFiles.images = e.target.files" />
+                  <input type="file" class="file-input" multiple accept=".jpg,.jpeg,.png,.webp" @change="e => editFiles.images = e.target.files" />
                 </div>
               </div>
-              <div class="col-md-6">
-                <div class="form-group">
+              <div class="field-col field-col-6">
+                <div class="field-group">
                   <label>Nuevos documentos</label>
-                  <input type="file" class="form-control-file" multiple accept=".pdf,.doc,.docx" @change="e => editFiles.documents = e.target.files" />
+                  <input type="file" class="file-input" multiple accept=".pdf,.doc,.docx" @change="e => editFiles.documents = e.target.files" />
                 </div>
               </div>
             </div>
           </form>
         </div>
-        <div class="modal-footer">
+        <div class="modal-card-footer">
           <button class="btn-cancel" @click="closeEditModals">Cancelar</button>
           <button class="btn-primary-custom" @click="submitEditMasterclass" :disabled="editLoading">
             <Loader2 v-if="editLoading" :size="14" class="spinner-inline" /> Actualizar Masterclass
@@ -201,96 +202,96 @@
 
     <!-- Edit Ebook Modal -->
     <div v-if="showEditEbookModal" class="modal-overlay" @click.self="closeEditModals">
-      <div class="modal-card modal-lg-wide" @click.stop>
-        <div class="modal-header">
-          <h5 class="modal-title"><Edit3 :size="18" /> Editar E-book: <u>{{ editTarget?.nombre || editTarget?.title }}</u></h5>
-          <button class="close-btn" @click="closeEditModals"><X :size="20" /></button>
+      <div class="modal-card modal-wide" @click.stop>
+        <div class="modal-card-header">
+          <h5 class="modal-card-title"><Edit3 :size="18" /> Editar E-book: <u>{{ editTarget?.nombre || editTarget?.title }}</u></h5>
+          <button class="modal-close-btn" @click="closeEditModals"><X :size="20" /></button>
         </div>
-        <div class="modal-body">
+        <div class="modal-card-body">
           <form @submit.prevent="submitEditEbook">
-            <div class="row">
-              <div class="col-md-6">
-                <div class="form-group">
-                  <label>Título <span class="text-danger">*</span></label>
-                  <input type="text" class="form-control" v-model="editForm.titulo" required />
+            <div class="field-row">
+              <div class="field-col field-col-6">
+                <div class="field-group">
+                  <label>Título <span class="required-mark">*</span></label>
+                  <input type="text" class="field-input" v-model="editForm.titulo" required />
                 </div>
               </div>
-              <div class="col-md-6">
-                <div class="form-group">
-                  <label>Autor <span class="text-danger">*</span></label>
-                  <input type="text" class="form-control" v-model="editForm.autor" required />
+              <div class="field-col field-col-6">
+                <div class="field-group">
+                  <label>Autor <span class="required-mark">*</span></label>
+                  <input type="text" class="field-input" v-model="editForm.autor" required />
                 </div>
               </div>
             </div>
-            <div class="row">
-              <div class="col-md-6">
-                <div class="form-group">
-                  <label>Categoría <span class="text-danger">*</span></label>
-                  <select class="form-control" v-model="editForm.categoria" required>
+            <div class="field-row">
+              <div class="field-col field-col-6">
+                <div class="field-group">
+                  <label>Categoría <span class="required-mark">*</span></label>
+                  <select class="field-input" v-model="editForm.categoria" required>
                     <option value="">Seleccionar</option>
                     <option v-for="cat in store.categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
                   </select>
                 </div>
               </div>
-              <div class="col-md-3">
-                <div class="form-group">
+              <div class="field-col field-col-3">
+                <div class="field-group">
                   <label>Precio</label>
-                  <input type="number" step="0.01" min="0" class="form-control" v-model="editForm.precio" />
+                  <input type="number" step="0.01" min="0" class="field-input" v-model="editForm.precio" />
                 </div>
               </div>
-              <div class="col-md-3">
-                <div class="form-group">
+              <div class="field-col field-col-3">
+                <div class="field-group">
                   <label>Páginas</label>
-                  <input type="number" min="1" class="form-control" v-model="editForm.paginas" required />
+                  <input type="number" min="1" class="field-input" v-model="editForm.paginas" required />
                 </div>
               </div>
             </div>
-            <div class="form-group">
+            <div class="field-group">
               <label>Descripción</label>
-              <textarea class="form-control" rows="3" v-model="editForm.descripcion" required></textarea>
+              <textarea class="field-input" rows="3" v-model="editForm.descripcion" required></textarea>
             </div>
             <!-- Capítulos -->
-            <div class="form-group">
+            <div class="field-group">
               <label>Capítulos</label>
-              <div class="border rounded p-3 bg-light-subtle">
-                <div v-for="(cap, i) in editForm.capitulos" :key="i" class="mb-2 p-2 border rounded bg-white">
-                  <div class="d-flex justify-content-between align-items-center mb-1">
-                    <strong>Capítulo {{ i + 1 }}</strong>
-                    <button type="button" class="btn-sm-icon text-danger" @click="removeChapter(i)" v-if="editForm.capitulos.length > 1"><X :size="14" /></button>
+              <div class="chapters-container">
+                <div v-for="(cap, i) in editForm.capitulos" :key="i" class="chapter-item">
+                  <div class="chapter-header-row">
+                    <strong class="chapter-label">Capítulo {{ i + 1 }}</strong>
+                    <button type="button" class="icon-btn-danger" @click="removeChapter(i)" v-if="editForm.capitulos.length > 1"><X :size="14" /></button>
                   </div>
-                  <div class="row">
-                    <div class="col-md-8">
-                      <input type="text" class="form-control form-control-sm mb-1" v-model="cap.titulo" placeholder="Título del capítulo" />
+                  <div class="field-row">
+                    <div class="field-col field-col-8">
+                      <input type="text" class="field-input field-input-sm" v-model="cap.titulo" placeholder="Título del capítulo" />
                     </div>
-                    <div class="col-md-4">
-                      <input type="number" min="1" class="form-control form-control-sm mb-1" v-model="cap.paginas" placeholder="Páginas" />
+                    <div class="field-col field-col-4">
+                      <input type="number" min="1" class="field-input field-input-sm" v-model="cap.paginas" placeholder="Páginas" />
                     </div>
                   </div>
-                  <textarea class="form-control form-control-sm" rows="2" v-model="cap.contenido" placeholder="Contenido..."></textarea>
+                  <textarea class="field-input field-input-sm" rows="2" v-model="cap.contenido" placeholder="Contenido..."></textarea>
                 </div>
-                <button type="button" class="btn btn-sm btn-outline-primary mt-1" @click="addChapter">
+                <button type="button" class="add-chapter-button" @click="addChapter">
                   <Plus :size="12" /> Agregar Capítulo
                 </button>
               </div>
             </div>
-            <div class="row">
-              <div class="col-md-6">
-                <div class="form-group">
+            <div class="field-row">
+              <div class="field-col field-col-6">
+                <div class="field-group">
                   <label>Nueva portada</label>
-                  <input type="file" class="form-control-file" accept="image/jpeg,image/png,image/jpg,image/webp" @change="e => editFiles.portada = e.target.files?.[0]" />
-                  <div v-if="editImages?.length" class="mt-1"><small class="text-muted">Portada actual:</small><img :src="editImages[0]?.image || editImages[0]?.url" class="img-thumbnail-sm d-block mt-1" /></div>
+                  <input type="file" class="file-input" accept="image/jpeg,image/png,image/jpg,image/webp" @change="e => editFiles.portada = e.target.files?.[0]" />
+                  <div v-if="editImages?.length" class="spacer-top-sm"><small class="field-hint">Portada actual:</small><img :src="editImages[0]?.image || editImages[0]?.url" class="preview-thumb preview-block" /></div>
                 </div>
               </div>
-              <div class="col-md-6">
-                <div class="form-group">
+              <div class="field-col field-col-6">
+                <div class="field-group">
                   <label>Nuevo PDF</label>
-                  <input type="file" class="form-control-file" accept=".pdf" @change="e => editFiles.archivo_pdf = e.target.files?.[0]" />
+                  <input type="file" class="file-input" accept=".pdf" @change="e => editFiles.archivo_pdf = e.target.files?.[0]" />
                 </div>
               </div>
             </div>
           </form>
         </div>
-        <div class="modal-footer">
+        <div class="modal-card-footer">
           <button class="btn-cancel" @click="closeEditModals">Cancelar</button>
           <button class="btn-primary-custom" @click="submitEditEbook" :disabled="editLoading">
             <Loader2 v-if="editLoading" :size="14" class="spinner-inline" /> Actualizar E-book
@@ -301,24 +302,24 @@
 
     <!-- Edit Mini Curso Modal -->
     <div v-if="showEditMiniModal" class="modal-overlay" @click.self="closeEditModals">
-      <div class="modal-card modal-lg-wide" @click.stop>
-        <div class="modal-header">
-          <h5 class="modal-title"><Edit3 :size="18" /> Editar Mini Curso: <u>{{ editTarget?.nombre || editTarget?.title }}</u></h5>
-          <button class="close-btn" @click="closeEditModals"><X :size="20" /></button>
+      <div class="modal-card modal-wide" @click.stop>
+        <div class="modal-card-header">
+          <h5 class="modal-card-title"><Edit3 :size="18" /> Editar Mini Curso: <u>{{ editTarget?.nombre || editTarget?.title }}</u></h5>
+          <button class="modal-close-btn" @click="closeEditModals"><X :size="20" /></button>
         </div>
-        <div class="modal-body">
+        <div class="modal-card-body">
           <form @submit.prevent="submitEditMiniCurso">
-            <div class="row">
-              <div class="col-md-6">
-                <div class="form-group">
-                  <label>Título <span class="text-danger">*</span></label>
-                  <input type="text" class="form-control" v-model="editForm.titulo" required />
+            <div class="field-row">
+              <div class="field-col field-col-6">
+                <div class="field-group">
+                  <label>Título <span class="required-mark">*</span></label>
+                  <input type="text" class="field-input" v-model="editForm.titulo" required />
                 </div>
               </div>
-              <div class="col-md-6">
-                <div class="form-group">
-                  <label>Nivel <span class="text-danger">*</span></label>
-                  <select class="form-control" v-model="editForm.nivel" required>
+              <div class="field-col field-col-6">
+                <div class="field-group">
+                  <label>Nivel <span class="required-mark">*</span></label>
+                  <select class="field-input" v-model="editForm.nivel" required>
                     <option value="">Seleccionar</option>
                     <option value="principiante">Principiante</option>
                     <option value="intermedio">Intermedio</option>
@@ -327,35 +328,35 @@
                 </div>
               </div>
             </div>
-            <div class="row">
-              <div class="col-md-6">
-                <div class="form-group">
-                  <label>Categoría <span class="text-danger">*</span></label>
-                  <select class="form-control" v-model="editForm.categoria" required>
+            <div class="field-row">
+              <div class="field-col field-col-6">
+                <div class="field-group">
+                  <label>Categoría <span class="required-mark">*</span></label>
+                  <select class="field-input" v-model="editForm.categoria" required>
                     <option value="">Seleccionar</option>
                     <option v-for="cat in store.categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
                   </select>
                 </div>
               </div>
-              <div class="col-md-6">
-                <div class="form-group">
-                  <label>Duración (min) <span class="text-danger">*</span></label>
-                  <input type="number" min="1" class="form-control" v-model="editForm.duracion" required />
+              <div class="field-col field-col-6">
+                <div class="field-group">
+                  <label>Duración (min) <span class="required-mark">*</span></label>
+                  <input type="number" min="1" class="field-input" v-model="editForm.duracion" required />
                 </div>
               </div>
             </div>
-            <div class="form-group">
+            <div class="field-group">
               <label>Descripción</label>
-              <textarea class="form-control" rows="3" v-model="editForm.descripcion" required></textarea>
+              <textarea class="field-input" rows="3" v-model="editForm.descripcion" required></textarea>
             </div>
-            <div class="form-group">
+            <div class="field-group">
               <label>Nueva imagen</label>
-              <input type="file" class="form-control-file" accept="image/jpeg,image/png,image/jpg,image/webp" @change="e => editFiles.imagen = e.target.files?.[0]" />
-              <div v-if="editImages?.length" class="mt-1"><small class="text-muted">Imagen actual:</small><img :src="editImages[0]?.image || editImages[0]?.url" class="img-thumbnail-sm d-block mt-1" /></div>
+              <input type="file" class="file-input" accept=".jpg,.jpeg,.png,.webp" @change="e => editFiles.imagen = e.target.files?.[0]" />
+              <div v-if="editImages?.length" class="spacer-top-sm"><small class="field-hint">Imagen actual:</small><img :src="editImages[0]?.image || editImages[0]?.url" class="preview-thumb preview-block" /></div>
             </div>
           </form>
         </div>
-        <div class="modal-footer">
+        <div class="modal-card-footer">
           <button class="btn-cancel" @click="closeEditModals">Cancelar</button>
           <button class="btn-primary-custom" @click="submitEditMiniCurso" :disabled="editLoading">
             <Loader2 v-if="editLoading" :size="14" class="spinner-inline" /> Actualizar Mini Curso
@@ -367,11 +368,11 @@
     <!-- ===================== DELETE MODAL ===================== -->
     <div v-if="showDeleteModal" class="modal-overlay" @click.self="showDeleteModal = false">
       <div class="modal-card" style="max-width:400px">
-        <div class="modal-header"><h5 class="modal-title"><AlertTriangle :size="18" /> Eliminar</h5><button class="close-btn" @click="showDeleteModal = false"><X :size="20" /></button></div>
-        <div class="modal-body">
+        <div class="modal-card-header"><h5 class="modal-card-title"><AlertTriangle :size="18" /> Eliminar</h5><button class="modal-close-btn" @click="showDeleteModal = false"><X :size="20" /></button></div>
+        <div class="modal-card-body">
           <p>¿Seguro que deseas eliminar <strong>{{ deleteTarget?.nombre || deleteTarget?.title }}</strong>?</p>
         </div>
-        <div class="modal-footer">
+        <div class="modal-card-footer">
           <button class="btn-cancel" @click="showDeleteModal = false">Cancelar</button>
           <button class="btn-danger-custom" @click="confirmDelete" :disabled="deleting">
             <Loader2 v-if="deleting" :size="14" class="spinner-inline" /> Eliminar
@@ -383,23 +384,23 @@
     <!-- ===================== STATUS MODAL ===================== -->
     <div v-if="showStatusModal" class="modal-overlay" @click.self="showStatusModal = false">
       <div class="modal-card" style="max-width:400px">
-        <div class="modal-header"><h5 class="modal-title"><ToggleLeft :size="18" /> Cambiar estado</h5><button class="close-btn" @click="showStatusModal = false"><X :size="20" /></button></div>
-        <div class="modal-body">
+        <div class="modal-card-header"><h5 class="modal-card-title"><ToggleLeft :size="18" /> Cambiar estado</h5><button class="modal-close-btn" @click="showStatusModal = false"><X :size="20" /></button></div>
+        <div class="modal-card-body">
           <p>Nuevo estado para <strong>{{ statusTarget?.nombre || statusTarget?.title }}</strong></p>
-          <select class="form-control" v-model="newStatus">
+          <select class="field-input" v-model="newStatus">
             <option value="" disabled>-- Seleccione un estado --</option>
             <option value="0">No publicado</option>
             <option value="1">Publicado</option>
             <option value="2">Privado</option>
           </select>
-          <div class="mt-2" v-if="newStatus !== ''">
-            <div class="alert-status" :class="getAlertClass(parseInt(newStatus))">
+          <div class="spacer-top" v-if="newStatus !== ''">
+            <div class="status-info-box" :class="getAlertClass(parseInt(newStatus))">
               <strong>{{ getEstadoLabelRaw(parseInt(newStatus)) }}</strong>
-              <p class="mb-0 mt-1 small">{{ getStatusDescription(parseInt(newStatus)) }}</p>
+              <p class="status-desc">{{ getStatusDescription(parseInt(newStatus)) }}</p>
             </div>
           </div>
         </div>
-        <div class="modal-footer">
+        <div class="modal-card-footer">
           <button class="btn-cancel" @click="showStatusModal = false">Cancelar</button>
           <button class="btn-primary-custom" @click="confirmStatusChange" :disabled="statusLoading || newStatus === ''">
             <Loader2 v-if="statusLoading" :size="14" class="spinner-inline" /> Cambiar Estado
@@ -411,12 +412,12 @@
     <!-- ===================== INVITATION MODAL ===================== -->
     <div v-if="showInviteModal" class="modal-overlay" @click.self="closeInviteModal">
       <div class="modal-card" @click.stop>
-        <div class="modal-header"><h5 class="modal-title"><Link :size="18" /> Invitar a {{ inviteTarget?.tipo || inviteTarget?.type }}: <u>{{ inviteTarget?.nombre || inviteTarget?.title }}</u></h5><button class="close-btn" @click="closeInviteModal"><X :size="20" /></button></div>
-        <div class="modal-body">
-          <div v-if="inviteLoading" class="loading-state py-3"><Loader2 class="spinner" :size="28" /><p>Verificando estado...</p></div>
+        <div class="modal-card-header"><h5 class="modal-card-title"><Link :size="18" /> Invitar a {{ inviteTarget?.tipo || inviteTarget?.type }}: <u>{{ inviteTarget?.nombre || inviteTarget?.title }}</u></h5><button class="modal-close-btn" @click="closeInviteModal"><X :size="20" /></button></div>
+        <div class="modal-card-body">
+          <div v-if="inviteLoading" class="loading-invite"><Loader2 class="spinner" :size="28" /><p>Verificando estado...</p></div>
 
           <!-- No registrado aún -->
-          <div v-else-if="!invitationData.isRegistered" class="alert alert-warning">
+          <div v-else-if="!invitationData.isRegistered" class="info-box info-warning">
             <h6><AlertTriangle :size="16" /> No disponible</h6>
             <p>Debes registrar/comprar esta herramienta antes de poder invitar a otros.</p>
           </div>
@@ -424,39 +425,39 @@
           <!-- Registrado, verificar link existente -->
           <div v-else>
             <!-- Ya existe un link -->
-            <div v-if="invitationData.existInvitation && !invitationData.newLink" class="alert alert-info">
+            <div v-if="invitationData.existInvitation && !invitationData.newLink" class="info-box info-info">
               <h6><Info :size="16" /> Link de Invitación Activo</h6>
               <p>Ya tienes un link de invitación activo para esta herramienta.</p>
               <div class="input-suffix">
-                <input type="text" class="form-control" :value="invitationData.invitationLink" readonly @focus="$event.target.select()" />
+                <input type="text" class="field-input" :value="invitationData.invitationLink" readonly @focus="$event.target.select()" />
                 <button class="btn-suffix" @click="copyInviteLink(invitationData.invitationLink)"><Copy :size="16" /></button>
               </div>
             </div>
 
             <!-- No hay link, crear uno -->
-            <div v-if="!invitationData.existInvitation && !invitationData.newLink" class="alert alert-warning">
+            <div v-if="!invitationData.existInvitation && !invitationData.newLink" class="info-box info-warning">
               <h6><AlertTriangle :size="16" /> Crear Link de Invitación</h6>
               <p>No tienes un link de invitación activo.</p>
-              <button class="stats-tab-btn mt-2" @click="generateInviteLink" :disabled="generatingLink">
+              <button class="action-btn spacer-top-sm" @click="generateInviteLink" :disabled="generatingLink">
                 <Loader2 v-if="generatingLink" :size="14" class="spinner-inline" />
                 <Plus v-else :size="14" /> Crear Link de Invitación
               </button>
             </div>
 
             <!-- Link recién creado -->
-            <div v-if="invitationData.newLink" class="alert alert-success mt-2">
+            <div v-if="invitationData.newLink" class="info-box info-success spacer-top-sm">
               <h6><CheckCircle2 :size="16" /> Link Creado Exitosamente</h6>
               <p>Válido por 7 días.</p>
               <div class="input-suffix">
-                <input type="text" class="form-control" :value="invitationData.newLink" readonly @focus="$event.target.select()" />
+                <input type="text" class="field-input" :value="invitationData.newLink" readonly @focus="$event.target.select()" />
                 <button class="btn-suffix" @click="copyInviteLink(invitationData.newLink)"><Copy :size="16" /></button>
               </div>
             </div>
 
             <!-- Compartir via redes -->
-            <div v-if="invitationData.existInvitation || invitationData.newLink" class="mt-3">
-              <label class="font-weight-bold small">Compartir vía:</label>
-              <div class="share-buttons d-flex flex-wrap gap-2 mt-2">
+            <div v-if="invitationData.existInvitation || invitationData.newLink" class="spacer-top">
+              <label class="share-label">Compartir vía:</label>
+              <div class="share-buttons">
                 <a :href="getWhatsappShareUrl()" target="_blank" class="btn-share btn-share-wa">
                   <MessageCircle :size="16" /> WhatsApp
                 </a>
@@ -470,7 +471,7 @@
             </div>
           </div>
         </div>
-        <div class="modal-footer">
+        <div class="modal-card-footer">
           <button class="btn-cancel" @click="closeInviteModal">Cerrar</button>
         </div>
       </div>
@@ -479,7 +480,7 @@
     <!-- ===================== TOAST ===================== -->
     <Transition name="toast-slide">
       <div class="toast-notification" v-if="toast">
-        <div class="toast-icon"><CheckCircle2 v-if="toast.type === 'success'" :size="20" class="text-green" /><AlertCircle v-else :size="20" class="text-red" /></div>
+        <div class="toast-icon"><CheckCircle2 v-if="toast.type === 'success'" :size="20" class="icon-green" /><AlertCircle v-else :size="20" class="icon-red" /></div>
         <div class="toast-content">
           <h4>{{ toast.title }}</h4>
           <p>{{ toast.message }}</p>
@@ -569,8 +570,8 @@ function getEstadoClass(item) {
 }
 
 function getAlertClass(estado) {
-  const classes = { 0: 'alert-secondary', 1: 'alert-success', 2: 'alert-warning' }
-  return classes[estado] || 'alert-info'
+  const classes = { 0: 'info-secondary', 1: 'info-success', 2: 'info-warning' }
+  return classes[estado] || 'info-info'
 }
 
 function getStatusDescription(estado) {
@@ -942,71 +943,82 @@ onMounted(async () => {
 .marketing-tools-view { animation: fadeIn 0.4s ease; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-.card-header {
+/* ─── View Card ─── */
+.view-card { width: 100%; }
+.view-card-body { padding: 0; }
+
+.view-header {
   display: flex; justify-content: space-between; align-items: flex-start;
   flex-wrap: wrap; gap: 12px; margin-bottom: 20px;
 }
+.view-title { font-size: 1.25rem; font-weight: 700; color: var(--text-bold); margin: 0; }
+.view-meta { font-size: 12px; color: var(--text-muted); display: block; margin-top: 2px; }
+
 .create-buttons { display: flex; gap: 6px; flex-wrap: wrap; }
-.stats-tab-btn {
+.action-btn {
   display: inline-flex; align-items: center; gap: 5px;
   background: transparent; border: 1px solid var(--border-color);
   padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;
   color: var(--text-muted); cursor: pointer; transition: all 0.2s;
 }
-.stats-tab-btn:hover { border-color: var(--primary-color); color: var(--primary-color); background: rgba(24,214,0,0.04); }
+.action-btn:hover { border-color: var(--primary-color); color: var(--primary-color); background: rgba(24,214,0,0.04); }
 
 .loading-state { display: flex; flex-direction: column; align-items: center; padding: 40px; color: var(--text-muted); gap: 12px; }
 .spinner { animation: spin 1s linear infinite; color: var(--primary-color); }
 .spinner-inline { animation: spin 1s linear infinite; display: inline-block; margin-right: 4px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ─── Table Toolbar ─── */
 .table-toolbar {
   display: flex; justify-content: space-between; align-items: center;
   flex-wrap: wrap; gap: 12px; margin-bottom: 12px;
 }
 .show-entries { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-muted); }
-.table-page-select {
+.page-size-select {
   border: 1px solid var(--border-color); border-radius: 6px;
   padding: 4px 8px; font-size: 13px; background: var(--card-bg);
   color: var(--text-main); cursor: pointer;
 }
 .search-wrapper { position: relative; display: flex; align-items: center; }
 .search-icon { position: absolute; left: 10px; color: var(--text-light); pointer-events: none; }
-.table-search {
+.search-input {
   border: 1px solid var(--border-color); border-radius: 8px;
   padding: 7px 12px 7px 34px; font-size: 13px;
   background: var(--card-bg); color: var(--text-main);
   min-width: 220px; transition: border-color 0.2s;
 }
-.table-search:focus { outline: none; border-color: var(--primary-color); }
+.search-input:focus { outline: none; border-color: var(--primary-color); }
 
-.table-responsive { border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); }
-.table { width: 100%; border-collapse: collapse; background: var(--card-bg); }
-.table thead { background: var(--bg-main); }
-.table th {
+/* ─── Table ─── */
+.table-wrap { border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); }
+.tools-table { width: 100%; border-collapse: collapse; background: var(--card-bg); }
+.tools-table thead { background: var(--bg-main); }
+.tools-table th {
   padding: 10px 12px; font-size: 0.78rem; font-weight: 700;
   color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;
   border-bottom: 1px solid var(--border-color); white-space: nowrap;
 }
-.table td {
+.tools-table td {
   padding: 10px 12px; font-size: 0.85rem; color: var(--text-main);
   border-bottom: 1px solid var(--border-color); vertical-align: middle;
 }
-.table tbody tr:last-child td { border-bottom: none; }
-.table tbody tr:hover { background: rgba(24, 214, 0, 0.03); }
+.tools-table tbody tr:last-child td { border-bottom: none; }
+.tools-table tbody tr:hover { background: rgba(24, 214, 0, 0.03); }
 .cell-name { font-weight: 600; }
 .cell-dist { text-align: center; font-weight: 600; }
+.empty-cell { text-align: center; color: var(--text-muted); padding: 24px 12px !important; }
 
-.badge { padding: 3px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
+/* ─── Badges ─── */
+.tipo-badge { padding: 3px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
 .badge-green { background: rgba(24, 214, 0, 0.12); color: #166534; padding: 3px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
 .badge-blue { background: rgba(24, 119, 242, 0.12); color: #1a56db; padding: 3px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
 .badge-orange { background: rgba(245, 158, 11, 0.12); color: #92400e; padding: 3px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
 .badge-gray { background: rgba(148, 163, 184, 0.15); color: #64748b; padding: 3px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
 
-.badge-status { padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; white-space: nowrap; display: inline-block; }
-.badge-status.badge-green { background: rgba(24, 214, 0, 0.12); color: #166534; }
-.badge-status.badge-gray { background: rgba(148, 163, 184, 0.15); color: #64748b; }
-.badge-status.badge-orange { background: rgba(245, 158, 11, 0.12); color: #92400e; }
+.status-badge { padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; white-space: nowrap; display: inline-block; }
+.status-badge.badge-green { background: rgba(24, 214, 0, 0.12); color: #166534; }
+.status-badge.badge-gray { background: rgba(148, 163, 184, 0.15); color: #64748b; }
+.status-badge.badge-orange { background: rgba(245, 158, 11, 0.12); color: #92400e; }
 
 .action-select {
   border: 1px solid var(--border-color); border-radius: 6px;
@@ -1014,22 +1026,23 @@ onMounted(async () => {
   color: var(--text-main); cursor: pointer; min-width: 120px;
 }
 
+/* ─── Table Footer ─── */
 .table-footer {
   display: flex; justify-content: space-between; align-items: center;
   margin-top: 12px; flex-wrap: wrap; gap: 8px;
 }
-.table-footer small { color: var(--text-muted); font-size: 12px; }
-.pagination-custom { display: flex; gap: 4px; list-style: none; padding: 0; margin: 0; }
-.pagination-custom li a {
+.footer-info { color: var(--text-muted); font-size: 12px; }
+.pagination-list { display: flex; gap: 4px; list-style: none; padding: 0; margin: 0; }
+.pagination-list li a {
   display: flex; align-items: center; justify-content: center;
   min-width: 32px; height: 32px; padding: 0 6px;
   border: 1px solid var(--border-color); border-radius: 6px;
   font-size: 13px; color: var(--text-main); text-decoration: none;
   transition: all 0.2s; background: var(--card-bg);
 }
-.pagination-custom li a:hover { border-color: var(--primary-color); color: var(--primary-color); }
-.pagination-custom li.active a { background: var(--primary-color); border-color: var(--primary-color); color: white; font-weight: 700; }
-.pagination-custom li.disabled a { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+.pagination-list li a:hover { border-color: var(--primary-color); color: var(--primary-color); }
+.pagination-list li.active a { background: var(--primary-color); border-color: var(--primary-color); color: white; font-weight: 700; }
+.pagination-list li.disabled a { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
 
 /* ─── Modal Overlay ─── */
 .modal-overlay {
@@ -1045,100 +1058,151 @@ onMounted(async () => {
   box-shadow: 0 20px 60px rgba(0,0,0,0.2);
   animation: slideUp 0.3s ease-out;
 }
-.modal-lg-wide { max-width: 700px; }
+.modal-wide { max-width: 700px; }
 @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-.modal-header {
+
+.modal-card-header {
   display: flex; justify-content: space-between; align-items: center;
   padding: 16px 20px; border-bottom: 1px solid var(--border-color);
 }
-.modal-title {
+.modal-card-title {
   font-size: 15px; font-weight: 700; color: var(--text-bold);
   display: flex; align-items: center; gap: 8px; margin: 0;
 }
-.close-btn {
+.modal-close-btn {
   background: none; border: none; color: var(--text-light);
   cursor: pointer; padding: 6px; border-radius: 6px;
   display: flex; transition: all 0.2s;
 }
-.close-btn:hover { background: var(--bg-main); color: var(--danger-color); }
-.modal-body { padding: 20px; max-height: 70vh; overflow-y: auto; }
-.modal-footer {
+.modal-close-btn:hover { background: var(--bg-main); color: var(--danger-color); }
+.modal-card-body { padding: 20px; max-height: 70vh; overflow-y: auto; }
+.modal-card-footer {
   display: flex; justify-content: flex-end; gap: 8px;
   padding: 0 20px 20px;
 }
+
+/* ─── Buttons ─── */
 .btn-cancel {
   background: transparent; border: 1px solid var(--border-color);
   padding: 8px 16px; border-radius: 8px; font-size: 13px;
   font-weight: 500; color: var(--text-main); cursor: pointer; transition: all 0.2s;
 }
 .btn-cancel:hover { background: var(--bg-main); }
+
 .btn-danger-custom {
   background: var(--danger-color); color: white; border: none;
   padding: 8px 16px; border-radius: 8px; font-size: 13px;
   font-weight: 600; cursor: pointer; transition: all 0.2s;
   display: inline-flex; align-items: center; gap: 4px;
 }
-.btn-danger-custom:hover:not(:disabled) { background: #dc2626; transform: translateY(-1px); }
+.btn-danger-custom:hover:not(:disabled) { filter: brightness(1.15); transform: translateY(-1px); }
 .btn-danger-custom:disabled { opacity: 0.5; cursor: not-allowed; }
+
 .btn-primary-custom {
   background: var(--primary-color); color: white; border: none;
   padding: 8px 16px; border-radius: 8px; font-size: 13px;
   font-weight: 600; cursor: pointer; transition: all 0.2s;
   display: inline-flex; align-items: center; gap: 4px;
 }
-.btn-primary-custom:hover:not(:disabled) { background: var(--primary-hover); transform: translateY(-1px); }
+.btn-primary-custom:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
 .btn-primary-custom:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* ─── Input Suffix ─── */
 .input-suffix { display: flex; }
-.input-suffix .form-control { border-radius: 8px 0 0 8px; flex: 1; }
+.input-suffix .field-input { border-radius: 8px 0 0 8px; flex: 1; }
 .btn-suffix {
   display: inline-flex; align-items: center; gap: 4px;
   background: var(--primary-color); color: white; border: none;
   padding: 8px 14px; border-radius: 0 8px 8px 0; font-size: 12px;
   font-weight: 600; cursor: pointer; transition: all 0.2s;
 }
-.btn-suffix:hover { background: var(--primary-hover); }
+.btn-suffix:hover { filter: brightness(1.1); }
 
-.form-group { margin-bottom: 12px; }
-.form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: var(--text-main); }
-.form-control {
+/* ─── Form Fields ─── */
+.field-group { margin-bottom: 12px; }
+.field-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: var(--text-main); }
+.field-input {
   width: 100%; padding: 8px 12px; border: 1px solid var(--border-color);
   border-radius: 8px; font-size: 13px; background: var(--card-bg);
-  color: var(--text-main); transition: border-color 0.2s;
+  color: var(--text-main); transition: border-color 0.2s; font-family: inherit;
 }
-.form-control:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(24, 214, 0, 0.08); }
-.form-control-file { display: block; width: 100%; padding: 6px 0; font-size: 13px; }
-select.form-control { cursor: pointer; }
-textarea.form-control { resize: vertical; }
+.field-input:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(24, 214, 0, 0.08); }
+.field-input-sm { padding: 5px 10px; font-size: 12px; }
+select.field-input { cursor: pointer; }
+textarea.field-input { resize: vertical; }
 
-.img-thumbnail-sm { max-height: 60px; border: 1px solid var(--border-color); border-radius: 4px; padding: 2px; }
-.gap-2 { gap: 8px; }
-.d-flex { display: flex; }
-.flex-wrap { flex-wrap: wrap; }
+.file-input { display: block; width: 100%; padding: 6px 0; font-size: 13px; }
+.required-mark { color: var(--danger-color); }
+.field-hint { font-size: 11px; color: var(--text-muted); }
+.spacer-top { margin-top: 12px; }
+.spacer-top-sm { margin-top: 8px; }
+.section-spacer { margin-bottom: 12px; }
 
-.bg-light-subtle { background: var(--bg-main); }
+/* ─── Field Grid ─── */
+.field-row { display: flex; gap: 12px; margin-bottom: 4px; }
+.field-col { flex: 1; }
+.field-col-8 { flex: 2; }
+.field-col-6 { flex: 1; }
+.field-col-4 { flex: 0 0 calc(33.333% - 8px); }
+.field-col-3 { flex: 0 0 calc(25% - 9px); }
 
-.btn-sm-icon {
+/* ─── Image Row ─── */
+.image-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.img-preview-wrap { display: inline-block; }
+.preview-thumb { max-height: 60px; border: 1px solid var(--border-color); border-radius: 4px; padding: 2px; }
+.preview-block { display: block; margin-top: 8px; }
+
+/* ─── Chapters ─── */
+.chapters-container {
+  background: var(--bg-main); border: 1px solid var(--border-color);
+  border-radius: 8px; padding: 12px;
+}
+.chapter-item {
+  margin-bottom: 8px; padding: 8px; border: 1px solid var(--border-color);
+  border-radius: 6px; background: var(--card-bg);
+}
+.chapter-header-row {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;
+}
+.chapter-label { font-size: 13px; }
+.icon-btn-danger {
   background: none; border: none; cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center;
-  padding: 4px; border-radius: 4px;
+  padding: 4px; border-radius: 4px; color: var(--danger-color);
 }
-.btn-sm-icon:hover { background: var(--bg-main); }
+.icon-btn-danger:hover { background: var(--bg-main); }
 
-.alert-status {
+.add-chapter-button {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: transparent; border: 1px dashed var(--border-color);
+  padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;
+  color: var(--text-muted); cursor: pointer; transition: all 0.2s; margin-top: 8px;
+}
+.add-chapter-button:hover { border-color: var(--primary-color); color: var(--primary-color); }
+
+/* ─── Status Info Box ─── */
+.status-info-box {
   padding: 10px 14px; border-radius: 8px; border: 1px solid;
+  font-size: 12px;
 }
-.alert-status.alert-secondary { background: #f8f9fa; border-color: #6c757d; color: #383d41; }
-.alert-status.alert-success { background: rgba(24,214,0,0.08); border-color: rgba(24,214,0,0.3); color: #166534; }
-.alert-status.alert-warning { background: #fff3cd; border-color: #ffc107; color: #856404; }
-.alert-status.alert-info { background: #e8f4fd; border-color: #b6d4fe; color: #0c5460; }
+.status-info-box strong { display: block; margin-bottom: 4px; }
+.status-desc { margin: 0; font-size: 12px; }
+.status-info-box.info-secondary { background: var(--bg-main); border-color: var(--text-muted); color: var(--text-main); }
+.status-info-box.info-success { background: var(--indicator-green); border-color: var(--indicator-green-text); color: var(--indicator-green-text); }
+.status-info-box.info-warning { background: var(--indicator-orange); border-color: var(--indicator-orange-text); color: var(--indicator-orange-text); }
+.status-info-box.info-info { background: var(--indicator-blue); border-color: var(--indicator-blue-text); color: var(--indicator-blue-text); }
 
-.alert { padding: 12px; border-radius: 8px; }
-.alert-warning { background: #fff3cd; border: 1px solid #ffc107; color: #856404; }
-.alert-info { background: #e8f4fd; border: 1px solid #b6d4fe; color: #0c5460; }
-.alert-success { background: rgba(24,214,0,0.08); border: 1px solid rgba(24,214,0,0.3); color: #166534; }
+/* ─── Info Boxes ─── */
+.info-box { padding: 12px; border-radius: 8px; border: 1px solid; font-size: 13px; }
+.info-box h6 { display: flex; align-items: center; gap: 6px; margin: 0 0 6px 0; font-size: 13px; }
+.info-box p { margin: 0; line-height: 1.4; }
 
-/* ─── Share Buttons ─── */
+.info-warning { background: var(--indicator-orange); border-color: var(--indicator-orange-text); color: var(--indicator-orange-text); }
+.info-info { background: var(--indicator-blue); border-color: var(--indicator-blue-text); color: var(--indicator-blue-text); }
+.info-success { background: var(--indicator-green); border-color: var(--indicator-green-text); color: var(--indicator-green-text); }
+
+/* ─── Share ─── */
+.share-label { font-weight: 700; font-size: 12px; display: block; margin-bottom: 8px; color: var(--text-main); }
 .share-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
 .btn-share {
   display: inline-flex; align-items: center; gap: 6px;
@@ -1153,6 +1217,8 @@ textarea.form-control { resize: vertical; }
 .btn-share-copy { background: var(--bg-main); color: var(--text-main); border: 1px solid var(--border-color); }
 .btn-share-copy:hover { background: var(--border-color); }
 
+.loading-invite { display: flex; flex-direction: column; align-items: center; padding: 16px 0; color: var(--text-muted); gap: 8px; }
+
 /* ─── Toast ─── */
 .toast-notification {
   position: fixed; bottom: 30px; right: 30px;
@@ -1164,8 +1230,8 @@ textarea.form-control { resize: vertical; }
   z-index: 99999; max-width: 360px;
 }
 .toast-icon { flex-shrink: 0; display: flex; margin-top: 2px; }
-.text-green { color: var(--primary-color); }
-.text-red { color: var(--danger-color); }
+.icon-green { color: var(--primary-color); }
+.icon-red { color: var(--danger-color); }
 .toast-content h4 { font-size: 14px; font-weight: 700; color: var(--text-bold); margin-bottom: 2px; }
 .toast-content p { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
 .toast-close { background: none; border: none; color: var(--text-light); cursor: pointer; padding: 2px; flex-shrink: 0; }
@@ -1175,11 +1241,14 @@ textarea.form-control { resize: vertical; }
 .toast-slide-enter-from { transform: translateX(100%); opacity: 0; }
 .toast-slide-leave-to { transform: scale(0.9); opacity: 0; }
 
+/* ─── Responsive ─── */
 @media (max-width: 768px) {
-  .card-header { flex-direction: column; }
+  .view-header { flex-direction: column; }
   .table-toolbar { flex-direction: column; align-items: stretch; }
-  .table-search { min-width: 100%; }
+  .search-input { min-width: 100%; }
   .toast-notification { bottom: 16px; right: 16px; left: 16px; max-width: none; }
-  .modal-lg-wide { max-width: 100%; }
+  .modal-wide { max-width: 100%; }
+  .field-row { flex-direction: column; gap: 0; }
+  .field-col-4, .field-col-3 { flex: 1; }
 }
 </style>

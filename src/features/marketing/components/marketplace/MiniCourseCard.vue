@@ -10,8 +10,8 @@
       <p class="text-muted">No se encontraron mini cursos</p>
     </div>
   </template>
-  <div v-for="item in items" :key="item.id" class="col-md-4 mb-4 grid-col">
-    <div class="card marketplace-card" @click="$emit('view', item)">
+  <div v-for="item in items" :key="item.id" class="grid-col">
+    <div class="marketplace-card" @click="$emit('view', item)">
       <div class="card-img-wrapper">
         <img
           v-if="item.image"
@@ -23,15 +23,15 @@
           <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:#ccc"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/><line x1="17" y1="17" x2="22" y2="17"/></svg>
         </div>
       </div>
-      <div class="card-body">
-        <h5 class="card-title">{{ item.title || item.titulo }}</h5>
-        <p class="card-text">
+      <div class="marketplace-card-body">
+        <h5 class="marketplace-card-title">{{ item.title || item.titulo }}</h5>
+        <p class="marketplace-card-text">
           <strong>Categoría:</strong> {{ item.category_name || '-' }} <br>
           <strong>Duración:</strong> {{ item.duration || item.duracion || '-' }} horas <br>
           <strong>Nivel:</strong> {{ formatLevel(item.level || item.nivel) }}
         </p>
-        <div class="card-footer-info">
-          <span class="badge badge-minicourse">Mini Curso</span>
+        <div class="marketplace-card-footer">
+          <span class="marketplace-badge badge-minicourse">Mini Curso</span>
         </div>
       </div>
     </div>
@@ -54,7 +54,25 @@ defineEmits(['view'])
 
 <style scoped>
 .grid-col {
+  flex: 0 0 33.333%;
+  max-width: 33.333%;
   display: flex;
+  padding: 0 12px;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 992px) {
+  .grid-col {
+    flex: 0 0 50%;
+    max-width: 50%;
+  }
+}
+
+@media (max-width: 768px) {
+  .grid-col {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
 }
 
 .marketplace-card {
@@ -106,7 +124,7 @@ defineEmits(['view'])
   background: var(--bg-main);
 }
 
-.card-body {
+.marketplace-card-body {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -114,7 +132,7 @@ defineEmits(['view'])
   gap: 8px;
 }
 
-.card-title {
+.marketplace-card-title {
   font-size: 1rem;
   font-weight: 700;
   color: var(--text-bold);
@@ -126,14 +144,14 @@ defineEmits(['view'])
   overflow: hidden;
 }
 
-.card-text {
+.marketplace-card-text {
   font-size: 0.82rem;
   color: var(--text-muted);
   line-height: 1.5;
   flex: 1;
 }
 
-.card-footer-info {
+.marketplace-card-footer {
   margin-top: auto;
   padding-top: 8px;
 }

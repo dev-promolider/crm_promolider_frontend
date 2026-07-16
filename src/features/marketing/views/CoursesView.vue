@@ -13,19 +13,19 @@
 
     <!-- LIST -->
     <div v-if="tab === 'list'" class="tab-content">
-      <button class="btn-primary" @click="showForm = true">+ Nuevo Curso</button>
-      <div v-if="showForm" class="card form-card">
+      <button class="btn-primary-custom" @click="showForm = true">+ Nuevo Curso</button>
+      <div v-if="showForm" class="course-form-card">
         <h3>Nuevo Curso</h3>
         <form @submit.prevent="saveCourse">
-          <div class="form-group"><label>Título *</label><input v-model="form.title" type="text" required /></div>
-          <div class="form-group"><label>Descripción *</label><textarea v-model="form.description" required></textarea></div>
-          <div class="form-group"><label>Precio (S/)</label><input v-model.number="form.price" type="number" step="0.01" min="0" /></div>
-          <button type="submit" class="btn-primary">Guardar</button>
-          <button type="button" class="btn-secondary" @click="showForm = false">Cancelar</button>
+          <div class="field-group"><label>Título *</label><input v-model="form.title" type="text" required /></div>
+          <div class="field-group"><label>Descripción *</label><textarea v-model="form.description" required></textarea></div>
+          <div class="field-group"><label>Precio (S/)</label><input v-model.number="form.price" type="number" step="0.01" min="0" /></div>
+          <button type="submit" class="btn-primary-custom">Guardar</button>
+          <button type="button" class="btn-secondary-custom" @click="showForm = false">Cancelar</button>
         </form>
       </div>
 
-      <div class="card" v-if="store.loading">Cargando...</div>
+      <div class="loading-card" v-if="store.loading">Cargando...</div>
       <div v-for="course in store.courses" :key="course.id" class="course-card" @click="selectCourse(course.id)">
         <h3>{{ course.title }}</h3>
         <p>{{ course.description?.slice(0, 100) }}...</p>
@@ -36,18 +36,18 @@
     <!-- MODULES -->
     <div v-if="tab === 'modules'" class="tab-content">
       <h2>{{ store.currentCourse?.title }} - Módulos</h2>
-      <button class="btn-primary" @click="showModuleForm = true">+ Módulo</button>
-      <div v-if="showModuleForm" class="card">
+      <button class="btn-primary-custom" @click="showModuleForm = true">+ Módulo</button>
+      <div v-if="showModuleForm" class="course-form-card">
         <form @submit.prevent="saveModule">
-          <div class="form-group"><label>Nombre *</label><input v-model="moduleForm.name" type="text" required /></div>
-          <button type="submit" class="btn-primary">Guardar</button>
-          <button type="button" class="btn-secondary" @click="showModuleForm = false">Cancelar</button>
+          <div class="field-group"><label>Nombre *</label><input v-model="moduleForm.name" type="text" required /></div>
+          <button type="submit" class="btn-primary-custom">Guardar</button>
+          <button type="button" class="btn-secondary-custom" @click="showModuleForm = false">Cancelar</button>
         </form>
       </div>
       <div v-for="mod in store.modules" :key="mod.id" class="module-card">
         <h4 @click="selectModule(mod.id)">{{ mod.name }} ({{ mod.classes_count || 0 }} clases)</h4>
-        <button class="btn-sm" @click="editModule(mod)">Editar</button>
-        <button class="btn-sm btn-danger" @click="showDeleteConfirm('module', mod.id)">Eliminar</button>
+        <button class="btn-sm-custom" @click="editModule(mod)">Editar</button>
+        <button class="btn-sm-custom btn-danger-custom" @click="showDeleteConfirm('module', mod.id)">Eliminar</button>
       </div>
     </div>
 
@@ -64,12 +64,12 @@
     <!-- GAMES -->
     <div v-if="tab === 'games'" class="tab-content">
       <h2>Juegos del Curso</h2>
-      <button class="btn-primary" @click="showGameForm = true">+ Juego</button>
-      <div v-if="showGameForm" class="card">
+      <button class="btn-primary-custom" @click="showGameForm = true">+ Juego</button>
+      <div v-if="showGameForm" class="course-form-card">
         <form @submit.prevent="saveGame">
-          <div class="form-group"><label>Nombre *</label><input v-model="gameForm.name" type="text" required /></div>
-          <button type="submit" class="btn-primary">Guardar</button>
-          <button type="button" class="btn-secondary" @click="showGameForm = false">Cancelar</button>
+          <div class="field-group"><label>Nombre *</label><input v-model="gameForm.name" type="text" required /></div>
+          <button type="submit" class="btn-primary-custom">Guardar</button>
+          <button type="button" class="btn-secondary-custom" @click="showGameForm = false">Cancelar</button>
         </form>
       </div>
       <div v-for="game in store.games" :key="game.id" class="game-card">
@@ -190,22 +190,22 @@ onMounted(() => {
 
 <style scoped>
 .courses { max-width: 1000px; margin: 0 auto; padding: 1.5rem; }
-.page-header h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; }
+.page-header h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; color: var(--text-bold); }
 .tabs { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
-.tabs button { padding: 0.5rem 1rem; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; font-size: 0.875rem; background: #fff; }
-.tabs button.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+.tabs button { padding: 0.5rem 1rem; border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; font-size: 0.875rem; background: var(--card-bg); color: var(--text-main); }
+.tabs button.active { background: var(--primary-color); color: #fff; border-color: var(--primary-color); }
 .tabs button:disabled { opacity: 0.5; cursor: not-allowed; }
-.card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem; }
-.course-card, .module-card, .game-card, .cert-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem; cursor: pointer; transition: border-color .15s; }
-.course-card:hover { border-color: #2563eb; }
-.module-card { cursor: default; display: flex; align-items: center; gap: 1rem; }
+.course-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem; cursor: pointer; transition: border-color .15s; }
+.course-card:hover { border-color: var(--primary-color); }
+.module-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem; cursor: default; display: flex; align-items: center; gap: 1rem; }
 .module-card h4 { flex: 1; margin: 0; cursor: pointer; }
-.form-group { margin-bottom: 1rem; }
-.form-group label { display: block; font-size: .875rem; font-weight: 500; margin-bottom: .375rem; color: #374151; }
-.form-group input, .form-group textarea { width: 100%; padding: .5rem .75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: .875rem; box-sizing: border-box; }
-.btn-primary, .btn-secondary, .btn-sm, .btn-danger { padding: .5rem 1rem; border: none; border-radius: 6px; font-size: .8125rem; cursor: pointer; margin-right: .5rem; margin-bottom: .5rem; }
-.btn-primary { background: #2563eb; color: #fff; }
-.btn-secondary { background: #e2e8f0; color: #334155; }
-.btn-sm { background: #e2e8f0; color: #334155; padding: .25rem .5rem; }
-.btn-danger { background: #dc2626; color: #fff; }
+.game-card, .cert-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem; }
+.field-group { margin-bottom: 1rem; }
+.field-group label { display: block; font-size: .875rem; font-weight: 500; margin-bottom: .375rem; color: var(--text-main); }
+.field-group input, .field-group textarea { width: 100%; padding: .5rem .75rem; border: 1px solid var(--border-color); border-radius: 6px; font-size: .875rem; box-sizing: border-box; background: var(--card-bg); color: var(--text-main); }
+.btn-primary-custom, .btn-secondary-custom, .btn-sm-custom, .btn-danger-custom { padding: .5rem 1rem; border: none; border-radius: 6px; font-size: .8125rem; cursor: pointer; margin-right: .5rem; margin-bottom: .5rem; }
+.btn-primary-custom { background: var(--primary-color); color: #fff; }
+.btn-secondary-custom { background: var(--bg-main); color: var(--text-main); }
+.btn-sm-custom { background: var(--bg-main); color: var(--text-main); padding: .25rem .5rem; }
+.btn-danger-custom { background: var(--danger-color); color: #fff; }
 </style>

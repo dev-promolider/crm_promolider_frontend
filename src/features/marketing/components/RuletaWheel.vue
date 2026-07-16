@@ -1,6 +1,6 @@
 <template>
   <div class="ruleta-container">
-    <div v-if="!premios || premios.length === 0" class="alert alert-info">
+    <div v-if="!premios || premios.length === 0" class="info-box info-info">
       Cargando ruleta...
     </div>
     <div v-else class="ruleta-wrapper">
@@ -60,9 +60,9 @@ const resultadoDetalle = computed(() => {
 })
 
 const resultadoClase = computed(() => {
-  if (!premioGanador.value) return 'alert-info'
-  if (premioGanador.value.tipo === 'vacio') return 'alert-warning'
-  return 'alert-success'
+  if (!premioGanador.value) return 'info-info'
+  if (premioGanador.value.tipo === 'vacio') return 'info-warning'
+  return 'info-success'
 })
 
 watch(() => props.premios, () => {
@@ -259,7 +259,15 @@ function determinarGanador() {
   margin-top: 16px; padding: 12px 20px; border-radius: 8px;
   display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 14px;
 }
-.alert-info { background: #e0f2fe; color: #075985; }
-.alert-warning { background: #fef3c7; color: #92400e; }
-.alert-success { background: #d1fae5; color: #065f46; }
+.resultado-alert.info-info { background: var(--indicator-blue); border-color: var(--indicator-blue-text); color: var(--indicator-blue-text); }
+.resultado-alert.info-warning { background: var(--indicator-orange); border-color: var(--indicator-orange-text); color: var(--indicator-orange-text); }
+.resultado-alert.info-success { background: var(--indicator-green); border-color: var(--indicator-green-text); color: var(--indicator-green-text); }
+
+.info-box {
+  margin-top: 16px; padding: 12px 20px; border-radius: 8px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 14px;
+}
+.info-box.info-info { background: var(--indicator-blue); color: var(--indicator-blue-text); }
+.info-box.info-warning { background: var(--indicator-orange); color: var(--indicator-orange-text); }
+.info-box.info-success { background: var(--indicator-green); color: var(--indicator-green-text); }
 </style>

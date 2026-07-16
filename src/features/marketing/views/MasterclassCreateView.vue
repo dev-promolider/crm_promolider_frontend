@@ -1,11 +1,11 @@
 <template>
   <div class="create-masterclass-view">
-    <div class="card">
-      <div class="card-body">
-        <div class="card-header">
+    <div class="view-card">
+      <div class="view-card-body">
+        <div class="view-header">
           <div>
-            <h4 class="card-title">Crear Masterclass</h4>
-            <span class="card-meta">Completa los datos para crear una nueva masterclass</span>
+            <h4 class="view-title">Crear Masterclass</h4>
+            <span class="view-meta">Completa los datos para crear una nueva masterclass</span>
           </div>
           <router-link to="/marketing/herramientas" class="stats-tab-btn">
             <ArrowLeft :size="15" /> Volver
@@ -16,41 +16,41 @@
           <div class="form-grid">
             <!-- Left Column -->
             <div class="form-column">
-              <div class="form-group">
-                <label>Nombre de la Masterclass <span class="required">*</span></label>
-                <input type="text" class="form-control" v-model="form.title" placeholder="Ej: Cómo vender en redes sociales" required />
+              <div class="field-group">
+                <label>Nombre de la Masterclass <span class="required-mark">*</span></label>
+                <input type="text" class="field-input" v-model="form.title" placeholder="Ej: Cómo vender en redes sociales" required />
               </div>
 
-              <div class="form-group">
-                <label>Categoría <span class="required">*</span></label>
-                <select class="form-control" v-model="form.category_id" required>
+              <div class="field-group">
+                <label>Categoría <span class="required-mark">*</span></label>
+                <select class="field-input" v-model="form.category_id" required>
                   <option value="">Seleccionar categoría</option>
                   <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
                 </select>
               </div>
 
-              <div class="form-group">
-                <label>Descripción <span class="required">*</span></label>
-                <textarea class="form-control" v-model="form.description" rows="3" placeholder="Describe de qué trata la masterclass..." required></textarea>
+              <div class="field-group">
+                <label>Descripción <span class="required-mark">*</span></label>
+                <textarea class="field-input" v-model="form.description" rows="3" placeholder="Describe de qué trata la masterclass..." required></textarea>
               </div>
 
-              <div class="form-group">
-                <label>Objetivo <span class="required">*</span></label>
-                <textarea class="form-control" v-model="form.objective" rows="2" placeholder="¿Qué aprenderán los asistentes?" required></textarea>
+              <div class="field-group">
+                <label>Objetivo <span class="required-mark">*</span></label>
+                <textarea class="field-input" v-model="form.objective" rows="2" placeholder="¿Qué aprenderán los asistentes?" required></textarea>
               </div>
 
-              <div class="form-row">
+              <div class="field-row">
                 <div class="form-group flex-1">
-                  <label>Fecha <span class="required">*</span></label>
-                  <input type="date" class="form-control" v-model="form.date" required />
+                  <label>Fecha <span class="required-mark">*</span></label>
+                  <input type="date" class="field-input" v-model="form.date" required />
                 </div>
                 <div class="form-group flex-1">
-                  <label>Hora <span class="required">*</span></label>
-                  <input type="time" class="form-control" v-model="form.time" required />
+                  <label>Hora <span class="required-mark">*</span></label>
+                  <input type="time" class="field-input" v-model="form.time" required />
                 </div>
                 <div class="form-group flex-1">
-                  <label>Duración <span class="required">*</span></label>
-                  <select class="form-control" v-model="form.duration" required>
+                  <label>Duración <span class="required-mark">*</span></label>
+                  <select class="field-input" v-model="form.duration" required>
                     <option value="">Seleccionar</option>
                     <option v-for="d in durationOptions" :key="d" :value="d">{{ d }} min</option>
                   </select>
@@ -60,24 +60,24 @@
 
             <!-- Right Column -->
             <div class="form-column">
-              <div class="form-group">
-                <label>Link de Reunión <span class="required">*</span></label>
-                <input type="url" class="form-control" v-model="form.meeting_link" placeholder="https://meet.google.com/..." required />
+              <div class="field-group">
+                <label>Link de Reunión <span class="required-mark">*</span></label>
+                <input type="url" class="field-input" v-model="form.meeting_link" placeholder="https://meet.google.com/..." required />
                 <small class="form-hint">Ej: Google Meet, Zoom, Teams</small>
               </div>
 
-              <div class="form-group">
-                <label>Correo Electrónico <span class="required">*</span></label>
-                <input type="email" class="form-control" v-model="form.email" placeholder="correo@ejemplo.com" required />
+              <div class="field-group">
+                <label>Correo Electrónico <span class="required-mark">*</span></label>
+                <input type="email" class="field-input" v-model="form.email" placeholder="correo@ejemplo.com" required />
               </div>
 
-              <div class="form-group">
-                <label>Número de Celular <span class="required">*</span></label>
-                <input type="tel" class="form-control" v-model="form.phone" placeholder="+51 999 999 999" required />
+              <div class="field-group">
+                <label>Número de Celular <span class="required-mark">*</span></label>
+                <input type="tel" class="field-input" v-model="form.phone" placeholder="+51 999 999 999" required />
               </div>
 
-              <div class="form-group">
-                <label>Imagen de portada <span class="required">*</span></label>
+              <div class="field-group">
+                <label>Imagen de portada <span class="required-mark">*</span></label>
                 <div class="file-dropzone" @click="triggerImageInput" @dragover.prevent @drop.prevent="handleImageDrop">
                   <Image :size="24" class="dropzone-icon" />
                   <span v-if="!form.image">Arrastra o haz clic para subir imagen (JPG, PNG, WEBP)</span>
@@ -90,7 +90,7 @@
                 </div>
               </div>
 
-              <div class="form-group">
+              <div class="field-group">
                 <label>Documentos adicionales (opcional)</label>
                 <div class="file-dropzone" @click="triggerDocInput" @dragover.prevent @drop.prevent="handleDocDrop">
                   <FileText :size="24" class="dropzone-icon" />
@@ -161,16 +161,30 @@ const docInput = ref(null)
 
 const durationOptions = [30, 60, 90, 120, 150, 180, 210, 240, 270, 300]
 
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+const ALLOWED_IMAGE_EXT = ['.jpg', '.jpeg', '.png', '.webp']
+
+function getFileExtension(filename) {
+  return filename ? '.' + filename.split('.').pop().toLowerCase() : ''
+}
+
+function isValidImageFile(file) {
+  if (!file) return false
+  return ALLOWED_IMAGE_TYPES.includes(file.type) && ALLOWED_IMAGE_EXT.includes(getFileExtension(file.name))
+}
+
 function triggerImageInput() { imageInput.value?.click() }
 function triggerDocInput() { docInput.value?.click() }
 
 function handleImageDrop(e) {
   const file = e.dataTransfer.files[0]
-  if (file) {
+  if (file && isValidImageFile(file)) {
     form.value.image = file
     const reader = new FileReader()
     reader.onload = (ev) => { imagePreview.value = ev.target.result }
     reader.readAsDataURL(file)
+  } else if (file) {
+    errors.value.push('Formato de imagen no válido. Arrastra JPG, PNG o WEBP')
   }
 }
 
@@ -206,6 +220,9 @@ function validateForm() {
   if (!f.phone.trim()) errors.value.push('El celular es requerido')
   else if (f.phone.replace(/\D/g, '').length < 10) errors.value.push('El celular debe tener al menos 10 dígitos')
   if (!f.image) errors.value.push('La imagen de portada es requerida')
+  else if (!isValidImageFile(f.image)) {
+    errors.value.push('Formato de imagen no válido. Usa JPG, PNG o WEBP')
+  }
   return errors.value.length === 0
 }
 
@@ -245,9 +262,9 @@ onMounted(async () => {
 <style scoped>
 .create-masterclass-view { animation: fadeIn 0.4s ease; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-.card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
-.card-meta { font-size: 12px; color: var(--text-muted); display: block; margin-top: 2px; }
-.required { color: var(--danger-color); }
+.view-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+.view-meta { font-size: 12px; color: var(--text-muted); display: block; margin-top: 2px; }
+.required-mark { color: var(--danger-color); }
 
 .stats-tab-btn {
   display: inline-flex; align-items: center; gap: 5px;
@@ -260,17 +277,18 @@ onMounted(async () => {
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
 @media (max-width: 768px) { .form-grid { grid-template-columns: 1fr; } }
 
-.form-group { margin-bottom: 16px; }
-.form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: var(--text-bold); }
-.form-control {
+.field-group { margin-bottom: 16px; }
+.field-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: var(--text-bold); }
+.field-input {
   width: 100%; padding: 9px 12px; border: 1px solid var(--border-color);
   border-radius: 8px; font-size: 13px; background: var(--card-bg);
   color: var(--text-main); transition: border-color 0.2s; font-family: inherit;
 }
-.form-control:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(24,214,0,0.08); }
+.field-input:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(24,214,0,0.08); }
+select.field-input, textarea.field-input { font-family: inherit; }
 .form-hint { font-size: 11px; color: var(--text-light); margin-top: 4px; display: block; }
 
-.form-row { display: flex; gap: 12px; }
+.field-row { display: flex; gap: 12px; }
 .flex-1 { flex: 1; }
 
 /* File dropzone */

@@ -1,7 +1,7 @@
 <template>
   <div class="calendar-view">
-    <div class="card">
-      <div class="card-body">
+    <div class="view-card">
+      <div class="view-card-body">
         <calendar-component></calendar-component>
       </div>
     </div>
