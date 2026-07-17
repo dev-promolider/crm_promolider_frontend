@@ -266,7 +266,7 @@ import { ElMessage } from "element-plus";
 import { VideoPlayer } from "@videojs-player/vue";
 import "video.js/dist/video-js.css";
 
-import { infoproductService } from '@/features/infoproducts/services/infoproductService';
+import { courseService } from '@/features/infoproducts/services/course/courseService';
 
 const STORAGE_URL = import.meta.env.VITE_APP_STORAGE_URL;
 
@@ -447,7 +447,7 @@ async function getModulesData() {
   selectedClassId.value = null;
 
   try {
-    const response = await infoproductService.getModuleAndClassesData(props.courses.id);
+    const response = await courseService.getOrders(props.courses.id);
 
     items.value = Array.isArray(response.data)
       ? response.data
@@ -540,3 +540,87 @@ onBeforeUnmount(() => {
   cleanupPlayerListener();
 });
 </script>
+
+<style scoped>
+.video-container {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  background: #000;
+  border-radius: 10px;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.video-player-box {
+  position: relative;
+  width: 100%;
+}
+
+.video-player-box :deep(.video-js) {
+  width: 100% !important;
+  min-height: 400px !important;
+  border-radius: 10px;
+}
+
+.video-player-box :deep(.vjs-control-bar) {
+  height: 4em;
+  background-color: rgba(0, 0, 0, 0.7);
+  border-radius: 0 0 10px 10px;
+}
+
+.video-player-box :deep(.vjs-button) {
+  width: 3em;
+  height: 3em;
+}
+
+.video-player-box :deep(.vjs-time-control) {
+  padding: 0 0.5em;
+  font-size: 1.2em;
+}
+
+.video-player-box :deep(.vjs-progress-control) {
+  height: 0.6em;
+}
+
+.video-player-box :deep(.vjs-progress-control:hover) {
+  height: 1em;
+}
+
+.class-link.active {
+  font-weight: 600;
+  color: #20e404;
+}
+
+.empty-state {
+  padding: 3rem 1rem;
+  text-align: center;
+}
+
+@media (max-width: 992px) {
+  .video-player-box :deep(.video-js) {
+    min-height: 300px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .video-player-box :deep(.video-js) {
+    min-height: 250px !important;
+  }
+
+  .video-player-box :deep(.vjs-control-bar) {
+    height: 3em;
+  }
+
+  .video-player-box :deep(.vjs-button) {
+    width: 2.5em;
+    height: 2.5em;
+  }
+}
+
+@media (max-width: 576px) {
+  .video-player-box :deep(.video-js) {
+    min-height: 200px !important;
+  }
+}
+</style>

@@ -38,8 +38,4 @@ export const infoproductService = {
     deleteInfoproduct(infoproductId) {
         return apiClient.delete(`/infoproducts/${infoproductId}`);
     },
-
-    getModuleAndClassesData(courseId) {
-        return apiClient.get(`/course/${courseId}/orders`);
-    }
 };
