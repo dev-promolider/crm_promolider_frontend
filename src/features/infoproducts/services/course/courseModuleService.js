@@ -17,7 +17,29 @@ export const courseModuleService = {
         return apiClient.get(`/course/certificate/configuration/${courseId}`);
     },
 
+    /* Related to classes */
     addClass(moduleId, formData) {
         return apiClient.post(`/course/module/class/${moduleId}/save`, formData);
-    }
+    },
+
+    updateClass(classId, formData) {
+        return apiClient.post(`/course/module/class/${classId}/update`, formData);
+    },
+
+    getSignedUrlForVideoUpload(classId, fileName) {
+        return apiClient.get(`/course/module/class/video-upload-url/${classId}/${encodeURIComponent(fileName)}`);
+    },
+
+    uploadVideoToSignedUrl(signedUrl, file) {
+        return apiClient.put(
+            signedUrl, 
+            file,
+            {
+                headers: {
+                    "Content-Type":
+                    file.type || "video/mp4",
+                },
+            },
+        )
+    },
 };
