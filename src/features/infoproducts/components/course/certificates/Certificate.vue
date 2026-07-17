@@ -243,7 +243,7 @@ import {
 } from "vue";
 
 import { ElMessage } from "element-plus";
-import courseCertificateService from "@/features/infoproducts/services/course/certificates/courseCertificateService";
+import courseCertificateService from "@/features/infoproducts/services/course/courseCertificateService";
 import axios from "axios";
 
 const props = defineProps({
