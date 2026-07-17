@@ -21,7 +21,8 @@
     "video.js": "^8.23.9",
     "vue": "^3.5.34",
     "vue-router": "^5.1.0",
-    "vue3-recaptcha2": "^1.8.0"
+    "vue3-recaptcha2": "^1.8.0",
+    "vuedraggable": "^4.1.0"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.6",
