@@ -20,16 +20,16 @@ defineProps({
 .mlm-empty-node {
   width: 100px;
   height: 80px;
-  border: 2px dashed #4b5563;
+  border: 2px dashed var(--border-color);
   border-radius: 12px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: #6b7280;
+  color: var(--text-muted);
   transition: all 0.3s ease;
   cursor: pointer;
-  background: rgba(15, 23, 42, 0.4);
+  background: var(--bg-main);
 }
 
 .mlm-empty-node:hover {

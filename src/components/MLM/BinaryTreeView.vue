@@ -99,11 +99,11 @@ onMounted(() => {
 .mlm-tree-wrapper {
   width: 100%;
   position: relative;
-  background: #0f172a; /* Dark background matching the theme */
+  background: var(--card-bg);
   border-radius: 16px;
   overflow: hidden;
-  border: 1px solid #334155;
-  box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+  border: 1px solid var(--border-color);
+  box-shadow: inset 0 2px 10px rgba(0,0,0,0.1);
 }
 
 .mlm-tree-header {
@@ -116,9 +116,8 @@ onMounted(() => {
 .mlm-tree-title {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #f8fafc;
+  color: var(--text-bold);
   margin: 0;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
 }
 
 .mlm-zoom-controls {
@@ -127,18 +126,18 @@ onMounted(() => {
   right: 24px;
   z-index: 20;
   display: flex;
-  background: rgba(30, 41, 59, 0.9);
+  background: var(--navbar-bg);
   backdrop-filter: blur(8px);
   border-radius: 8px;
   padding: 4px;
-  border: 1px solid #334155;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.15);
 }
 
 .mlm-btn-zoom {
   background: transparent;
   border: none;
-  color: #94a3b8;
+  color: var(--text-muted);
   padding: 8px;
   cursor: pointer;
   border-radius: 6px;
@@ -149,19 +148,19 @@ onMounted(() => {
 }
 
 .mlm-btn-zoom:hover {
-  background: #334155;
-  color: #f8fafc;
+  background: var(--border-color);
+  color: var(--text-bold);
 }
 
 .mlm-divider {
   width: 1px;
-  background: #334155;
+  background: var(--border-color);
   margin: 4px 2px;
 }
 
 .mlm-canvas-area {
   width: 100%;
-  height: 800px; /* Fixed height for scroll area */
+  height: 800px;
   overflow: auto;
   display: flex;
   justify-content: center;
@@ -176,12 +175,12 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   margin-top: 120px;
-  color: #94a3b8;
+  color: var(--text-muted);
   font-weight: 500;
 }
 
 .mlm-error {
-  color: #ef4444;
+  color: var(--danger-color);
   background: rgba(239, 68, 68, 0.1);
   padding: 16px 24px;
   border-radius: 8px;
@@ -217,10 +216,10 @@ onMounted(() => {
   background: transparent; 
 }
 .mlm-custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgba(71, 85, 105, 0.5); 
+  background-color: var(--border-color);
   border-radius: 10px;
 }
 .mlm-custom-scrollbar:hover::-webkit-scrollbar-thumb {
-  background-color: rgba(71, 85, 105, 0.8); 
+  background-color: var(--text-muted);
 }
 </style>
