@@ -101,8 +101,9 @@ const pan = (e) => {
   e.preventDefault();
   const x = e.pageX - canvas.value.offsetLeft;
   const y = e.pageY - canvas.value.offsetTop;
-  const walkX = (x - startX.value) * 1.5; // Velocidad de paneo X
-  const walkY = (y - startY.value) * 1.5; // Velocidad de paneo Y
+  const walkX = (x - startX.value) * 1.5; 
+  const walkY = (y - startY.value) * 1.5; 
+  
   canvas.value.scrollLeft = scrollLeft.value - walkX;
   canvas.value.scrollTop = scrollTop.value - walkY;
 };
@@ -210,9 +211,8 @@ onMounted(() => {
   width: 100%;
   height: 800px;
   overflow: auto;
-  display: flex;
-  align-items: flex-start;
-  padding-top: 100px; /* Más espacio arriba para que no choque con los botones */
+  text-align: center;
+  padding-top: 80px; 
   position: relative;
   cursor: grab;
 }
@@ -257,13 +257,10 @@ onMounted(() => {
 .mlm-tree-scale-box {
   transition: transform 0.3s ease-out;
   transform-origin: top center;
-  padding: 100px; /* Padding masivo para crear buffer scrollable */
-  padding-bottom: 120px;
-  margin: 0 auto;
-  width: max-content;
-  min-width: 100%;
-  display: flex;
+  padding: 80px 100px 120px 100px; /* Buffer lateral y vertical */
+  display: inline-flex;
   justify-content: center;
+  text-align: left;
 }
 
 /* Custom Scrollbar */

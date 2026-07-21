@@ -18,8 +18,12 @@ defineProps({
 
 <style scoped>
 .mlm-empty-node {
-  width: 40px;
-  height: 40px;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 32px;
+  height: 32px;
   border: 2px dashed var(--border-color);
   border-radius: 50%;
   display: flex;
