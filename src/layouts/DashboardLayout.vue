@@ -1378,5 +1378,6 @@ onBeforeUnmount(() => {
 }
 
 .opc-payment-method select { width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--main-bg); color: var(--text-main); font-size: 1rem; }
+.opc-payment-method select option { background-color: var(--card-bg); color: var(--text-main); }
 </style>
 
