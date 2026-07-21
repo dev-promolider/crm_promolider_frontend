@@ -251,88 +251,9 @@
 
       <div class="tree-container">
 
-        <!-- Árbol binario dinámico -->
-        <div class="tree" v-if="activeTab === 'binary'">
-          <ul v-if="binaryTreeData.c">
-            <li>
-              <!-- Root Node (c) -->
-              <a href="#" class="tree-node root-node" @click.prevent="openUserModal(binaryTreeData.c, 'Raíz Principal', 'Ninguno')">
-                <img :src="getAvatarUrl(binaryTreeData.c.photo) || 'https://i.pravatar.cc/150?img=11'" alt="Root" />
-                <span>{{ binaryTreeData.c.name }}</span>
-              </a>
-              <ul>
-                <!-- Left Leg (a) -->
-                <li>
-                  <a href="#" class="tree-node" v-if="binaryTreeData.a" @click.prevent="openUserModal(binaryTreeData.a, 'Izquierda', binaryTreeData.c?.name)">
-                    <img :src="getAvatarUrl(binaryTreeData.a.photo) || 'https://i.pravatar.cc/150?img=12'" alt="A" />
-                    <span>{{ binaryTreeData.a.name }}</span>
-                  </a>
-                  <a href="#" class="tree-node empty-node" v-else>
-                    <UserPlus :size="20" class="empty-icon" />
-                  </a>
-
-                  <!-- Left Leg Children (aa & ab) -->
-                  <ul v-if="binaryTreeData.a || binaryTreeData.aa || binaryTreeData.ab">
-                    <li>
-                      <a href="#" class="tree-node" v-if="binaryTreeData.aa" @click.prevent="openUserModal(binaryTreeData.aa, 'Izquierda', binaryTreeData.a?.name)">
-                        <img :src="getAvatarUrl(binaryTreeData.aa.photo) || 'https://i.pravatar.cc/150?img=13'" alt="AA" />
-                        <span>{{ binaryTreeData.aa.name }}</span>
-                      </a>
-                      <a href="#" class="tree-node empty-node" v-else>
-                        <UserPlus :size="20" class="empty-icon" />
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#" class="tree-node" v-if="binaryTreeData.ab" @click.prevent="openUserModal(binaryTreeData.ab, 'Derecha', binaryTreeData.a?.name)">
-                        <img :src="getAvatarUrl(binaryTreeData.ab.photo) || 'https://i.pravatar.cc/150?img=14'" alt="AB" />
-                        <span>{{ binaryTreeData.ab.name }}</span>
-                      </a>
-                      <a href="#" class="tree-node empty-node" v-else>
-                        <UserPlus :size="20" class="empty-icon" />
-                      </a>
-                    </li>
-                  </ul>
-                </li>
-
-                <!-- Right Leg (b) -->
-                <li>
-                  <a href="#" class="tree-node" v-if="binaryTreeData.b" @click.prevent="openUserModal(binaryTreeData.b, 'Derecha', binaryTreeData.c?.name)">
-                    <img :src="getAvatarUrl(binaryTreeData.b.photo) || 'https://i.pravatar.cc/150?img=15'" alt="B" />
-                    <span>{{ binaryTreeData.b.name }}</span>
-                  </a>
-                  <a href="#" class="tree-node empty-node" v-else>
-                    <UserPlus :size="20" class="empty-icon" />
-                  </a>
-
-                  <!-- Right Leg Children (ba & bb) -->
-                  <ul v-if="binaryTreeData.b || binaryTreeData.ba || binaryTreeData.bb">
-                    <li>
-                      <a href="#" class="tree-node" v-if="binaryTreeData.ba" @click.prevent="openUserModal(binaryTreeData.ba, 'Izquierda', binaryTreeData.b?.name)">
-                        <img :src="getAvatarUrl(binaryTreeData.ba.photo) || 'https://i.pravatar.cc/150?img=16'" alt="BA" />
-                        <span>{{ binaryTreeData.ba.name }}</span>
-                      </a>
-                      <a href="#" class="tree-node empty-node" v-else>
-                        <UserPlus :size="20" class="empty-icon" />
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#" class="tree-node" v-if="binaryTreeData.bb" @click.prevent="openUserModal(binaryTreeData.bb, 'Derecha', binaryTreeData.b?.name)">
-                        <img :src="getAvatarUrl(binaryTreeData.bb.photo) || 'https://i.pravatar.cc/150?img=17'" alt="BB" />
-                        <span>{{ binaryTreeData.bb.name }}</span>
-                      </a>
-                      <a href="#" class="tree-node empty-node" v-else>
-                        <UserPlus :size="20" class="empty-icon" />
-                      </a>
-                    </li>
-                  </ul>
-                </li>
-              </ul>
-            </li>
-          </ul>
-          <div v-else class="loading-state">
-            <Loader2 class="spinner-icon" :size="40" />
-            <p>Cargando árbol binario...</p>
-          </div>
+        <!-- Árbol binario dinámico (NUEVO COMPONENTE) -->
+        <div v-if="activeTab === 'binary'" class="mt-4">
+          <BinaryTreeView />
         </div>
 
         <!-- Árbol Uninivel dinámico -->
@@ -369,10 +290,6 @@
 
       </div>
 
-      <div class="tree-footer" v-if="activeTab === 'binary'">
-        <button class="vol-btn">Volumen Izquierdo: {{ binaryTreeData.c?.LeftPoints || 0 }} pts</button>
-        <button class="vol-btn">Volumen Derecho: {{ binaryTreeData.c?.RightPoints || 0 }} pts</button>
-      </div>
     </div>
 
     <!-- Toast Notification -->
@@ -484,12 +401,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, provide } from 'vue';
 import {
   CheckCircle2, XCircle, TrendingUp, Clock, Award, Users, Video, PlayCircle, UserPlus, X, Info, Loader2, AlertCircle
 } from 'lucide-vue-next';
 import api from '@/services/apiClient';
 import { useAuthStore } from '@/features/auth/stores/authStore';
+import BinaryTreeView from '@/components/MLM/BinaryTreeView.vue';
 
 const authStore = useAuthStore();
 const user = computed(() => authStore.user);
@@ -544,34 +462,14 @@ const openUserModal = async (nodeData, position, sponsorName) => {
   const userId = userData.id;
   console.log("Extracted userId:", userId);
   
-  // Si ya tiene el email y el username, la data fue cargada de forma eficiente por eager loading. No repetimos la consulta.
+  // Si ya tiene el email y el username, la data fue cargada de forma eficiente por eager loading.
   if (userData.email && (userData.username || userData.user_name)) {
     console.log("User details already present via eager loading. Skipping API fetch.");
     return;
-  }
-  
-  if (userId && userId > 0) {
-    loadingDetails.value = true;
-    try {
-      console.log(`Sending GET request to /user/${userId}/detail`);
-      const response = await api.get(`/user/${userId}/detail`);
-      console.log("API response status:", response.status);
-      console.log("API response data:", JSON.stringify(response.data));
-      
-      if (response.data) {
-        selectedUser.value = {
-          ...selectedUser.value,
-          ...response.data
-        };
-      }
-    } catch (error) {
-      console.error("Error al cargar detalles del usuario:", error);
-      detailsError.value = error.response?.data?.message || error.message || error.toString();
-    } finally {
-      loadingDetails.value = false;
-    }
   } else {
-    console.warn("No valid userId found to query detailed user info.");
+    // Si llegamos aquí, significa que el frontend tiene una versión vieja del caché del árbol.
+    detailsError.value = "Por favor, recarga la página (F5) para sincronizar los últimos datos del usuario desde el servidor.";
+    console.warn("Faltan datos del usuario. El caché está obsoleto.");
   }
 };
 
@@ -581,6 +479,9 @@ const closeUserModal = () => {
   selectedNode.value = null;
   detailsError.value = null;
 };
+
+// Proveer la función a los componentes hijos
+provide('openUserModal', openUserModal);
 
 // Utils para el modal
 const isTruthy = (val) => val === true || val === 1 || val === '1';
