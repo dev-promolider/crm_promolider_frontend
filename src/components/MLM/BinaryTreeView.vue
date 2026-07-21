@@ -8,6 +8,13 @@
 
     <!-- Controles de Zoom -->
     <div class="mlm-zoom-controls">
+      <!-- Icono de Pan (solo visual para indicar que se puede arrastrar) -->
+      <div class="mlm-btn-zoom" title="Arrastra con el click para moverte" style="cursor: default; opacity: 0.7;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1m0 0V11m0-5.5a1.5 1.5 0 013 0v3m0 0V11" />
+        </svg>
+      </div>
+      <div class="mlm-divider"></div>
       <button @click="zoomIn" class="mlm-btn-zoom" title="Acercar">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
@@ -28,7 +35,15 @@
     </div>
 
     <!-- Área de Dibujo (Scrollable & Zoomable) -->
-    <div class="mlm-canvas-area mlm-custom-scrollbar" ref="canvas">
+    <div 
+      class="mlm-canvas-area mlm-custom-scrollbar" 
+      :class="{ 'is-panning': isPanning }"
+      ref="canvas"
+      @mousedown="startPan"
+      @mousemove="pan"
+      @mouseup="stopPan"
+      @mouseleave="stopPan"
+    >
       
       <!-- Estados de Carga / Error -->
       <div v-if="loading" class="mlm-state-box">
@@ -62,6 +77,39 @@ const scale = ref(1);
 const loading = ref(true);
 const error = ref(null);
 const treeData = ref(null);
+const canvas = ref(null);
+
+// Lógica de Paneo (Arrastre con la manito)
+const isPanning = ref(false);
+const startX = ref(0);
+const startY = ref(0);
+const scrollLeft = ref(0);
+const scrollTop = ref(0);
+
+const startPan = (e) => {
+  // Solo iniciar el paneo si se hace clic en el fondo, no en una tarjeta
+  if (e.target.closest('.mlm-node-card') || e.target.closest('.mlm-empty-node')) return;
+  isPanning.value = true;
+  startX.value = e.pageX - canvas.value.offsetLeft;
+  startY.value = e.pageY - canvas.value.offsetTop;
+  scrollLeft.value = canvas.value.scrollLeft;
+  scrollTop.value = canvas.value.scrollTop;
+};
+
+const pan = (e) => {
+  if (!isPanning.value) return;
+  e.preventDefault();
+  const x = e.pageX - canvas.value.offsetLeft;
+  const y = e.pageY - canvas.value.offsetTop;
+  const walkX = (x - startX.value) * 1.5; // Velocidad de paneo X
+  const walkY = (y - startY.value) * 1.5; // Velocidad de paneo Y
+  canvas.value.scrollLeft = scrollLeft.value - walkX;
+  canvas.value.scrollTop = scrollTop.value - walkY;
+};
+
+const stopPan = () => {
+  isPanning.value = false;
+};
 
 const zoomIn = () => {
   if (scale.value < 2) scale.value += 0.1;
@@ -122,8 +170,8 @@ onMounted(() => {
 
 .mlm-zoom-controls {
   position: absolute;
-  bottom: 24px;
-  right: 24px;
+  top: 16px;
+  right: 20px;
   z-index: 20;
   display: flex;
   background: var(--navbar-bg);
@@ -165,8 +213,14 @@ onMounted(() => {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  padding-top: 80px;
+  padding-top: 100px; /* Más espacio arriba para que no choque con los botones */
   position: relative;
+  cursor: grab;
+}
+
+.mlm-canvas-area.is-panning {
+  cursor: grabbing;
+  user-select: none;
 }
 
 .mlm-state-box {
