@@ -670,6 +670,11 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.text-green { color: #10b981 !important; }
+.text-red { color: #ef4444 !important; }
+.text-blue { color: #3b82f6 !important; }
+.text-purple { color: #a855f7 !important; }
+
 .loading-state {
   display: flex;
   flex-direction: column;
