@@ -3,10 +3,10 @@
 ================================== */
 .app-layout {
   display: flex;
-  height: 100vh;
+  min-height: 100vh;
+  height: auto;
   width: 100vw;
   background-color: var(--bg-main);
-  overflow: hidden;
   position: relative;
   transition: background-color 0.3s ease;
 }
@@ -163,10 +163,12 @@ body.dark-theme .watermark-bg img {
 ================================== */
 .main-content {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   position: relative;
   z-index: 5;
+  overflow: visible;
 }
 
 .topbar {
@@ -374,9 +376,10 @@ body.dark-theme .watermark-bg img {
 .router-view-container {
   flex: 1;
   padding: 30px;
-  overflow-y: auto;
   overflow-x: hidden;
+  overflow-y: visible;
   position: relative;
+  min-height: 0;
 }
 
 /* ==================================
