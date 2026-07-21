@@ -34,12 +34,6 @@
 
     <!-- Children Connection Area -->
     <div class="mlm-children-area">
-      <!-- Conector SVG para la división izquierda/derecha -->
-      <svg class="mlm-connector-svg" preserveAspectRatio="none">
-        <path d="M 100 0 L 100 24 M 300 0 L 300 24 M 100 0 L 300 0 M 200 -24 L 200 0" 
-              stroke="#4b5563" stroke-width="2" fill="none" />
-      </svg>
-      
       <!-- Left Leg -->
       <div class="mlm-leg">
         <BinaryTreeNode v-if="node.left" :node="node.left" />
@@ -202,26 +196,65 @@ export default {
 
 .mlm-children-area {
   display: flex;
+  justify-content: center;
   align-items: flex-start;
-  margin-top: 24px;
+  margin-top: 48px; /* Espacio para las líneas de conexión */
   position: relative;
-  width: 400px;
 }
 
-.mlm-connector-svg {
+/* Línea vertical desde el padre */
+.mlm-children-area::before {
+  content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
+  top: -48px;
+  left: 50%;
+  width: 2px;
   height: 24px;
-  margin-top: -24px;
-  pointer-events: none;
+  background: #4b5563;
+  transform: translateX(-50%);
 }
 
 .mlm-leg {
+  flex: 1 1 50%;
   width: 50%;
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
+  padding: 0 8px; /* Separación horizontal entre nodos */
+}
+
+/* Línea horizontal para la pata izquierda */
+.mlm-leg:first-child::before {
+  content: '';
+  position: absolute;
+  top: -24px;
+  right: 0;
+  width: 50%;
+  height: 2px;
+  background: #4b5563;
+}
+
+/* Línea horizontal para la pata derecha */
+.mlm-leg:last-child::before {
+  content: '';
+  position: absolute;
+  top: -24px;
+  left: 0;
+  width: 50%;
+  height: 2px;
+  background: #4b5563;
+}
+
+/* Línea vertical hacia el nodo hijo */
+.mlm-leg::after {
+  content: '';
+  position: absolute;
+  top: -24px;
+  left: 50%;
+  width: 2px;
+  height: 24px;
+  background: #4b5563;
+  transform: translateX(-50%);
 }
 </style>
