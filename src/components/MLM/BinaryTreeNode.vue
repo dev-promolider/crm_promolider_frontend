@@ -1,7 +1,7 @@
 <template>
   <div class="mlm-node-container">
     <!-- User Card (The Node) -->
-    <div class="mlm-node-card" @click="handleClick">
+    <div class="mlm-node-card" @click="handleClick" :class="{ 'is-dimmed': isSearching && !isMatch, 'is-highlighted': isSearching && isMatch }">
       <div class="mlm-top-line"></div>
       
       <div class="mlm-node-content">
@@ -51,7 +51,7 @@
 </template>
 
 <script setup>
-import { computed, inject } from 'vue';
+import { computed, inject, ref } from 'vue';
 import EmptyNode from './EmptyNode.vue';
 
 const props = defineProps({
@@ -62,6 +62,19 @@ const props = defineProps({
 });
 
 const openUserModal = inject('openUserModal');
+const searchQuery = inject('searchQuery', ref(''));
+
+const isSearching = computed(() => {
+  return searchQuery.value && searchQuery.value.trim() !== '';
+});
+
+const isMatch = computed(() => {
+  if (!isSearching.value) return true;
+  const q = searchQuery.value.trim().toLowerCase();
+  const name = props.node.name ? props.node.name.toLowerCase() : '';
+  const username = props.node.username ? props.node.username.toLowerCase() : '';
+  return name.includes(q) || username.includes(q);
+});
 
 const handleClick = () => {
   if (openUserModal) {
@@ -106,6 +119,19 @@ export default {
   transform: translateY(-4px);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
   border-color: var(--primary-color);
+}
+
+.mlm-node-card.is-dimmed {
+  opacity: 0.25;
+  filter: grayscale(100%);
+  transform: scale(0.95);
+}
+
+.mlm-node-card.is-highlighted {
+  transform: scale(1.1);
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.7);
+  border-color: #10b981;
+  z-index: 20;
 }
 
 .mlm-top-line {

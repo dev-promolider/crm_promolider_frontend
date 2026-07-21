@@ -4,6 +4,7 @@
     <!-- Barra superior -->
     <div class="mlm-tree-header">
       <h2 class="mlm-tree-title">Mi Red Binaria</h2>
+      <input type="text" v-model="searchQuery" placeholder="Buscar nombre o usuario..." class="mlm-search-input" />
     </div>
 
     <!-- Controles de Zoom -->
@@ -69,7 +70,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue';
+import { ref, onMounted, nextTick, provide } from 'vue';
 import api from '@/services/apiClient';
 import BinaryTreeNode from './BinaryTreeNode.vue';
 
@@ -78,6 +79,10 @@ const loading = ref(true);
 const error = ref(null);
 const treeData = ref(null);
 const canvas = ref(null);
+const searchQuery = ref('');
+
+// Proveer la búsqueda a los nodos hijos
+provide('searchQuery', searchQuery);
 
 // Lógica de Paneo (Arrastre con la manito)
 const isPanning = ref(false);
@@ -188,6 +193,25 @@ onMounted(() => {
   margin: 0;
 }
 
+.mlm-search-input {
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-main);
+  color: var(--text-main);
+  font-size: 0.85rem;
+  width: 200px;
+  outline: none;
+  transition: all 0.2s;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.mlm-search-input:focus {
+  border-color: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
 .mlm-zoom-controls {
   position: absolute;
   top: 16px;
@@ -235,8 +259,6 @@ onMounted(() => {
   text-align: center;
   position: relative;
   cursor: grab;
-  /* Centrado seguro que no corta los lados en pantallas pequeñas */
-  white-space: nowrap;
 }
 
 .mlm-canvas-area.is-panning {
@@ -280,9 +302,9 @@ onMounted(() => {
   transition: transform 0.3s ease-out;
   transform-origin: top center;
   padding: 40px 60px 80px 60px; /* Reducido para que encuadre mejor */
-  display: inline-block; /* Usar inline-block en lugar de flex para no romper el text-align: center del padre */
+  display: inline-flex;
+  justify-content: center;
   text-align: left;
-  min-width: min-content;
 }
 
 /* Custom Scrollbar */

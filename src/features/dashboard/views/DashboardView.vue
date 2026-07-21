@@ -247,6 +247,16 @@
               tus patrocinadores superiores para mostrarte solo tus resultados reales).</p>
           </div>
         </div>
+        
+        <!-- Filtro y Buscador Uninivel -->
+        <div v-if="activeTab === 'unilevel'" class="unilevel-filter-wrapper ml-auto" style="margin-left: auto; display: flex; gap: 8px; align-items: center;">
+          <input type="text" v-model="unilevelSearch" placeholder="Buscar nombre o usuario..." class="premium-select" style="padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main); font-size: 0.85rem; width: 180px;" />
+          <select v-model="unilevelFilter" class="premium-select" style="padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main); font-size: 0.85rem;">
+            <option value="all">Todas las piernas</option>
+            <option value="Izquierda">Pierna Izquierda</option>
+            <option value="Derecha">Pierna Derecha</option>
+          </select>
+        </div>
       </div>
 
       <div class="tree-container">
@@ -283,8 +293,8 @@
                 </div>
               </div>
 
-              <ul v-if="unilevelTreeData.directs && unilevelTreeData.directs.length > 0">
-                <li v-for="direct in unilevelTreeData.directs" :key="direct.id">
+              <ul v-if="filteredDirects && filteredDirects.length > 0">
+                <li v-for="direct in filteredDirects" :key="direct.id">
                   <div class="mlm-node-card" @click.prevent="openUserModal(direct, 'Frontal (Directo)', unilevelTreeData.root?.name)">
                     <div class="mlm-top-line"></div>
                     <div class="mlm-node-content">
@@ -566,6 +576,29 @@ const widgetsData = ref(JSON.parse(sessionStorage.getItem('dashboard_widgets')) 
 
 const binaryTreeData = ref(JSON.parse(sessionStorage.getItem('dashboard_binary')) || {});
 const unilevelTreeData = ref(JSON.parse(sessionStorage.getItem('dashboard_unilevel')) || {});
+
+const unilevelFilter = ref('all'); // 'all', 'Izquierda', 'Derecha'
+const unilevelSearch = ref('');
+
+const filteredDirects = computed(() => {
+  if (!unilevelTreeData.value.directs) return [];
+  
+  let result = unilevelTreeData.value.directs;
+  
+  if (unilevelFilter.value !== 'all') {
+    result = result.filter(direct => direct.leg === unilevelFilter.value);
+  }
+  
+  if (unilevelSearch.value.trim() !== '') {
+    const q = unilevelSearch.value.trim().toLowerCase();
+    result = result.filter(direct => 
+      (direct.name && direct.name.toLowerCase().includes(q)) || 
+      (direct.username && direct.username.toLowerCase().includes(q))
+    );
+  }
+  
+  return result;
+});
 
 const activeStatsTab = ref('classic');
 const isSimulated = ref(false);
