@@ -87,6 +87,7 @@
                       :src="getS3Url(item.image)"
                       class="c-card-img"
                       :alt="item.title"
+                      @error="$event.target.src = '/img_mantenimiento.png'; $event.target.onerror = null;"
                     />
                     <div v-else class="c-card-img-placeholder">
                       <Megaphone :size="48" style="color:#ccc" />

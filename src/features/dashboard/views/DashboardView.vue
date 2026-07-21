@@ -258,25 +258,55 @@
 
         <!-- Árbol Uninivel dinámico -->
         <div class="tree unilevel-tree" v-if="activeTab === 'unilevel'">
+          
+          <div class="unilevel-stats-card" v-if="unilevelTreeData.root">
+            <div class="stat-icon icon-green" style="width: 40px; height: 40px;">
+              <Users :size="20" />
+            </div>
+            <div class="stat-info" style="text-align: left;">
+              <h4 style="font-size: 1.2rem; margin: 0; color: var(--text-bold);">{{ unilevelTreeData.directs ? unilevelTreeData.directs.length : 0 }}</h4>
+              <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted);">Patrocinados directos</p>
+            </div>
+          </div>
+
           <ul v-if="unilevelTreeData.root">
             <li>
-              <a href="#" class="tree-node root-node" @click.prevent="openUserModal(unilevelTreeData.root, 'Raíz Uninivel', 'Ninguno')">
-                <img :src="getAvatarUrl(unilevelTreeData.root.photo) || 'https://i.pravatar.cc/150?img=11'" alt="Root" />
-                <span>{{ unilevelTreeData.root.name }}</span>
-              </a>
-
-              <!-- antes: <ul> plano con todos los directos como hermanos -->
-              <!-- ahora: contenedor aparte, no es un <ul> jerárquico anidado -->
-              <div class="unilevel-directs-grid" v-if="unilevelTreeData.directs && unilevelTreeData.directs.length > 0">
-                <a href="#" class="tree-node" v-for="direct in unilevelTreeData.directs" :key="direct.id" @click.prevent="openUserModal(direct, 'Frontal (Directo)', unilevelTreeData.root?.name)">
-                  <img :src="getAvatarUrl(direct.photo) || 'https://i.pravatar.cc/150?img=10'" :alt="direct.name" />
-                  <span>{{ direct.name }}</span>
-                  <span :class="direct.active ? 'text-green' : 'text-red'"
-                    style="font-size: 10px; margin-top: 5px; font-weight: bold;">
-                    {{ direct.active ? 'Activo' : 'Inactivo' }}
-                  </span>
-                </a>
+              <div class="mlm-node-card root-card" @click.prevent="openUserModal(unilevelTreeData.root, 'Raíz Uninivel', 'Ninguno')">
+                <div class="mlm-top-line"></div>
+                <div class="mlm-node-content">
+                  <div class="mlm-avatar">
+                    <img v-if="unilevelTreeData.root.photo" :src="getAvatarUrl(unilevelTreeData.root.photo)" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" @error="$event.target.src = '/img_mantenimiento.png'; $event.target.onerror = null;" />
+                    <span v-else>{{ unilevelTreeData.root.name?.charAt(0) || 'R' }}</span>
+                  </div>
+                  <h4 class="mlm-name">{{ unilevelTreeData.root.name }}</h4>
+                  <p class="mlm-rank">{{ unilevelTreeData.root.role || 'Patrocinador' }}</p>
+                </div>
               </div>
+
+              <ul v-if="unilevelTreeData.directs && unilevelTreeData.directs.length > 0">
+                <li v-for="direct in unilevelTreeData.directs" :key="direct.id">
+                  <div class="mlm-node-card" @click.prevent="openUserModal(direct, 'Frontal (Directo)', unilevelTreeData.root?.name)">
+                    <div class="mlm-top-line"></div>
+                    <div class="mlm-node-content">
+                      <div class="mlm-avatar">
+                        <img v-if="direct.photo" :src="getAvatarUrl(direct.photo)" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" @error="$event.target.src = '/img_mantenimiento.png'; $event.target.onerror = null;" />
+                        <span v-else>{{ direct.name?.charAt(0) || 'U' }}</span>
+                      </div>
+                      <h4 class="mlm-name">{{ direct.name }}</h4>
+                      <p class="mlm-rank">{{ direct.role || 'Afiliado' }}</p>
+                      
+                      <div class="mlm-points-grid" style="grid-template-columns: 1fr;">
+                        <div class="mlm-point-box">
+                          <span class="mlm-point-label">Estado</span>
+                          <span class="mlm-point-value" :class="direct.active ? 'text-green' : 'text-red'">
+                            {{ direct.active ? 'ACTIVO' : 'INACTIVO' }}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </li>
+              </ul>
               <div v-else class="mt-4 text-muted text-center" style="font-size: 13px;">
                 Aún no tienes invitados directos. ¡Comparte tu enlace de referido!
               </div>
@@ -701,6 +731,140 @@ onMounted(() => {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* ESTILOS REUTILIZADOS DEL ARBOL BINARIO (mlm-node-card) */
+.mlm-node-card {
+  position: relative;
+  width: 90px;
+  background: var(--card-bg);
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border-color);
+  padding: 6px 4px;
+  transition: all 0.3s ease;
+  z-index: 10;
+  cursor: pointer;
+  margin: 0 auto; /* Para centrar la raíz si es necesario */
+}
+
+.mlm-node-card.root-card {
+  width: 110px;
+  padding: 8px 6px;
+  border-color: var(--primary-color);
+  box-shadow: 0 4px 15px rgba(24, 214, 0, 0.2);
+}
+
+.mlm-node-card.root-card .mlm-avatar {
+  width: 36px;
+  height: 36px;
+}
+.mlm-node-card.root-card .mlm-name {
+  font-size: 0.75rem;
+}
+
+.mlm-node-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  border-color: var(--primary-color);
+}
+
+.mlm-top-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, #10b981, #3b82f6);
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+
+.mlm-node-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.mlm-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--bg-main);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+  border: 2px solid var(--border-color);
+}
+
+.mlm-avatar span {
+  color: #10b981;
+  font-weight: 700;
+  font-size: 0.65rem;
+}
+
+.mlm-name {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-bold);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  text-align: center;
+  margin: 0;
+}
+
+.mlm-rank {
+  font-size: 0.5rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  margin: 0 0 4px 0;
+}
+
+.mlm-points-grid {
+  width: 100%;
+  display: grid;
+  gap: 4px;
+  text-align: center;
+  background: var(--bg-main);
+  border-radius: 6px;
+  padding: 4px;
+  border: 1px solid var(--border-color);
+}
+
+.mlm-point-box {
+  display: flex;
+  flex-direction: column;
+}
+
+.mlm-point-label {
+  font-size: 0.45rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 0;
+}
+
+.mlm-point-value {
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--text-bold);
+}
+
+.unilevel-stats-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--card-bg);
+  padding: 12px 20px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  margin-bottom: 20px;
+  margin-left: 50%;
+  transform: translateX(-50%);
 }
 </style>
 

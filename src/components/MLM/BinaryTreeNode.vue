@@ -7,7 +7,8 @@
       <div class="mlm-node-content">
         <!-- Avatar -->
         <div class="mlm-avatar">
-          <span>{{ getInitials(node.name) }}</span>
+          <img v-if="node.photoUrl" :src="node.photoUrl" :alt="node.name" class="mlm-avatar-img" @error="$event.target.src = '/img_mantenimiento.png'; $event.target.onerror = null;" />
+          <span v-else>{{ getInitials(node.name) }}</span>
         </div>
         
         <!-- Info -->
@@ -65,7 +66,7 @@ const openUserModal = inject('openUserModal');
 const handleClick = () => {
   if (openUserModal) {
     // node tiene los rawUserData gracias a array_merge en BinaryNode
-    openUserModal(props.node, 'Árbol Binario', 'Ver en Red');
+    openUserModal(props.node, 'Árbol Binario', props.node.sponsor_name || 'Ninguno');
   }
 };
 
@@ -135,12 +136,19 @@ export default {
   margin-bottom: 2px;
   box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
   border: 2px solid var(--border-color);
+  overflow: hidden;
 }
 
 .mlm-avatar span {
   color: #10b981;
   font-weight: 700;
   font-size: 0.65rem;
+}
+
+.mlm-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .mlm-name {

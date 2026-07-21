@@ -50,7 +50,7 @@
         </div>
         <div class="data">
           <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 1rem;">
-            <img v-if="currentRank?.icon" :src="getS3Url(currentRank.icon)" alt="Medalla" style="width:40px; height:40px; object-fit:contain;" />
+            <img v-if="currentRank?.icon" :src="getS3Url(currentRank.icon)" alt="Medalla" style="width:40px; height:40px; object-fit:contain;" @error="$event.target.src = '/img_mantenimiento.png'; $event.target.onerror = null;" />
             <p style="font-size: 1.5rem; line-height: 2.5rem; margin: 0;">{{ currentRank?.name || 'University' }}</p>
           </div>
           <div class="range">
@@ -127,7 +127,7 @@
               <tr v-for="history in histories" :key="history.id">
                 <td>
                   <div style="display: flex; align-items: center; gap: 8px;">
-                    <img v-if="history.rank?.icon" :src="getS3Url(history.rank.icon)" alt="Medalla" style="width: 24px; height: 24px; object-fit: contain;" />
+                    <img v-if="history.rank?.icon" :src="getS3Url(history.rank.icon)" alt="Medalla" style="width: 24px; height: 24px; object-fit: contain;" @error="$event.target.src = '/img_mantenimiento.png'; $event.target.onerror = null;" />
                     <span class="rank-name">{{ history.rank?.name || 'N/A' }}</span>
                   </div>
                 </td>

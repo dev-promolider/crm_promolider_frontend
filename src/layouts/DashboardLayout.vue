@@ -253,7 +253,7 @@
           <!-- Rango -->
           <div class="topbar-item" :title="'Rango: ' + topbarStats.rank.name">
             <button class="icon-btn">
-              <img v-if="topbarStats.rank.icon" :src="getAvatarUrl(topbarStats.rank.icon)" alt="Rango" style="width:20px; height:20px; object-fit:contain;" />
+              <img v-if="topbarStats.rank.icon" :src="getAvatarUrl(topbarStats.rank.icon)" alt="Rango" style="width:20px; height:20px; object-fit:contain;" @error="$event.target.src = '/img_mantenimiento.png'; $event.target.onerror = null;" />
               <Award v-else :size="20" />
             </button>
           </div>
@@ -308,7 +308,7 @@
                   <span class="user-role">{{ user?.account_type?.name || user?.role || 'University' }}</span>
                 </div>
                 <div class="user-avatar">
-                  <img v-if="user?.photo || user?.avatar" :src="getAvatarUrl(user.photo || user.avatar)" alt="Avatar" />
+                  <img v-if="user?.photo || user?.avatar" :src="getAvatarUrl(user.photo || user.avatar)" alt="Avatar" @error="$event.target.src = '/img_mantenimiento.png'; $event.target.onerror = null;" />
                   <div v-else class="initials-avatar">{{ (user?.name || user?.nombre) ? (user.name || user.nombre).charAt(0).toUpperCase() : 'U' }}</div>
                   <div class="status-dot"></div>
                 </div>

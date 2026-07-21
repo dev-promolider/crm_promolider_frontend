@@ -69,7 +69,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, nextTick } from 'vue';
 import api from '@/services/apiClient';
 import BinaryTreeNode from './BinaryTreeNode.vue';
 
@@ -112,6 +112,15 @@ const stopPan = () => {
   isPanning.value = false;
 };
 
+const centerCanvas = () => {
+  if (!canvas.value) return;
+  const el = canvas.value;
+  // Center horizontally
+  el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
+  // Scroll to top
+  el.scrollTop = 0;
+};
+
 const zoomIn = () => {
   if (scale.value < 2) scale.value += 0.1;
 };
@@ -122,6 +131,7 @@ const zoomOut = () => {
 
 const resetZoom = () => {
   scale.value = 1;
+  setTimeout(() => centerCanvas(), 300); // Centrar con retraso para dar tiempo a la transicion
 };
 
 const fetchTree = async () => {
@@ -131,6 +141,12 @@ const fetchTree = async () => {
     
     const response = await api.get('/mlm/tree');
     treeData.value = response.data.data;
+    
+    // Esperar a que Vue renderice el árbol y luego centrar el canvas
+    await nextTick();
+    setTimeout(() => {
+      centerCanvas();
+    }, 100);
   } catch (err) {
     console.error('Error al cargar el árbol MLM:', err);
     error.value = 'No se pudo cargar la red. Inténtalo de nuevo más tarde.';
@@ -141,6 +157,9 @@ const fetchTree = async () => {
 
 onMounted(() => {
   fetchTree();
+  
+  // Añadir un listener de resize para mantener el centrado
+  window.addEventListener('resize', centerCanvas);
 });
 </script>
 
@@ -209,12 +228,15 @@ onMounted(() => {
 
 .mlm-canvas-area {
   width: 100%;
-  height: 800px;
+  height: 65vh;
+  min-height: 450px;
+  max-height: 750px;
   overflow: auto;
   text-align: center;
-  padding-top: 80px; 
   position: relative;
   cursor: grab;
+  /* Centrado seguro que no corta los lados en pantallas pequeñas */
+  white-space: nowrap;
 }
 
 .mlm-canvas-area.is-panning {
@@ -257,10 +279,10 @@ onMounted(() => {
 .mlm-tree-scale-box {
   transition: transform 0.3s ease-out;
   transform-origin: top center;
-  padding: 80px 100px 120px 100px; /* Buffer lateral y vertical */
-  display: inline-flex;
-  justify-content: center;
+  padding: 40px 60px 80px 60px; /* Reducido para que encuadre mejor */
+  display: inline-block; /* Usar inline-block en lugar de flex para no romper el text-align: center del padre */
   text-align: left;
+  min-width: min-content;
 }
 
 /* Custom Scrollbar */
