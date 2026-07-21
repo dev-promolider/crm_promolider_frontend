@@ -211,7 +211,6 @@ onMounted(() => {
   height: 800px;
   overflow: auto;
   display: flex;
-  justify-content: center;
   align-items: flex-start;
   padding-top: 100px; /* Más espacio arriba para que no choque con los botones */
   position: relative;
@@ -258,7 +257,13 @@ onMounted(() => {
 .mlm-tree-scale-box {
   transition: transform 0.3s ease-out;
   transform-origin: top center;
+  padding: 100px; /* Padding masivo para crear buffer scrollable */
   padding-bottom: 120px;
+  margin: 0 auto;
+  width: max-content;
+  min-width: 100%;
+  display: flex;
+  justify-content: center;
 }
 
 /* Custom Scrollbar */

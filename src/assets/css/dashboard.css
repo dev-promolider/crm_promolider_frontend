@@ -519,10 +519,11 @@ body.dark-theme .card::before {
 }
 
 .user-modal {
-  background-color: white;
+  background-color: var(--card-bg);
   width: 90%;
   max-width: 450px;
   border-radius: 12px;
+  border: 1px solid var(--border-color);
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
   overflow: hidden;
   animation: slideUp 0.3s ease-out;
@@ -538,12 +539,12 @@ body.dark-theme .card::before {
   justify-content: space-between;
   align-items: center;
   padding: 16px 24px;
-  border-bottom: 1px solid #e2e8f0;
-  background-color: white;
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--card-bg);
 }
 
 .user-modal-header h3 {
-  color: #22c55e;
+  color: var(--primary-color);
   margin: 0;
   font-size: 1.1rem;
   font-weight: 700;
@@ -552,7 +553,7 @@ body.dark-theme .card::before {
 .user-modal-close {
   background: none;
   border: none;
-  color: #94a3b8;
+  color: var(--text-muted);
   cursor: pointer;
   padding: 6px;
   border-radius: 6px;
@@ -563,15 +564,15 @@ body.dark-theme .card::before {
 }
 
 .user-modal-close:hover {
-  background-color: #f1f5f9;
-  color: #ef4444;
+  background-color: var(--bg-main);
+  color: var(--danger-color);
 }
 
 .user-modal-body {
   padding: 10px 24px 24px;
   max-height: 70vh;
   overflow-y: auto;
-  background-color: white;
+  background-color: var(--card-bg);
 }
 
 
@@ -670,7 +671,7 @@ body.dark-theme .radar-svg {
   justify-content: space-between;
   align-items: center;
   padding: 12px 0;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--border-color);
   font-size: 0.9rem;
 }
 
@@ -679,12 +680,12 @@ body.dark-theme .radar-svg {
 }
 
 .user-info-row span:first-child {
-  color: #64748b;
+  color: var(--text-muted);
   font-weight: 500;
 }
 
 .user-info-row strong {
-  color: #334155;
+  color: var(--text-bold);
   font-weight: 600;
 }
 
@@ -703,16 +704,16 @@ body.dark-theme .radar-svg {
 .modal-divider {
   border: 0;
   height: 1px;
-  background-color: #e2e8f0;
+  background-color: var(--border-color);
   margin: 15px 0;
 }
 
 .position-row {
-  background-color: #f8fafc;
+  background-color: var(--bg-main);
   padding: 12px;
   border-radius: 8px;
   margin-bottom: 8px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
 }
 
 .text-blue { color: #3b82f6 !important; font-size: 0.95rem; }

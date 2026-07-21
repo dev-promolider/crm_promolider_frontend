@@ -90,12 +90,12 @@ export default {
 
 .mlm-node-card {
   position: relative;
-  width: 160px;
+  width: 90px;
   background: var(--card-bg);
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   border: 1px solid var(--border-color);
-  padding: 16px 12px;
+  padding: 6px 4px;
   transition: all 0.3s ease;
   z-index: 10;
   cursor: pointer;
@@ -125,14 +125,14 @@ export default {
 }
 
 .mlm-avatar {
-  width: 48px;
-  height: 48px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   background: var(--bg-main);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 8px;
+  margin-bottom: 2px;
   box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
   border: 2px solid var(--border-color);
 }
@@ -140,11 +140,11 @@ export default {
 .mlm-avatar span {
   color: #10b981;
   font-weight: 700;
-  font-size: 1.1rem;
+  font-size: 0.65rem;
 }
 
 .mlm-name {
-  font-size: 0.9rem;
+  font-size: 0.65rem;
   font-weight: 600;
   color: var(--text-bold);
   white-space: nowrap;
@@ -152,25 +152,25 @@ export default {
   text-overflow: ellipsis;
   width: 100%;
   text-align: center;
-  margin: 0 0 2px 0;
+  margin: 0;
 }
 
 .mlm-rank {
-  font-size: 0.7rem;
+  font-size: 0.5rem;
   color: var(--text-muted);
   font-weight: 500;
-  margin: 0 0 12px 0;
+  margin: 0 0 4px 0;
 }
 
 .mlm-points-grid {
   width: 100%;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 4px;
   text-align: center;
   background: var(--bg-main);
-  border-radius: 8px;
-  padding: 6px;
+  border-radius: 6px;
+  padding: 4px;
   border: 1px solid var(--border-color);
 }
 
@@ -180,14 +180,14 @@ export default {
 }
 
 .mlm-point-label {
-  font-size: 0.6rem;
+  font-size: 0.45rem;
   color: var(--text-muted);
   text-transform: uppercase;
-  margin-bottom: 2px;
+  margin-bottom: 0;
 }
 
 .mlm-point-value {
-  font-size: 0.85rem;
+  font-size: 0.6rem;
   font-weight: 700;
   color: var(--text-bold);
 }
@@ -200,59 +200,53 @@ export default {
   position: relative;
 }
 
-/* Línea vertical desde el padre */
 .mlm-children-area::before {
   content: '';
   position: absolute;
   top: -48px;
   left: 50%;
-  width: 2px;
+  width: 3px;
   height: 24px;
-  background: var(--border-color);
+  background: #64748b; /* Gris más fuerte para contraste */
   transform: translateX(-50%);
 }
 
 .mlm-leg {
-  flex: 1 1 50%;
-  width: 50%;
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 0 8px;
+  padding: 0 10px; /* Padding razonable, ya no causará separación extrema */
 }
 
-/* Línea horizontal para la pata izquierda */
 .mlm-leg:first-child::before {
   content: '';
   position: absolute;
   top: -24px;
   right: 0;
   width: 50%;
-  height: 2px;
-  background: var(--border-color);
+  height: 3px;
+  background: #64748b;
 }
 
-/* Línea horizontal para la pata derecha */
 .mlm-leg:last-child::before {
   content: '';
   position: absolute;
   top: -24px;
   left: 0;
   width: 50%;
-  height: 2px;
-  background: var(--border-color);
+  height: 3px;
+  background: #64748b;
 }
 
-/* Línea vertical hacia el nodo hijo */
 .mlm-leg::after {
   content: '';
   position: absolute;
   top: -24px;
   left: 50%;
-  width: 2px;
+  width: 3px;
   height: 24px;
-  background: var(--border-color);
+  background: #64748b;
   transform: translateX(-50%);
 }
 </style>

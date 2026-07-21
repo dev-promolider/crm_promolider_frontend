@@ -18,10 +18,10 @@ defineProps({
 
 <style scoped>
 .mlm-empty-node {
-  width: 100px;
-  height: 80px;
+  width: 40px;
+  height: 40px;
   border: 2px dashed var(--border-color);
-  border-radius: 12px;
+  border-radius: 50%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -40,9 +40,8 @@ defineProps({
 }
 
 .mlm-empty-icon {
-  width: 24px;
-  height: 24px;
-  margin-bottom: 4px;
+  width: 18px;
+  height: 18px;
   transition: transform 0.3s ease;
 }
 
@@ -51,7 +50,6 @@ defineProps({
 }
 
 .mlm-empty-text {
-  font-size: 0.7rem;
-  font-weight: 500;
+  display: none;
 }
 </style>
