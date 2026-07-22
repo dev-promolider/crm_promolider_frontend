@@ -10,8 +10,8 @@ const cleanParams = (params) => {
 
 export const infoproductService = {
     getCreatedInfoproducts(params = {}) {
-        return apiClient.get(`/me/infoproducts/?origin=created`, {
-            params: cleanParams(params),
+        return apiClient.get(`/me/infoproducts`, {
+            params: { ...cleanParams(params), origin: 'created' },
         });
     },
 
