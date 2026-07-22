@@ -440,6 +440,35 @@
     </div>
 
   </div>
+    <!-- Payment Success Modal -->
+    <transition name="modal-fade">
+      <div v-if="showSuccessPaymentModal" class="opc-modal-overlay" @click.self="showSuccessPaymentModal = false">
+        <div class="opc-modal">
+          <div class="opc-modal-header">
+            <h3>Pago Exitoso</h3>
+            <button class="opc-close-btn" @click="showSuccessPaymentModal = false">
+              <X :size="24" />
+            </button>
+          </div>
+          <div class="opc-modal-body text-center p-4">
+            <CustomAlert 
+              type="success" 
+              title="¡Operación Completada!" 
+              message="Tu pago de recompra OPC se procesó correctamente." 
+            />
+            <p style="margin-top: 15px; font-size: 14px; opacity: 0.8; margin-bottom: 20px;">
+              Tus días activos han sido actualizados en la plataforma.
+            </p>
+            <div class="mt-4 flex justify-center w-full">
+              <button class="opc-btn-submit" style="width: auto; padding: 10px 30px;" @click="showSuccessPaymentModal = false">
+                Continuar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </transition>
+
 </template>
 
 <script setup>
@@ -449,6 +478,7 @@ import { useAuthStore } from '@/features/auth/stores/authStore';
 import api from '@/services/apiClient';
 import PageLoader from '@/components/PageLoader.vue';
 import AnimatedButton from '@/components/AnimatedButton.vue';
+import CustomAlert from '@/components/CustomAlert.vue';
 import { globalLoading } from '@/utils/loaderState';
 import { ElMessage } from 'element-plus';
 import 'element-plus/theme-chalk/el-message.css';
@@ -488,6 +518,7 @@ const topbarStats = ref({
 
 // Real-time Toast State
 const showToast = ref(false);
+const showSuccessPaymentModal = ref(false);
 const toastTitle = ref('');
 const toastBody = ref('');
 const toastImage = ref('');
@@ -777,6 +808,26 @@ onMounted(() => {
   authStore.fetchUser();
 
   listenNotifications();
+
+  const queryParams = new URLSearchParams(window.location.search);
+  if (queryParams.get('payment') === 'success_opc') {
+    const chargeId = queryParams.get('id');
+    if (chargeId) {
+      api.post('/opc/confirm-payment', { charge_id: chargeId }).then((res) => {
+        if (res.data.success) {
+          showSuccessPaymentModal.value = true;
+          authStore.fetchUser();
+        }
+      }).catch(console.error).finally(() => {
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, newUrl);
+      });
+    } else {
+      showSuccessPaymentModal.value = true;
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+    }
+  }
 
   // Auto-expand sección Marketing al navegar dentro de /marketing
   watch(() => route.path, (path) => {
@@ -1380,4 +1431,7 @@ onBeforeUnmount(() => {
 .opc-payment-method select { width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--main-bg); color: var(--text-main); font-size: 1rem; }
 .opc-payment-method select option { background-color: var(--card-bg); color: var(--text-main); }
 </style>
+
+
+
 
