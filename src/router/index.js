@@ -61,8 +61,15 @@ const routes = [
   },
   {
     path: '/courses/create',
-    name: 'courses.create',
-    component: { template: '<div>Create Course Placeholder</div>' }
+    component: () => import('@/layouts/DashboardLayout.vue'),
+    meta: { requiresAuth: true, layout: 'DashboardLayout' },
+    children: [
+      {
+        path: '',
+        name: 'courses.create',
+        component: () => import('@/features/infoproducts/views/CreateCourseView.vue')
+      }
+    ]
   },
   {
     path: '/course/module/:courseId/editModule',
@@ -72,14 +79,21 @@ const routes = [
       {
         path: '',
         name: 'course.module.edit',
-        component: { template: '<div>Edit Module Placeholder</div>' }
+        component: () => import('@/features/infoproducts/views/EditModuleView.vue')
       }
     ]
   },
   {
     path: '/books/create',
-    name: 'books.create',
-    component: { template: '<div>Create Book Placeholder</div>' }
+    component: () => import('@/layouts/DashboardLayout.vue'),
+    meta: { requiresAuth: true, layout: 'DashboardLayout' },
+    children: [
+      {
+        path: '',
+        name: 'books.create',
+        component: () => import('@/features/infoproducts/views/CreateBookView.vue')
+      }
+    ]
   },
   {
     path: '/dashboard',

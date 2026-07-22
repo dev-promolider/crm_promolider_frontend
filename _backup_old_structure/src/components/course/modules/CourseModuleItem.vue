@@ -42,7 +42,7 @@
 
 <script>
 import api from '../../../api/api';
-import CourseModuelClass from './classes/CourseModuleClass.vue';
+import CourseModuleClass from './classes/CourseModuleClass.vue';
 import { SaveIcon, Trash2Icon, PlusSquareIcon } from 'vue-feather-icons';
 
 export default {
@@ -62,7 +62,7 @@ export default {
   },
 
   components: {
-    'course-module-class': CourseModuelClass,
+    'course-module-class': CourseModuleClass,
     SaveIcon,
     Trash2Icon,
     PlusSquareIcon,
