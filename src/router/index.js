@@ -131,7 +131,12 @@ const routes = [
         component: () => import('@/features/wallet/views/MySalesView.vue')
       },
       {
-        path: 'bono-rango/historial',
+        path: 'bono-binario/puntos-activos',
+        name: 'active-binary-points',
+        component: () => import('@/features/wallet/views/ActiveBinaryPointsView.vue')
+      },
+      {
+        path: 'bono-binario/historial',
         name: 'binary-history',
         component: () => import('@/features/wallet/views/BinaryHistoryView.vue')
       },

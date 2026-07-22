@@ -45,6 +45,10 @@ export default {
     return apiClient.get('/marketing/reports/binary-history', { params });
   },
 
+  getActiveBinaryPoints() {
+    return apiClient.get('/marketing/reports/active-binary-points');
+  },
+
   getSales(userId) {
     return apiClient.get(`/marketing/reports/getsales/${userId}`);
   },

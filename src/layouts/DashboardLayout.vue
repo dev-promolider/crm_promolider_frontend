@@ -189,7 +189,7 @@
                     @click="bonoRangoExpanded = !bonoRangoExpanded"
                   >
                     <Award :size="16" />
-                    <span class="nav-label">Bono Rango</span>
+                    <span class="nav-label">Bono Binario</span>
                     <ChevronDown
                       :size="12"
                       class="nav-arrow"
@@ -199,7 +199,11 @@
 
                   <transition name="submenu-slide">
                     <div v-if="bonoRangoExpanded" class="nav-sub-submenu">
-                      <RouterLink to="/dashboard/bono-rango/historial" class="nav-subitem-deep" active-class="active">
+                      <RouterLink to="/dashboard/bono-binario/puntos-activos" class="nav-subitem-deep" active-class="active">
+                        <span class="submenu-dot"></span>
+                        <span>Puntos Activos</span>
+                      </RouterLink>
+                      <RouterLink to="/dashboard/bono-binario/historial" class="nav-subitem-deep" active-class="active">
                         <span class="submenu-dot"></span>
                         <span>Historial</span>
                       </RouterLink>
@@ -249,13 +253,90 @@
           <div class="topbar-item" title="Créditos">
             <div class="badge green-badge">{{ topbarStats.credits }}</div>
           </div>
+
+          <!-- Puntos Binarios (Izquierda y Derecha) -->
+          <div class="topbar-item" :title="`Pierna Izquierda: ${activeBinaryPoints.total_left} pts | Pierna Derecha: ${activeBinaryPoints.total_right} pts`">
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <span style="font-size: 12px; font-weight: 600; color: #3b82f6;">I: {{ activeBinaryPoints.total_left }}</span>
+              <Users :size="16" class="text-gray-400" />
+              <span style="font-size: 12px; font-weight: 600; color: #10b981;">D: {{ activeBinaryPoints.total_right }}</span>
+            </div>
+          </div>
           
           <!-- Rango -->
-          <div class="topbar-item" :title="'Rango: ' + topbarStats.rank.name">
-            <button class="icon-btn">
+          <div class="topbar-item" title="Ver plan de rangos" style="position: relative;">
+            <button class="icon-btn" @click="toggleRankDropdown">
               <img v-if="topbarStats.rank.icon" :src="getAvatarUrl(topbarStats.rank.icon)" alt="Rango" style="width:20px; height:20px; object-fit:contain;" @error="$event.target.src = '/img_mantenimiento.png'; $event.target.onerror = null;" />
               <Award v-else :size="20" />
             </button>
+            
+            <!-- Rank Dropdown -->
+            <div class="notifications-dropdown" :class="{ 'show': isRankDropdownOpen }" @click.stop style="width: 600px; right: -200px; max-height: 80vh; overflow-y: auto; z-index: 1000;">
+              <div class="notifications-header">
+                <span class="font-bold text-lg">Tu Rango Actual: {{ topbarStats.rank.name }}</span>
+              </div>
+              <div class="notifications-body p-4">
+                <div v-if="isLoadingRanks" class="p-8 flex flex-col items-center justify-center gap-2" style="color: var(--text-muted);">
+                  <Loader2 class="animate-spin" :size="24" />
+                  <span class="text-sm">Cargando datos de rangos...</span>
+                </div>
+                <div v-else>
+                  <h3 class="font-bold mb-2 text-cyan-400">Requisitos y Topes por Rango</h3>
+                  <div class="table-responsive mb-4" style="background: rgba(15, 23, 42, 0.4); border-radius: 8px;">
+                    <table class="premium-table text-xs" style="width: 100%; text-align: left;">
+                      <thead>
+                        <tr>
+                          <th style="padding: 8px;">Rango</th>
+                          <th style="padding: 8px;">Directos Req.</th>
+                          <th style="padding: 8px;">Tope Mensual</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr v-for="rank in rankList" :key="rank.id" :class="{'bg-cyan-900/30': rank.name === topbarStats.rank.name}">
+                          <td style="padding: 8px;">
+                            <div class="flex items-center gap-2">
+                              <img v-if="rank.icon" :src="getAvatarUrl(rank.icon)" style="width:16px; height:16px; object-fit:contain;" @error="$event.target.src = '/img_mantenimiento.png';" />
+                              {{ rank.name }}
+                            </div>
+                          </td>
+                          <td style="padding: 8px;">{{ rank.active_direct }}</td>
+                          <td style="padding: 8px;" class="text-emerald-400">${{ rank.max_pay }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <h3 class="font-bold mb-2 text-cyan-400">Bono Generacional</h3>
+                  <p class="text-xs text-gray-400 mb-2">Porcentaje que cobras de las ganancias de Bono Binario de tu red.</p>
+                  <div class="table-responsive" style="background: rgba(15, 23, 42, 0.4); border-radius: 8px;">
+                    <table class="premium-table text-xs" style="width: 100%; text-align: center;">
+                      <thead>
+                        <tr>
+                          <th style="padding: 8px; text-align: left;">Rango</th>
+                          <th style="padding: 8px;">G1</th>
+                          <th style="padding: 8px;">G2</th>
+                          <th style="padding: 8px;">G3</th>
+                          <th style="padding: 8px;">G4</th>
+                          <th style="padding: 8px;">G5</th>
+                          <th style="padding: 8px;">G6</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr v-for="gen in generationalList" :key="gen.id" :class="{'bg-cyan-900/30': gen.rank_name === topbarStats.rank.name}">
+                          <td style="padding: 8px; text-align: left;">{{ gen.rank_name }}</td>
+                          <td style="padding: 8px;">{{ gen.g_1 > 0 ? Number(gen.g_1) + '%' : '-' }}</td>
+                          <td style="padding: 8px;">{{ gen.g_2 > 0 ? Number(gen.g_2) + '%' : '-' }}</td>
+                          <td style="padding: 8px;">{{ gen.g_3 > 0 ? Number(gen.g_3) + '%' : '-' }}</td>
+                          <td style="padding: 8px;">{{ gen.g_4 > 0 ? Number(gen.g_4) + '%' : '-' }}</td>
+                          <td style="padding: 8px;">{{ gen.g_5 > 0 ? Number(gen.g_5) + '%' : '-' }}</td>
+                          <td style="padding: 8px;">{{ gen.g_6 > 0 ? Number(gen.g_6) + '%' : '-' }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
           
           <!-- Puntos -->
@@ -484,6 +565,8 @@ import { ElMessage } from 'element-plus';
 import 'element-plus/theme-chalk/el-message.css';
 
 
+import walletService from '@/features/wallet/services/walletService';
+import compensationService from '@/features/wallet/services/compensationService';
 const isLoading = computed(() => globalLoading.value > 0);
 import { 
   LayoutDashboard, UserPlus, Database, MonitorPlay, Star, Send, PieChart, ChevronRight, ChevronDown, Menu, 
@@ -505,9 +588,9 @@ const getAvatarUrl = (photoPath) => {
 const isSidebarCollapsed = ref(false);
 const isDropdownOpen = ref(false);
 const marketingExpanded = ref(route.path.startsWith('/marketing'));
-const reportesExpanded = ref(route.path.includes('billetera') || route.path.includes('mis-compras') || route.path.includes('mis-ventas') || route.path.includes('bono-rango'));
+const reportesExpanded = ref(route.path.includes('billetera') || route.path.includes('mis-compras') || route.path.includes('mis-ventas') || route.path.includes('bono-binario'));
 const carteraExpanded = ref(route.path.includes('billetera') || route.path.includes('mis-compras') || route.path.includes('mis-ventas'));
-const bonoRangoExpanded = ref(route.path.includes('bono-rango'));
+const bonoRangoExpanded = ref(route.path.includes('bono-binario'));
 
 const topbarStats = ref({
   credits: 0,
@@ -515,6 +598,8 @@ const topbarStats = ref({
   points: { total: 0, percentage: 0 },
   notifications: { unread: 0 }
 });
+
+const activeBinaryPoints = ref({ total_left: 0, total_right: 0 });
 
 // Real-time Toast State
 const showToast = ref(false);
@@ -537,7 +622,37 @@ const loadTopbarStats = async () => {
 const toggleDropdown = (e) => {
   e.stopPropagation();
   isDropdownOpen.value = !isDropdownOpen.value;
-  isNotificationsOpen.value = false; // Close notifications if open
+  isNotificationsOpen.value = false;
+  isRankDropdownOpen.value = false;
+};
+
+// --- Rank Dropdown State ---
+const isRankDropdownOpen = ref(false);
+const rankList = ref([]);
+const generationalList = ref([]);
+const isLoadingRanks = ref(false);
+
+const toggleRankDropdown = async (e) => {
+  e.stopPropagation();
+  isRankDropdownOpen.value = !isRankDropdownOpen.value;
+  isNotificationsOpen.value = false;
+  isDropdownOpen.value = false;
+  
+  if (isRankDropdownOpen.value && rankList.value.length === 0) {
+    isLoadingRanks.value = true;
+    try {
+      const [ranksRes, genRes] = await Promise.all([
+        compensationService.getRanks(),
+        compensationService.getGenerationalBonuses()
+      ]);
+      rankList.value = ranksRes.data?.data || [];
+      generationalList.value = genRes.data?.data || [];
+    } catch (error) {
+      console.error("Error fetching ranks data:", error);
+    } finally {
+      isLoadingRanks.value = false;
+    }
+  }
 };
 
 // --- Aula Virtual Dropdown State ---
@@ -613,10 +728,25 @@ const fetchNotifications = async () => {
   }
 };
 
+const loadActiveBinaryPoints = async () => {
+  try {
+    const response = await walletService.getActiveBinaryPoints();
+    if (response.data?.status === 'success') {
+      activeBinaryPoints.value = {
+        total_left: response.data.data.total_left,
+        total_right: response.data.data.total_right
+      };
+    }
+  } catch (error) {
+    console.error('Error fetching active binary points:', error);
+  }
+};
+
 const toggleNotifications = async (e) => {
   e.stopPropagation();
   isNotificationsOpen.value = !isNotificationsOpen.value;
-  isDropdownOpen.value = false; // Close user dropdown if open
+  isDropdownOpen.value = false;
+  isRankDropdownOpen.value = false;
   
   if (isNotificationsOpen.value) {
     await fetchNotifications();
@@ -836,6 +966,7 @@ onMounted(() => {
 
   // Cargar estadísticas
   loadTopbarStats();
+  loadActiveBinaryPoints();
 
   // Event listener para el dropdown
   window.addEventListener('click', closeDropdown);

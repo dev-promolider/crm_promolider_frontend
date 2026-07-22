@@ -1560,10 +1560,31 @@ async function handleTransferFunds() {
   }
 }
 
-function handleRecharge() {
+async function handleRecharge() {
   if (formRecharge.value.amount <= 0) return;
-  // Redirect to payment system
-  window.location.href = `/pay/recharge-openpay/${formRecharge.value.amount}/${formRecharge.value.type_payment}`;
+  
+  if (formRecharge.value.type_payment === 1) { // Openpay
+    loadingAction.value = true;
+    try {
+      const response = await apiClient.post('wallet/recharge/openpay', {
+        amount: formRecharge.value.amount
+      });
+      
+      const paymentUrl = response.data?.data?.payment_url || response.data?.payment_url;
+      if (paymentUrl) {
+        window.location.href = paymentUrl;
+      } else {
+        showToast('Error al generar enlace de pago Openpay.', 'error');
+      }
+    } catch (error) {
+      showToast(error.response?.data?.error || 'Error al iniciar recarga con Openpay.', 'error');
+    } finally {
+      loadingAction.value = false;
+    }
+  } else {
+    // Otros métodos de pago si existieran
+    showToast('Método de pago no implementado.', 'error');
+  }
 }
 
 async function handleRejectRequest(id) {

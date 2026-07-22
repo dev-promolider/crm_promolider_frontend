@@ -66,18 +66,18 @@
         <div class="card-header" style="align-items: flex-start; margin-bottom: 5px; z-index: 10; position: relative;">
           <div v-if="activeStatsTab === 'classic'" style="display: flex; align-items: flex-start; gap: 10px;">
             <div>
-              <h3 class="card-title">Resumen Mensual</h3>
-              <span class="card-meta">Ganancias calculadas este mes</span>
+              <h3 class="card-title">{{ timeframe === 'historical' ? 'Resumen Histórico' : 'Resumen Mensual' }}</h3>
+              <span class="card-meta">{{ timeframe === 'historical' ? 'Ganancias históricas totales' : 'Ganancias calculadas este mes' }}</span>
             </div>
             <div class="info-tooltip-wrapper" style="margin-top: 3px;">
               <Info :size="18" class="text-light" />
               <div class="info-tooltip" style="left: 0; right: auto;">
-                <h5>Bono de Expansión</h5>
-                <p>Comisiones directas por el registro de nuevos miembros referidos por ti.</p>
-                <h5>Bono Binario</h5>
-                <p>Ganancias generadas por el volumen de tu equipo en la pierna de pago (menor).</p>
-                <h5>Bono Generacional</h5>
-                <p>Matching bonus sobre las ganancias de los líderes directos que has desarrollado.</p>
+                <h5>Bono de Inicio Rápido</h5>
+                <p>Comisiones directas e inmediatas por cada nuevo socio o cliente que afilies directamente al sistema.</p>
+                <h5>Bono de Equipo (Binario)</h5>
+                <p>Ingresos residuales calculados en base al volumen total de ventas generado por la pierna de pago (equipo menor).</p>
+                <h5>Matching Bonus (Generaciones)</h5>
+                <p>Un porcentaje de las ganancias obtenidas por los líderes de tu equipo, hasta varias generaciones de profundidad.</p>
               </div>
             </div>
           </div>
@@ -87,6 +87,10 @@
           </div>
           
           <div class="stats-tabs" style="display: flex; gap: 8px; align-items: center;">
+            <select v-model="timeframe" @change="loadDashboardWidgets" class="stats-tab-btn" style="background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-light); outline: none; cursor: pointer; border-radius: 8px; padding: 6px 12px; font-size: 0.85rem; height: 32px;">
+              <option value="normal">Vista Normal</option>
+              <option value="historical">Vista Histórica</option>
+            </select>
             <button class="stats-tab-btn" :style="isSimulated ? 'background-color: rgba(24, 214, 0, 0.12); border: 1px solid var(--primary-color); color: var(--primary-color);' : 'border: 1px dashed var(--text-light); color: var(--text-light);'" @click="isSimulated = !isSimulated">
               {{ isSimulated ? 'Ver Real' : 'Simular Datos' }}
             </button>
@@ -104,7 +108,7 @@
                 </div>
                 <div class="stat-info">
                   <h4>$ {{ displayMonthly.expansion.toFixed(2) }}</h4>
-                  <p>Bono de expansión</p>
+                  <p>Inicio Rápido</p>
                 </div>
               </div>
               <div class="stat-item">
@@ -113,7 +117,7 @@
                 </div>
                 <div class="stat-info">
                   <h4>$ {{ displayMonthly.binary.toFixed(2) }}</h4>
-                  <p>Bono binario</p>
+                  <p>Bono Binario</p>
                 </div>
               </div>
               <div class="stat-item">
@@ -122,7 +126,7 @@
                 </div>
                 <div class="stat-info">
                   <h4>$ {{ displayMonthly.generational.toFixed(2) }}</h4>
-                  <p>Bono generacional</p>
+                  <p>Matching Bonus</p>
                 </div>
               </div>
             </div>
@@ -130,18 +134,29 @@
             <div class="card-header mt-4" style="align-items: flex-start; border-top: 1px solid var(--border-color); padding-top: 20px; z-index: 10; position: relative;">
               <div style="display: flex; align-items: flex-start; gap: 10px;">
                 <div>
-                  <h3 class="card-title">Ingresos Acumulativos</h3>
-                  <span class="card-meta">Desde el último corte o liquidación</span>
+                  <h3 class="card-title">{{ timeframe === 'historical' ? 'Ingresos Totales' : 'Ingresos Acumulativos' }}</h3>
+                  <span class="card-meta">
+                    <template v-if="timeframe === 'historical'">Desde la creación de la cuenta</template>
+                    <template v-else>
+                      Desde el último corte o liquidación 
+                      <span v-if="widgetsData?.last_cut_date" style="font-weight: 700; color: var(--text-color, #e0e0e0); margin-left: 4px; background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1);">
+                        ({{ widgetsData.last_cut_date }})
+                      </span>
+                      <span v-else style="font-weight: 700; color: #ff9800; margin-left: 4px; background: rgba(255, 152, 0, 0.1); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(255, 152, 0, 0.2);">
+                        (Aún no se ha hecho ningún corte)
+                      </span>
+                    </template>
+                  </span>
                 </div>
                 <div class="info-tooltip-wrapper" style="margin-top: 3px;">
                   <Info :size="18" class="text-light" />
                   <div class="info-tooltip" style="left: 0; right: auto;">
-                  <h5>Bono de Efectivo Rápido</h5>
-                  <p>Premios inmediatos o comisiones instantáneas por cumplir metas rápidas o campañas especiales de ventas.</p>
-                  <h5>Bono de Productor</h5>
-                  <p>Regalías que ganas cuando las personas compran los cursos, libros digitales o masterclasses donde tú eres el autor o productor.</p>
-                  <h5>Bono por Venta de Curso</h5>
-                  <p>Comisiones que generas cuando compartes tu enlace de afiliado y alguien compra un curso del catálogo general (Mercado).</p>
+                  <h5>Comisiones Instantáneas</h5>
+                  <p>Premios en efectivo que cobras al instante por alcanzar metas o participar en campañas promocionales (Fast Cash).</p>
+                  <h5>Regalías de Autor</h5>
+                  <p>Ingresos pasivos que generas cada vez que alguien en la red compra un curso o infoproducto creado por ti (Eres el Productor).</p>
+                  <h5>Comisiones de Afiliado</h5>
+                  <p>Dinero ganado al recomendar exitosamente los cursos del catálogo general a través de tus enlaces de afiliado.</p>
                 </div>
               </div>
             </div>
@@ -154,14 +169,14 @@
                 </div>
                 <div class="stat-info">
                   <h4>$ {{ displayCumulative.fast_cash.toFixed(2) }}</h4>
-                  <p>Bono de efectivo rápido</p>
+                  <p>Comisiones Instantáneas</p>
                 </div>
               </div>
               <div class="stat-item">
                 <div class="stat-icon icon-red"><Video :size="18" /></div>
                 <div class="stat-info">
                   <h4>$ {{ displayCumulative.producer.toFixed(2) }}</h4>
-                  <p>Bono de productor</p>
+                  <p>Regalías de Autor</p>
                 </div>
               </div>
               <div class="stat-item">
@@ -170,7 +185,7 @@
                 </div>
                 <div class="stat-info">
                   <h4>$ {{ displayCumulative.course_sale.toFixed(2) }}</h4>
-                  <p>Bono por venta de curso</p>
+                  <p>Ventas de Afiliado</p>
                 </div>
               </div>
             </div>
@@ -269,13 +284,25 @@
         <!-- Árbol Uninivel dinámico -->
         <div class="tree unilevel-tree" v-if="activeTab === 'unilevel'">
           
-          <div class="unilevel-stats-card" v-if="unilevelTreeData.root">
-            <div class="stat-icon icon-green" style="width: 40px; height: 40px;">
-              <Users :size="20" />
+          <div class="unilevel-stats-container" v-if="unilevelTreeData.root">
+            <div class="unilevel-stats-card">
+              <div class="stat-icon icon-green" style="width: 40px; height: 40px;">
+                <Users :size="20" />
+              </div>
+              <div class="stat-info" style="text-align: left;">
+                <h4 style="font-size: 1.2rem; margin: 0; color: var(--text-bold);">{{ unilevelTreeData.directs ? unilevelTreeData.directs.length : 0 }}</h4>
+                <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted);">Patrocinados directos</p>
+              </div>
             </div>
-            <div class="stat-info" style="text-align: left;">
-              <h4 style="font-size: 1.2rem; margin: 0; color: var(--text-bold);">{{ unilevelTreeData.directs ? unilevelTreeData.directs.length : 0 }}</h4>
-              <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted);">Patrocinados directos</p>
+            
+            <div class="unilevel-stats-card">
+              <div class="stat-icon icon-purple" style="width: 40px; height: 40px;">
+                <UserPlus :size="20" />
+              </div>
+              <div class="stat-info" style="text-align: left;">
+                <h4 style="font-size: 1.2rem; margin: 0; color: var(--text-bold);">{{ totalIndirects }}</h4>
+                <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted);">Patrocinados indirectos</p>
+              </div>
             </div>
           </div>
 
@@ -294,28 +321,12 @@
               </div>
 
               <ul v-if="filteredDirects && filteredDirects.length > 0">
-                <li v-for="direct in filteredDirects" :key="direct.id">
-                  <div class="mlm-node-card" @click.prevent="openUserModal(direct, 'Frontal (Directo)', unilevelTreeData.root?.name)">
-                    <div class="mlm-top-line"></div>
-                    <div class="mlm-node-content">
-                      <div class="mlm-avatar">
-                        <img v-if="direct.photo" :src="getAvatarUrl(direct.photo)" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" @error="$event.target.src = '/img_mantenimiento.png'; $event.target.onerror = null;" />
-                        <span v-else>{{ direct.name?.charAt(0) || 'U' }}</span>
-                      </div>
-                      <h4 class="mlm-name">{{ direct.name }}</h4>
-                      <p class="mlm-rank">{{ direct.role || 'Afiliado' }}</p>
-                      
-                      <div class="mlm-points-grid" style="grid-template-columns: 1fr;">
-                        <div class="mlm-point-box">
-                          <span class="mlm-point-label">Estado</span>
-                          <span class="mlm-point-value" :class="direct.active ? 'text-green' : 'text-red'">
-                            {{ direct.active ? 'ACTIVO' : 'INACTIVO' }}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </li>
+                <UnilevelTreeNode 
+                  v-for="direct in filteredDirects" 
+                  :key="direct.id" 
+                  :node="direct" 
+                  :sponsorName="unilevelTreeData.root.name"
+                />
               </ul>
               <div v-else class="mt-4 text-muted text-center" style="font-size: 13px;">
                 Aún no tienes invitados directos. ¡Comparte tu enlace de referido!
@@ -441,13 +452,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, provide } from 'vue';
+import { ref, computed, onMounted, provide } from 'vue';
 import {
   CheckCircle2, XCircle, TrendingUp, Clock, Award, Users, Video, PlayCircle, UserPlus, X, Info, Loader2, AlertCircle
 } from 'lucide-vue-next';
 import api from '@/services/apiClient';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import BinaryTreeView from '@/components/MLM/BinaryTreeView.vue';
+import UnilevelTreeNode from '@/features/dashboard/components/UnilevelTreeNode.vue';
 
 const authStore = useAuthStore();
 const user = computed(() => authStore.user);
@@ -580,6 +592,27 @@ const unilevelTreeData = ref(JSON.parse(sessionStorage.getItem('dashboard_unilev
 const unilevelFilter = ref('all'); // 'all', 'Izquierda', 'Derecha'
 const unilevelSearch = ref('');
 
+provide('openUserModal', openUserModal);
+provide('unilevelSearch', unilevelSearch);
+provide('unilevelFilter', unilevelFilter);
+
+const totalIndirects = computed(() => {
+  if (!unilevelTreeData.value.directs) return 0;
+  
+  let count = 0;
+  const countDescendants = (nodes) => {
+    for (const node of nodes) {
+      if (node.directs && node.directs.length > 0) {
+        count += node.directs.length;
+        countDescendants(node.directs);
+      }
+    }
+  };
+  
+  countDescendants(unilevelTreeData.value.directs);
+  return count;
+});
+
 const filteredDirects = computed(() => {
   if (!unilevelTreeData.value.directs) return [];
   
@@ -602,6 +635,7 @@ const filteredDirects = computed(() => {
 
 const activeStatsTab = ref('classic');
 const isSimulated = ref(false);
+const timeframe = ref('normal');
 
 const displayMonthly = computed(() => {
   if (isSimulated.value) {
@@ -675,10 +709,12 @@ const radarPointsCumulative = computed(() => {
 
 const loadDashboardWidgets = async () => {
   try {
-    const response = await api.get('/dashboard/widgets');
+    const response = await api.get('/dashboard/widgets?timeframe=' + timeframe.value);
     if (response.data && response.data.data) {
       widgetsData.value = response.data.data;
-      sessionStorage.setItem('dashboard_widgets', JSON.stringify(response.data.data));
+      if (timeframe.value === 'normal') {
+        sessionStorage.setItem('dashboard_widgets', JSON.stringify(response.data.data));
+      }
     }
   } catch (error) {
     console.error("Error cargando widgets del dashboard:", error);
@@ -886,6 +922,13 @@ onMounted(() => {
   color: var(--text-bold);
 }
 
+.unilevel-stats-container {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
 .unilevel-stats-card {
   display: inline-flex;
   align-items: center;
@@ -895,9 +938,6 @@ onMounted(() => {
   border-radius: 12px;
   border: 1px solid var(--border-color);
   box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-  margin-bottom: 20px;
-  margin-left: 50%;
-  transform: translateX(-50%);
 }
 </style>
 
