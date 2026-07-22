@@ -5,3 +5,5 @@ export const courseCertificateService = {
         return apiClient.post(`/courses/certificate/store/configuration`, formData);
     }
 };
+
+export default courseCertificateService;
