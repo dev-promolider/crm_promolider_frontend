@@ -1,1 +1,5 @@
-<template><div class="p-8 text-center text-gray-500">Módulo en construcción</div></template>
+<template>
+  <div class="p-8 text-center text-gray-500">
+    MÃ³dulo en construcciÃ³n
+  </div>
+</template>
