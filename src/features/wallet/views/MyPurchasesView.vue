@@ -73,7 +73,7 @@
         </div>
         
         <div class="per-page-selector">
-          <span class="text-sm text-gray-500 mr-2">Mostrar:</span>
+          <span class="per-page-label">Mostrar:</span>
           <select v-model="perPage" @change="changePage(1)" class="per-page-select">
             <option :value="10">10</option>
             <option :value="15">15</option>
@@ -418,6 +418,33 @@ const formatDate = (dateString) => {
   position: relative;
   width: 100%;
   max-width: 380px;
+}
+
+.per-page-selector {
+  display: flex;
+  align-items: center;
+}
+
+.per-page-label {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin-right: 0.5rem;
+}
+
+.per-page-select {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-bold);
+  padding: 0.35rem 0.5rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.per-page-select:focus {
+  border-color: var(--primary-color);
 }
 
 .search-icon {

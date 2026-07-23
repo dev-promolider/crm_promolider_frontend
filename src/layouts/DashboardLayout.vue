@@ -524,23 +524,23 @@
     <!-- Payment Success Modal -->
     <transition name="modal-fade">
       <div v-if="showSuccessPaymentModal" class="opc-modal-overlay" @click.self="showSuccessPaymentModal = false">
-        <div class="opc-modal">
+        <div class="opc-modal-container">
           <div class="opc-modal-header">
-            <h3>Pago Exitoso</h3>
-            <button class="opc-close-btn" @click="showSuccessPaymentModal = false">
+            <h2>Pago Exitoso</h2>
+            <button class="opc-modal-close" @click="showSuccessPaymentModal = false">
               <X :size="24" />
             </button>
           </div>
-          <div class="opc-modal-body text-center p-4">
+          <div class="opc-modal-body" style="text-align: center; padding: 1.5rem;">
             <CustomAlert 
               type="success" 
               title="¡Operación Completada!" 
               message="Tu pago de recompra OPC se procesó correctamente." 
             />
-            <p style="margin-top: 15px; font-size: 14px; opacity: 0.8; margin-bottom: 20px;">
+            <p style="margin-top: 15px; font-size: 14px; color: var(--text-main); margin-bottom: 20px;">
               Tus días activos han sido actualizados en la plataforma.
             </p>
-            <div class="mt-4 flex justify-center w-full">
+            <div style="margin-top: 1rem; display: flex; justify-content: center; width: 100%;">
               <button class="opc-btn-submit" style="width: auto; padding: 10px 30px;" @click="showSuccessPaymentModal = false">
                 Continuar
               </button>
