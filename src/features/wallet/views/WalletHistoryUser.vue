@@ -931,6 +931,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import walletService from '../services/walletService';
 import apiClient from '@/services/apiClient';
@@ -949,6 +950,8 @@ const isAdmin = computed(() => {
   return roles.map(r => String(r).toLowerCase()).includes('admin') || 
          roles.map(r => String(r).toLowerCase()).includes('super-admin');
 });
+const route = useRoute();
+const router = useRouter();
 
 // State variables
 const walletBalance = ref(0);
@@ -1062,7 +1065,25 @@ function changeMovPage(p) {
 }
 
 // Initialization
-onMounted(() => {
+onMounted(async () => {
+  // Verificar si venimos de un pago exitoso de recarga Openpay
+  if (route.query.payment === 'success_recharge' && route.query.id) {
+    showToast('Confirmando tu recarga con Openpay...', 'success');
+    try {
+      const response = await apiClient.post('marketing/reports/wallet/recharge/confirm-openpay', {
+        id: route.query.id
+      });
+      if (response.data?.success) {
+        showToast('Recarga generada correctamente y está pendiente de aprobación.', 'success');
+      }
+    } catch (error) {
+      showToast(error.response?.data?.error || 'Error al confirmar recarga Openpay', 'error');
+    }
+    
+    // Limpiar la URL para evitar confirmaciones múltiples si recarga la página
+    router.replace({ path: route.path, query: {} });
+  }
+
   loadBalance();
   loadMovements();
   loadBinaryHistory();
@@ -1566,7 +1587,7 @@ async function handleRecharge() {
   if (formRecharge.value.type_payment === 1) { // Openpay
     loadingAction.value = true;
     try {
-      const response = await apiClient.post('wallet/recharge/openpay', {
+      const response = await apiClient.post('marketing/reports/wallet/recharge/openpay', {
         amount: formRecharge.value.amount
       });
       
