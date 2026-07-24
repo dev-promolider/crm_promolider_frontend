@@ -1,6 +1,14 @@
 import apiClient from "@/services/apiClient";
 
 export const courseService = {
+    getCourseData(courseId) {
+        return apiClient.get(`/course/${courseId}`);
+    }, // Hecho
+
+    getModules(courseId) {
+        return apiClient.get(`/course/${courseId}/modulesList`);
+    }, // Hecho
+
     getOrders(courseId) {
         return apiClient.get(`/course/${courseId}/orders`);
     },

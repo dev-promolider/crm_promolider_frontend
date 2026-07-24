@@ -243,7 +243,8 @@ import {
 } from "vue";
 
 import { ElMessage } from "element-plus";
-import courseCertificateService from "@/features/infoproducts/services/course/courseCertificateService";
+import { courseService } from "@/features/infoproducts/services/course/courseService";
+import { courseModuleService } from "@/features/infoproducts/services/course/courseModuleService";
 import axios from "axios";
 
 const props = defineProps({
@@ -371,7 +372,7 @@ async function listModules() {
   }
 
   try {
-    const response = await courseCertificateService.listModules(props.course.id);
+    const response = await courseService.getModules(props.course.id);
 
     modules.value = response.data?.data ?? [];
   } catch (error) {
@@ -393,7 +394,7 @@ async function listLessons(moduleId) {
   }
 
   try {
-    const response = await courseCertificateService.listLessons(moduleId);
+    const response = await courseModuleService.listLessons(moduleId);
 
     lessons.value = response.data ?? [];
   } catch (error) {

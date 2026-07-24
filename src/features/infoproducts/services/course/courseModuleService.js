@@ -1,17 +1,9 @@
 import apiClient from '@/services/apiClient';
 
 export const courseModuleService = {
-    listModules(courseId) {
-        return apiClient.get(`/courses/${courseId}/modulesList`);
-    },
-
     listLessons(moduleId) {
-        return apiClient.get(`/courses/module/class/${moduleId}/classList`);
-    },
-
-    getModulePageData(courseId) {
-        return apiClient.get(`/courses/${courseId}/modules/edit-data`);
-    },
+        return apiClient.get(`/course/module/class/${moduleId}/classList`);
+    }, // Hecho
 
     getConfiguration(courseId) {
         return apiClient.get(`/courses/certificate/configuration/${courseId}`);

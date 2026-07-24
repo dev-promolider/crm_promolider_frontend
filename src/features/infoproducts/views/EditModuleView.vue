@@ -64,8 +64,8 @@
 import { onMounted, ref } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
 
-import CourseModuleList from '@/features/infoproducts/components/course/modules/CourseModuleList.vue';
-import { courseModuleService } from '@/features/infoproducts/services/course/courseModuleService';
+//import CourseModuleList from '@/features/infoproducts/components/course/modules/CourseModuleList.vue';
+import { courseService } from '@/features/infoproducts/services/course/courseService';
 
 const route = useRoute();
 const courseId = route.params.courseId;
@@ -78,10 +78,11 @@ const loadModulePage = async () => {
     isLoading.value = true;
 
     try {
-        const response = await courseModuleService.getModulePageData(courseId);
+        const responseModuleData = await courseService.getModules(courseId);
+        modules.value = responseModuleData.data.data || [];
 
-        course.value = response.data.course || null;
-        modules.value = response.data.modules || [];
+        const responseCourseData = await courseService.getCourseData(courseId);
+        course.value = responseCourseData.data.data || null;
     } catch (error) {
         console.error('Error loading module page:', error);
         alert('Error al cargar los módulos del curso.');
