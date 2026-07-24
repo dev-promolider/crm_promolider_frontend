@@ -167,6 +167,7 @@
 </template>
 
 <script setup>
+import '@/assets/landing-tailwind.css';
 import { ref, onMounted, nextTick, computed } from 'vue';
 import { marked } from 'marked';
 import { useAuthStore } from '@/features/auth/stores/authStore';
