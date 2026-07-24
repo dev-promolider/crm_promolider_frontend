@@ -96,6 +96,18 @@ const routes = [
     ]
   },
   {
+    path: '/pickle-bot',
+    component: () => import('@/layouts/DashboardLayout.vue'),
+    meta: { requiresAuth: true, layout: 'DashboardLayout' },
+    children: [
+      {
+        path: '',
+        name: 'pickle-bot',
+        component: () => import('@/features/picklebot/views/PickleBotView.vue')
+      }
+    ]
+  },
+  {
     path: '/dashboard',
     component: () => import('@/layouts/DashboardLayout.vue'),
     meta: { requiresAuth: true, layout: 'DashboardLayout' },
