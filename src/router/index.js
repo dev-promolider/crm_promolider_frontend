@@ -143,7 +143,7 @@ const routes = [
       {
         path: '/solicitudes',
         name: 'dashboard-solicitudes',
-        component: { template: '<div class="p-6"><h2>Módulo de Solicitudes (En construcción)</h2></div>' }
+        component: () => import('@/features/requests/views/RequestsView.vue')
       },
       {
         path: '/perfil',

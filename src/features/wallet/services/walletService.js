@@ -17,30 +17,6 @@ export default {
     return apiClient.post('/marketing/reports/movements/transfer-founds', { direct, amount });
   },
 
-  requestFunds(amount, accountType, accountNumber) {
-    return apiClient.post('/marketing/reports/movements/request-founds', {
-      amount,
-      account_type: accountType,
-      account_number: accountNumber
-    });
-  },
-
-  getRequestFundsList() {
-    return apiClient.get('/marketing/reports/movements/request-founds/list');
-  },
-
-  rejectRequest(id) {
-    return apiClient.post('/marketing/reports/movements/request-founds/reject', { id });
-  },
-
-  approveRequest(formData) {
-    return apiClient.post('/marketing/reports/movements/request-founds/approve', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
-  },
-
   getBinaryHistory(params = {}) {
     return apiClient.get('/marketing/reports/binary-history', { params });
   },

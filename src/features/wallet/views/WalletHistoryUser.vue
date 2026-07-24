@@ -17,7 +17,7 @@
           </div>
         </div>
         <div class="action-buttons">
-          <button class="btn btn-premium btn-icon" @click="openModal('solicitud')">
+          <button class="btn btn-premium btn-icon" @click="goToRequests">
             <ArrowUpRight :size="16" /> Solicitar Retiro
           </button>
           <button class="btn btn-secondary btn-icon" @click="openModal('transferencia')">
@@ -52,14 +52,6 @@
         @click="activeTab = 'redemption'"
       >
         <Award :size="16" /> Canje de Premios
-      </button>
-      <button 
-        v-if="isAdmin"
-        class="tab-btn admin-tab" 
-        :class="{ active: activeTab === 'requests' }" 
-        @click="activeTab = 'requests'"
-      >
-        <ShieldAlert :size="16" /> Solicitudes de Socios
       </button>
     </div>
 
@@ -303,63 +295,7 @@
         </div>
       </div>
 
-      <!-- 4. ADMIN REQUESTS TAB -->
-      <div v-if="activeTab === 'requests' && isAdmin" class="tab-pane">
-        <div class="table-header">
-          <h3>Solicitudes de Retiro Pendientes</h3>
-          <Loader2 v-if="loadingRequests" :size="18" class="spinner" />
-        </div>
-
-        <div class="table-responsive">
-          <table class="table-custom">
-            <thead>
-              <tr>
-                <th>Usuario</th>
-                <th>Monto Solicitado</th>
-                <th>Detalles de Pago</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="req in pendingRequests" :key="req.id">
-                <td>
-                  <div class="user-cell">
-                    <span class="user-name">{{ req.wallet?.user?.name }} {{ req.wallet?.user?.last_name }}</span>
-                    <span class="user-username">@{{ req.wallet?.user?.username }}</span>
-                  </div>
-                </td>
-                <td class="font-weight-bolder text-warning">
-                  {{ formatMoney(req.amount) }}
-                </td>
-                <td>
-                  <div class="payment-details">
-                    <span class="method-badge">{{ req.account_type }}</span>
-                    <span class="account-num">{{ req.account_number }}</span>
-                  </div>
-                </td>
-                <td>
-                  <div class="admin-actions">
-                    <button class="btn-approve" @click="openApproveModal(req)">
-                      <Check :size="14" /> Aprobar
-                    </button>
-                    <button class="btn-reject" @click="handleRejectRequest(req.id)">
-                      <X :size="14" /> Rechazar
-                    </button>
-                  </div>
-                </td>
-              </tr>
-              <tr v-if="pendingRequests.length === 0 && !loadingRequests">
-                <td colspan="4" class="empty-row">
-                  <ShieldCheck :size="24" class="text-success" />
-                  <p>¡Buen trabajo! No hay solicitudes pendientes de aprobación.</p>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- 5. CONFIG TAB -->
+      <!-- 4. CONFIG TAB -->
       <div v-if="activeTab === 'config'" class="tab-pane">
         <div class="wallet-config-grid">
           
@@ -627,82 +563,6 @@
 
     <!-- MODALS -->
 
-    <!-- Modal: Solicitud de Retiro -->
-    <div v-if="activeModal === 'solicitud'" class="modal-overlay" @click.self="closeModal">
-      <div class="modal-card">
-        <div class="modal-header">
-          <h5>Solicitud de Retiro de Fondos</h5>
-          <button class="close-btn" @click="closeModal"><X :size="18" /></button>
-        </div>
-        <div class="modal-body">
-          <div class="form-group">
-            <label>Monto a Retirar (USD)</label>
-            <input 
-              type="number" 
-              v-model.number="formRequest.amount" 
-              placeholder="Min $20" 
-              class="form-control"
-              min="20"
-            />
-            <small class="text-muted">Monto mínimo de retiro: $20.00</small>
-          </div>
-
-          <div class="form-group">
-            <label>Tipo de Cuenta / Billetera</label>
-            <select v-model="formRequest.account_type" class="form-control" @change="onAccountTypeChange">
-              <option value="">Seleccione opción</option>
-              <option value="paypal">PayPal</option>
-              <option value="binance">Binance (USDT)</option>
-            </select>
-          </div>
-
-          <!-- Dynamic account listing or manual entry -->
-          <div class="form-group" v-if="formRequest.account_type">
-            <label>Cuenta de Destino</label>
-            
-            <select 
-              v-if="availableAccounts.length > 0" 
-              v-model="formRequest.account_number" 
-              class="form-control"
-            >
-              <option value="">Seleccione cuenta configurada</option>
-              <option 
-                v-for="acc in availableAccounts" 
-                :key="acc.id" 
-                :value="getAccountVal(acc)"
-              >
-                {{ getAccountDisplay(acc) }}
-              </option>
-            </select>
-
-            <!-- Manual input input fallback -->
-            <div v-else class="manual-input-box">
-              <input 
-                type="text" 
-                v-model="formRequest.account_number" 
-                :placeholder="getPlaceholderText(formRequest.account_type)" 
-                class="form-control"
-              />
-              <small class="text-warning-light mt-1 d-block">
-                No tienes cuentas configuradas. Ingresa los datos manualmente.
-              </small>
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" @click="closeModal">Cancelar</button>
-          <button 
-            class="btn btn-premium" 
-            :disabled="!isRequestFormValid || loadingAction" 
-            @click="handleRequestFunds"
-          >
-            <Loader2 v-if="loadingAction" class="spinner" :size="14" />
-            Enviar Solicitud
-          </button>
-        </div>
-      </div>
-    </div>
-
     <!-- Modal: Traslado de Fondos -->
     <div v-if="activeModal === 'transferencia'" class="modal-overlay" @click.self="closeModal">
       <div class="modal-card">
@@ -824,47 +684,6 @@
       </div>
     </div>
 
-    <!-- Modal: Aprobar Solicitud con Soporte (Admin) -->
-    <div v-if="activeModal === 'approve'" class="modal-overlay" @click.self="closeModal">
-      <div class="modal-card">
-        <div class="modal-header">
-          <h5>Aprobar Solicitud de Retiro</h5>
-          <button class="close-btn" @click="closeModal"><X :size="18" /></button>
-        </div>
-        <div class="modal-body">
-          <div class="form-group">
-            <label>Mensaje o Nota de Aprobación</label>
-            <textarea 
-              v-model="formApprove.message" 
-              placeholder="Escribe detalles del depósito o transacción..." 
-              class="form-control"
-              rows="3"
-            ></textarea>
-          </div>
-          <div class="form-group">
-            <label>Subir Comprobante (Imagen)</label>
-            <input 
-              type="file" 
-              @change="handleFileChange" 
-              accept="image/*" 
-              class="form-control"
-            />
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" @click="closeModal">Cancelar</button>
-          <button 
-            class="btn btn-premium" 
-            :disabled="loadingAction" 
-            @click="handleApproveRequest"
-          >
-            <Loader2 v-if="loadingAction" class="spinner" :size="14" />
-            Confirmar Aprobación
-          </button>
-        </div>
-      </div>
-    </div>
-
     <!-- Modal: Confirmar Canje de Premio -->
     <div v-if="showConfirmRedeem" class="modal-overlay" @click.self="closeRedeemConfirmation">
       <div class="modal-card">
@@ -938,18 +757,13 @@ import apiClient from '@/services/apiClient';
 import { formatDate } from '@/utils/formatDate';
 import {
   Wallet as WalletIcon, CheckCircle, Clock, ArrowUpRight, RefreshCw, Plus, 
-  ListTodo, TrendingUp, DollarSign, ShieldAlert, Eye, Inbox, Search, 
-  ShieldCheck, X, Check, ImageOff, Download, Loader2, AlertTriangle,
+  ListTodo, TrendingUp, DollarSign, Eye, Inbox, Search, 
+  X, ImageOff, Download, Loader2, AlertTriangle,
   Settings, Award, Trash2, Edit3, Globe, Coins
 } from 'lucide-vue-next';
 
 const authStore = useAuthStore();
 const userId = computed(() => authStore.user?.id);
-const isAdmin = computed(() => {
-  const roles = authStore.role || [];
-  return roles.map(r => String(r).toLowerCase()).includes('admin') || 
-         roles.map(r => String(r).toLowerCase()).includes('super-admin');
-});
 const route = useRoute();
 const router = useRouter();
 
@@ -960,10 +774,7 @@ const walletPending = ref(0);
 const movements = ref([]);
 const binaryHistory = ref([]);
 const sales = ref([]);
-const pendingRequests = ref([]);
 const myDirects = ref([]);
-const paypalAccounts = ref([]);
-const binanceAccounts = ref([]);
 
 // Config & Redemption state variables
 const selectedMethod = ref('');
@@ -1002,14 +813,11 @@ const selectedMovement = ref({});
 const loadingMovements = ref(false);
 const loadingBinary = ref(false);
 const loadingSales = ref(false);
-const loadingRequests = ref(false);
 const loadingAction = ref(false);
 
 // Forms
-const formRequest = ref({ amount: '', account_type: '', account_number: '' });
 const formTransfer = ref({ amount: '', direct: '' });
 const formRecharge = ref({ amount: '', type_payment: 1 });
-const formApprove = ref({ id: null, message: '', support_image: null });
 
 // Search & Pagination
 const binarySearch = ref('');
@@ -1033,21 +841,9 @@ const movTo           = ref(0);
 const toast = ref({ show: false, message: '', type: 'success' });
 
 // Form validations
-const isRequestFormValid = computed(() => {
-  return formRequest.value.amount >= 20 &&
-         formRequest.value.account_type &&
-         formRequest.value.account_number.trim() !== '';
-});
-
 const isTransferFormValid = computed(() => {
   return formTransfer.value.amount >= 20 &&
          formTransfer.value.direct;
-});
-
-const availableAccounts = computed(() => {
-  if (formRequest.value.account_type === 'paypal') return paypalAccounts.value;
-  if (formRequest.value.account_type === 'binance') return binanceAccounts.value;
-  return [];
 });
 
 function clearMovFilters() {
@@ -1092,10 +888,6 @@ onMounted(async () => {
   loadPaymentAccounts();
   loadCredits();
   loadRewards();
-  
-  if (isAdmin.value) {
-    loadPendingRequests();
-  }
 });
 
 // Data loaders
@@ -1166,18 +958,6 @@ async function loadSales() {
   }
 }
 
-async function loadPendingRequests() {
-  loadingRequests.value = true;
-  try {
-    const response = await walletService.getRequestFundsList();
-    pendingRequests.value = response.data || [];
-  } catch (error) {
-    console.error('Error loading pending requests:', error);
-  } finally {
-    loadingRequests.value = false;
-  }
-}
-
 async function loadDirects() {
   try {
     const response = await apiClient.get('/marketing/reports/movements/my-directs');
@@ -1196,11 +976,10 @@ async function loadPaymentAccounts() {
       apiClient.get('/marketing/payment/paypal-accounts')
     ]);
     
-    // Refresh the accounts lists used in withdrawal forms
-    binanceAccounts.value = binanceResponse.data?.data || binanceResponse.data || [];
-    paypalAccounts.value = paypalResponse.data?.data || paypalResponse.data || [];
+    const binanceList = binanceResponse.data?.data || binanceResponse.data || [];
+    const paypalList = paypalResponse.data?.data || paypalResponse.data || [];
 
-    const parsedBinance = binanceAccounts.value.map(account => ({
+    const parsedBinance = binanceList.map(account => ({
       id: account.id,
       type: 'binance',
       method: 'Binance',
@@ -1213,7 +992,7 @@ async function loadPaymentAccounts() {
       }
     }));
 
-    const parsedPaypal = paypalAccounts.value.map(account => ({
+    const parsedPaypal = paypalList.map(account => ({
       id: account.id,
       type: 'paypal',
       method: 'PayPal',
@@ -1439,26 +1218,6 @@ async function confirmRedeemReward() {
   }
 }
 
-// Payment accounts API fallbacks
-async function onAccountTypeChange() {
-  formRequest.value.account_number = '';
-  if (formRequest.value.account_type === 'paypal') {
-    try {
-      const res = await apiClient.get('/marketing/payment/paypal-accounts');
-      paypalAccounts.value = res.data?.data || res.data || [];
-    } catch {
-      paypalAccounts.value = [];
-    }
-  } else if (formRequest.value.account_type === 'binance') {
-    try {
-      const res = await apiClient.get('/marketing/payment/binance-accounts');
-      binanceAccounts.value = res.data?.data || res.data || [];
-    } catch {
-      binanceAccounts.value = [];
-    }
-  }
-}
-
 // Helpers
 function formatMoney(amount) {
   return new Intl.NumberFormat('en-US', {
@@ -1523,44 +1282,9 @@ function getBonusTagClass(typeId) {
   return 'tag-gray';
 }
 
-function getAccountDisplay(acc) {
-  if (formRequest.value.account_type === 'paypal') {
-    return `${acc.account_name} (${acc.email})`;
-  }
-  return `${acc.account_name} (${acc.binance_id})`;
-}
-
-function getAccountVal(acc) {
-  return formRequest.value.account_type === 'paypal' ? acc.email : acc.binance_id;
-}
-
-function getPlaceholderText(type) {
-  return type === 'paypal' ? 'ejemplo@correo.com' : 'ID de Binance o Billetera USDT';
-}
-
 // Actions handlers
-async function handleRequestFunds() {
-  if (walletBalance.value < formRequest.value.amount) {
-    showToast('Saldo insuficiente para retirar.', 'error');
-    return;
-  }
-
-  loadingAction.value = true;
-  try {
-    await walletService.requestFunds(
-      formRequest.value.amount,
-      formRequest.value.account_type,
-      formRequest.value.account_number
-    );
-    showToast('Solicitud de retiro enviada correctamente.', 'success');
-    closeModal();
-    loadBalance();
-    loadMovements();
-  } catch (error) {
-    showToast(error.response?.data?.error || 'Error al procesar retiro.', 'error');
-  } finally {
-    loadingAction.value = false;
-  }
+function goToRequests() {
+  router.push('/solicitudes');
 }
 
 async function handleTransferFunds() {
@@ -1608,46 +1332,6 @@ async function handleRecharge() {
   }
 }
 
-async function handleRejectRequest(id) {
-  if (!confirm('¿Está seguro de rechazar esta solicitud de retiro?')) return;
-  
-  try {
-    await walletService.rejectRequest(id);
-    showToast('Solicitud rechazada correctamente.', 'success');
-    loadPendingRequests();
-  } catch (error) {
-    showToast('Error al rechazar solicitud.', 'error');
-  }
-}
-
-function handleFileChange(event) {
-  const file = event.target.files[0];
-  if (file) {
-    formApprove.value.support_image = file;
-  }
-}
-
-async function handleApproveRequest() {
-  loadingAction.value = true;
-  const formData = new FormData();
-  formData.append('id', formApprove.value.id);
-  formData.append('message', formApprove.value.message);
-  if (formApprove.value.support_image) {
-    formData.append('support_image', formApprove.value.support_image);
-  }
-
-  try {
-    await walletService.approveRequest(formData);
-    showToast('Solicitud aprobada correctamente.', 'success');
-    closeModal();
-    loadPendingRequests();
-  } catch (error) {
-    showToast(error.response?.data?.error || 'Error al aprobar solicitud.', 'error');
-  } finally {
-    loadingAction.value = false;
-  }
-}
-
 // Search and paging
 let searchTimeout;
 function debouncedFetchBinary() {
@@ -1676,17 +1360,8 @@ function changeBinaryPage(page) {
 function openModal(modalName) {
   activeModal.value = modalName;
   // reset forms
-  formRequest.value = { amount: '', account_type: '', account_number: '' };
   formTransfer.value = { amount: '', direct: '' };
   formRecharge.value = { amount: '', type_payment: 1 };
-  formApprove.value = { id: null, message: '', support_image: null };
-}
-
-function openApproveModal(req) {
-  activeModal.value = 'approve';
-  formApprove.value.id = req.id;
-  formApprove.value.message = '';
-  formApprove.value.support_image = null;
 }
 
 function viewSupport(movement) {
@@ -1879,23 +1554,6 @@ function showToast(message, type = 'success') {
   color: #16a34a;
 }
 
-.admin-tab {
-  margin-left: auto;
-  border: 1px dashed #f43f5e;
-  color: #f43f5e;
-}
-
-.admin-tab:hover {
-  background: #fff1f2;
-  color: #e11d48;
-}
-
-.admin-tab.active {
-  background: #ffe4e6;
-  color: #be123c;
-  border-style: solid;
-}
-
 /* Tab Panels */
 .tab-content-wrapper {
   background: var(--card-bg);
@@ -1998,40 +1656,6 @@ function showToast(message, type = 'success') {
 .tag-primary { background: var(--indicator-blue);   color: var(--indicator-blue-text);  }
 .tag-purple  { background: var(--indicator-green);  color: var(--indicator-green-text); }
 .tag-gray    { background: rgba(0,0,0,0.06);         color: var(--text-main);            }
-
-/* Admin actions */
-.admin-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.btn-approve {
-  background: #22c55e;
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.btn-reject {
-  background: #ef4444;
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
 
 .btn-table-action {
   background: transparent;
@@ -2138,13 +1762,6 @@ function showToast(message, type = 'success') {
 .form-control:focus {
   border-color: #22c55e;
   box-shadow: 0 0 0 3px rgba(22, 197, 94, 0.12);
-}
-
-.manual-input-box {
-  background: var(--card-bg);
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
 }
 
 /* Support Modal Img */
