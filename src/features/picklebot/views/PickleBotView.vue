@@ -172,7 +172,7 @@ import { marked } from 'marked';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 
 // Get API URL from .env or fallback
-const API_URL = import.meta.env.VITE_PICKLE_API_URL || 'http://localhost:3005/api/v1/chats';
+const API_URL = 'https://agente.picklechatbot.promolider.org/api/v1/chats';
 
 // Auth and User
 const authStore = useAuthStore();
