@@ -123,7 +123,7 @@
 
           <RouterLink to="/solicitudes" class="nav-item" active-class="active">
             <Send :size="20" />
-            <span v-if="!isSidebarCollapsed">Solicitudes</span>
+            <span v-if="!isSidebarCollapsed">Solicitudes de Fondos</span>
             <ChevronRight v-if="!isSidebarCollapsed" :size="16" class="ml-auto opacity-50" />
           </RouterLink>
 
