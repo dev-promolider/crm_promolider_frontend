@@ -88,8 +88,8 @@
           
           <div class="stats-tabs" style="display: flex; gap: 8px; align-items: center;">
             <select v-model="timeframe" @change="loadDashboardWidgets" class="stats-tab-btn" style="background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-light); outline: none; cursor: pointer; border-radius: 8px; padding: 6px 12px; font-size: 0.85rem; height: 32px;">
-              <option value="normal">Vista Normal</option>
-              <option value="historical">Vista Histórica</option>
+              <option value="normal" style="background-color: var(--card-bg); color: var(--text-light);">Vista Normal</option>
+              <option value="historical" style="background-color: var(--card-bg); color: var(--text-light);">Vista Histórica</option>
             </select>
             <button class="stats-tab-btn" :style="isSimulated ? 'background-color: rgba(24, 214, 0, 0.12); border: 1px solid var(--primary-color); color: var(--primary-color);' : 'border: 1px dashed var(--text-light); color: var(--text-light);'" @click="isSimulated = !isSimulated">
               {{ isSimulated ? 'Ver Real' : 'Simular Datos' }}

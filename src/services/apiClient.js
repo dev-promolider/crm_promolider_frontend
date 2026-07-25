@@ -1,8 +1,11 @@
 import axios from "axios";
 import { startGlobalLoading, stopGlobalLoading } from "../utils/loaderState";
 
+const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const DYNAMIC_API_URL = isLocal ? "http://127.0.0.1:8000/api/v1" : "https://api.promolider.org/api/v1"; // Cambia esta URL por la de tu producción
+
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1",
+  baseURL: import.meta.env.VITE_API_URL || DYNAMIC_API_URL,
   headers: {
     Accept: "application/json",
     "Content-Type": "application/json",
