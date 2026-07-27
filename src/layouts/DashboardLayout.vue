@@ -199,6 +199,10 @@
 
                   <transition name="submenu-slide">
                     <div v-if="bonoRangoExpanded" class="nav-sub-submenu">
+                      <RouterLink to="/dashboard/rangos-y-bonos" class="nav-subitem-deep" active-class="active">
+                        <span class="submenu-dot"></span>
+                        <span>Rangos y Bonos</span>
+                      </RouterLink>
                       <RouterLink to="/dashboard/bono-binario/puntos-activos" class="nav-subitem-deep" active-class="active">
                         <span class="submenu-dot"></span>
                         <span>Puntos Activos</span>
@@ -588,9 +592,9 @@ const getAvatarUrl = (photoPath) => {
 const isSidebarCollapsed = ref(false);
 const isDropdownOpen = ref(false);
 const marketingExpanded = ref(route.path.startsWith('/marketing'));
-const reportesExpanded = ref(route.path.includes('billetera') || route.path.includes('mis-compras') || route.path.includes('mis-ventas') || route.path.includes('bono-binario'));
+const reportesExpanded = ref(route.path.includes('billetera') || route.path.includes('mis-compras') || route.path.includes('mis-ventas') || route.path.includes('bono-binario') || route.path.includes('rangos-y-bonos'));
 const carteraExpanded = ref(route.path.includes('billetera') || route.path.includes('mis-compras') || route.path.includes('mis-ventas'));
-const bonoRangoExpanded = ref(route.path.includes('bono-binario'));
+const bonoRangoExpanded = ref(route.path.includes('bono-binario') || route.path.includes('rangos-y-bonos'));
 
 const topbarStats = ref({
   credits: 0,

@@ -141,6 +141,11 @@ const routes = [
         component: () => import('@/features/wallet/views/BinaryHistoryView.vue')
       },
       {
+        path: 'rangos-y-bonos',
+        name: 'dashboard-rangos-bonos',
+        component: () => import('@/features/wallet/views/RanksAndBonusesView.vue')
+      },
+      {
         path: '/solicitudes',
         name: 'dashboard-solicitudes',
         component: () => import('@/features/requests/views/RequestsView.vue')
