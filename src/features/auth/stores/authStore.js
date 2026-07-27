@@ -18,6 +18,7 @@ export const useAuthStore = defineStore('auth', {
       return state.role.includes(role);
     },
     userRoles: (state) => state.role,
+    userId: (state) => state.user?.id,
   },
   actions: {
     async login(credentials) {
