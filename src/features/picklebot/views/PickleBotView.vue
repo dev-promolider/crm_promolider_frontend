@@ -1,36 +1,49 @@
 <template>
-  <div class="pickle-layout w-full grid grid-cols-1 md:grid-cols-[18rem_1fr] gap-6 p-4 lg:p-6 bg-[#09090b] text-slate-100 relative overflow-hidden rounded-xl">
+  <div class="pickle-layout w-full grid grid-cols-1 md:grid-cols-[17rem_1fr] gap-4 relative overflow-hidden rounded-xl">
     <!-- Background accents -->
-    <div class="absolute top-[20%] left-[10%] w-96 h-96 bg-primary-600/15 rounded-full blur-[100px] pointer-events-none"></div>
-    <div class="absolute bottom-[20%] right-[10%] w-96 h-96 bg-primary-600/15 rounded-full blur-[100px] pointer-events-none"></div>
+    <div class="pickle-glow absolute top-[20%] left-[10%] w-96 h-96 rounded-full blur-[100px] pointer-events-none"></div>
+    <div class="pickle-glow absolute bottom-[20%] right-[10%] w-96 h-96 rounded-full blur-[100px] pointer-events-none"></div>
 
     <!-- Sidebar -->
     <div class="sidebar w-full order-2 md:order-1 glass-panel overflow-hidden flex flex-col rounded-2xl z-10 min-h-0">
       <div class="flex flex-col h-full min-h-0 p-4 md:p-6">
-        <button @click="startNewChat" class="new-chat-btn w-full bg-primary-500 hover:bg-primary-600 text-white font-semibold py-3 px-4 rounded-xl transition-colors duration-200 mb-5 flex items-center justify-center gap-2 shadow-sm">
+
+          <!-- Header -->
+        <div class="chat-header p-5 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="pickle-avatar w-10 h-10 rounded-xl flex items-center justify-center font-bold text-base shadow-lg">
+                P
+              </div>
+              <div>
+                <h2 class="pickle-title font-semibold text-sm">Pickle Bot</h2>
+              </div>
+            </div>
+          </div>
+
+        <button @click="startNewChat" class="pickle-primary-btn new-chat-btn w-full font-semibold py-3 px-4 rounded-xl transition-colors duration-200 mb-5 flex items-center justify-center gap-2 shadow-sm">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
           Nuevo Chat
         </button>
 
-        <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 px-1 pb-2 border-b border-white/5">Historial</p>
+        <p class="pickle-label text-xs font-semibold uppercase tracking-wider mb-2 px-1 pb-2">Historial</p>
 
         <div class="chat-list flex-1 min-h-0 overflow-y-auto pr-1 mt-1 flex flex-col gap-1">
-          <div v-if="pickleBotStore.loadingChats" class="flex flex-col items-center justify-center gap-2 py-8 text-slate-500">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="animate-spin text-primary-400"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-            <span class="text-sm">Cargando historiales...</span>
+          <div v-if="pickleBotStore.loadingChats" class="pickle-text-muted flex flex-col items-center justify-center gap-2 py-8">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="pickle-spinner animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+            <span class="text-xs">Cargando historiales...</span>
           </div>
-          <div v-else-if="pickleBotStore.chats.length === 0" class="flex flex-col items-center justify-center gap-2 py-8 text-slate-500 text-center px-4">
+          <div v-else-if="pickleBotStore.chats.length === 0" class="pickle-text-muted flex flex-col items-center justify-center gap-2 py-8 text-center px-4">
             <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="opacity-60"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            <span class="text-sm">No hay chats recientes</span>
+            <span class="text-xs">No hay chats recientes</span>
           </div>
           <div v-else v-for="chat in pickleBotStore.chats" :key="chat.id"
-               class="chat-list-item group flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl cursor-pointer transition-colors duration-150 border-l-2"
-               :class="pickleBotStore.currentChat?.id === chat.id ? 'bg-primary-500/15 border-primary-400 text-white' : 'border-transparent hover:bg-white/5 text-slate-300'"
+               class="pickle-chat-item group flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl cursor-pointer transition-colors duration-150 border-l-2"
+               :class="{ 'pickle-chat-item--active': pickleBotStore.currentChat?.id === chat.id }"
                @click="loadChat(chat.id)">
             <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 opacity-60"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            <span class="chat-title truncate flex-1 text-sm">{{ chat.title || 'Nuevo Chat' }}</span>
+            <span class="chat-title truncate flex-1 text-xs">{{ chat.title || 'Nuevo Chat' }}</span>
             <button @click.stop="confirmDeleteChat(chat.id)"
-                    class="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg bg-transparent text-slate-500 md:opacity-0 md:group-hover:opacity-100 hover:bg-red-500/15 hover:text-red-400 transition-all duration-150"
+                    class="pickle-delete-btn shrink-0 w-7 h-7 flex items-center justify-center rounded-lg bg-transparent md:opacity-0 md:group-hover:opacity-100 transition-all duration-150"
                     title="Eliminar chat">
               <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
             </button>
@@ -41,27 +54,13 @@
 
     <!-- Main Chat Area -->
     <div class="chat-container order-1 md:order-2 min-h-0 glass-panel flex flex-col rounded-2xl z-10 overflow-hidden shadow-2xl">
-      <!-- Header -->
-      <div class="chat-header p-5 border-b border-white/10 flex items-center justify-between bg-black/20">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center font-bold text-lg shadow-lg">
-            P
-          </div>
-          <div>
-            <h2 class="font-semibold text-white">Pickle Bot</h2>
-            <p class="text-xs text-slate-400 flex items-center gap-1">
-              <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Online
-            </p>
-          </div>
-        </div>
-      </div>
 
       <!-- Messages -->
       <div class="chat-messages flex-1 overflow-y-auto p-4 md:p-6 flex flex-col gap-5 scroll-smooth" ref="messagesContainer">
 
         <!-- Welcome Message (only if new chat) -->
-        <div v-if="!pickleBotStore.currentChat && pickleBotStore.messages.length === 0" class="message assistant self-start bg-white/5 border border-white/10 rounded-2xl rounded-bl-sm py-3 px-4 max-w-[85%] animate-fade-in-up">
-          <div class="prose prose-invert max-w-none text-sm md:text-base leading-relaxed">
+        <div v-if="!pickleBotStore.currentChat && pickleBotStore.messages.length === 0" class="pickle-msg pickle-msg--assistant message assistant self-start rounded-2xl rounded-bl-sm py-3 px-4 max-w-[85%] animate-fade-in-up">
+          <div class="prose prose-invert max-w-none text-xs leading-relaxed">
             ¡Hola! Soy Pickle. Escribe algo para comenzar a crear tu curso.
           </div>
         </div>
@@ -72,9 +71,9 @@
           <!-- Text Message -->
           <div v-if="msg.type === 'text' || msg.type === 'form_answers'"
                class="message py-3 px-4 rounded-2xl max-w-[85%] animate-fade-in-up break-words"
-               :class="msg.role === 'user' ? 'user self-end bg-gradient-to-br from-primary-500 to-primary-500 rounded-br-sm shadow-lg shadow-primary-500/20' : 'assistant self-start bg-white/5 border border-white/10 rounded-bl-sm'">
-            <div v-if="msg.role === 'assistant'" class="prose prose-invert max-w-none text-sm md:text-base leading-relaxed" v-html="parseMarkdown(msg.content.text || msg.content)"></div>
-            <div v-else class="text-sm md:text-base whitespace-pre-wrap">{{ msg.content.text || 'Respuestas enviadas' }}</div>
+               :class="msg.role === 'user' ? 'pickle-msg pickle-msg--user user self-end rounded-br-sm shadow-lg' : 'pickle-msg pickle-msg--assistant assistant self-start rounded-bl-sm'">
+            <div v-if="msg.role === 'assistant'" class="prose prose-invert max-w-none text-xs leading-relaxed" v-html="parseMarkdown(msg.content.text || msg.content)"></div>
+            <div v-else class="text-xs whitespace-pre-wrap">{{ msg.content.text || 'Respuestas enviadas' }}</div>
           </div>
 
           <!-- Form Message -->
@@ -84,43 +83,43 @@
         </template>
 
         <!-- Typing Indicator -->
-        <div v-show="pickleBotStore.isSending" class="typing-indicator assistant self-start bg-white/5 border border-white/10 rounded-2xl rounded-bl-sm py-3 px-4 max-w-[85%] flex items-center gap-3 animate-fade-in-up">
+        <div v-show="pickleBotStore.isSending" class="pickle-msg pickle-msg--assistant typing-indicator assistant self-start rounded-2xl rounded-bl-sm py-3 px-4 max-w-[85%] flex items-center gap-3 animate-fade-in-up">
           <div class="flex gap-1.5">
-            <div class="w-1.5 h-1.5 bg-primary-400 rounded-full animate-bounce" style="animation-delay: -0.32s"></div>
-            <div class="w-1.5 h-1.5 bg-primary-400 rounded-full animate-bounce" style="animation-delay: -0.16s"></div>
-            <div class="w-1.5 h-1.5 bg-primary-400 rounded-full animate-bounce"></div>
+            <div class="pickle-dot w-1.5 h-1.5 rounded-full animate-bounce" style="animation-delay: -0.32s"></div>
+            <div class="pickle-dot w-1.5 h-1.5 rounded-full animate-bounce" style="animation-delay: -0.16s"></div>
+            <div class="pickle-dot w-1.5 h-1.5 rounded-full animate-bounce"></div>
           </div>
-          <span class="text-xs text-slate-400">{{ loadingText }}</span>
+          <span class="pickle-text-muted text-xs">{{ loadingText }}</span>
         </div>
       </div>
 
       <!-- Input Area -->
-      <div class="chat-input p-4 md:p-5 border-t border-white/10 bg-black/20">
-        <p v-if="!userId" class="text-xs text-red-400 mb-2">
+      <div class="chat-input p-4 md:p-5">
+        <p v-if="!userId" class="pickle-error-text text-xs mb-2">
           No se pudo identificar tu usuario. Vuelve a iniciar sesión para usar Pickle Bot.
         </p>
         <form @submit.prevent="sendMessage" class="flex items-center gap-3 relative">
           <!-- Model Selector -->
           <div class="model-selector relative shrink-0" @click.stop>
             <button type="button" @click="toggleModelMenu"
-                    class="flex items-center gap-2 h-12 md:h-14 bg-white/5 hover:bg-white/10 border border-white/10 text-sm text-slate-200 px-3.5 rounded-full outline-none focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/20 transition-all cursor-pointer"
-                    :class="{ 'bg-white/10 border-white/20': isModelMenuOpen }">
+                    class="pickle-model-btn flex items-center gap-2 h-12 md:h-14 text-xs px-3.5 rounded-full outline-none transition-all cursor-pointer"
+                    :class="{ 'pickle-model-btn--open': isModelMenuOpen }">
               <span class="w-2 h-2 rounded-full shrink-0" :style="{ backgroundColor: selectedModelInfo.color }"></span>
               <span class="truncate max-w-[90px] sm:max-w-[130px]">{{ selectedModelInfo.label }}</span>
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400 transition-transform duration-150 shrink-0" :class="{ 'rotate-180': isModelMenuOpen }"><path d="m6 9 6 6 6-6"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="pickle-text-muted transition-transform duration-150 shrink-0" :class="{ 'rotate-180': isModelMenuOpen }"><path d="m6 9 6 6 6-6"/></svg>
             </button>
 
             <Transition name="model-menu-fade">
-              <div v-if="isModelMenuOpen" class="model-menu rounded-xl p-1.5 shadow-2xl z-30 overflow-hidden">
+              <div v-if="isModelMenuOpen" class="pickle-model-menu model-menu rounded-xl p-1.5 shadow-2xl z-30 overflow-hidden">
                 <button v-for="m in models" :key="m.value" type="button" @click="chooseModel(m.value)"
-                        class="w-full flex items-start gap-2.5 text-left px-3 py-2.5 rounded-lg transition-colors"
-                        :class="m.value === selectedModel ? 'bg-white/10' : 'bg-transparent hover:bg-white/5'">
+                        class="pickle-model-menu-item w-full flex items-start gap-2.5 text-left px-3 py-2.5 rounded-lg transition-colors"
+                        :class="{ 'pickle-model-menu-item--active': m.value === selectedModel }">
                   <span class="w-2.5 h-2.5 rounded-full shrink-0 mt-1" :style="{ backgroundColor: m.color }"></span>
                   <div class="flex-1 min-w-0">
-                    <div class="text-sm font-medium" :class="m.value === selectedModel ? 'text-white' : 'text-slate-200'">{{ m.label }}</div>
-                    <div class="text-xs text-slate-400 mt-0.5">{{ m.description }}</div>
+                    <div class="pickle-model-menu-item-title text-xs font-medium">{{ m.label }}</div>
+                    <div class="pickle-text-muted text-xs mt-0.5">{{ m.description }}</div>
                   </div>
-                  <svg v-if="m.value === selectedModel" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 mt-0.5 text-primary-400"><path d="M20 6 9 17l-5-5"/></svg>
+                  <svg v-if="m.value === selectedModel" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="pickle-check-icon shrink-0 mt-0.5"><path d="M20 6 9 17l-5-5"/></svg>
                 </button>
               </div>
             </Transition>
@@ -130,11 +129,11 @@
                  v-model="inputText"
                  placeholder="Escribe tu mensaje aquí..."
                  :disabled="!userId || pickleBotStore.isSending || pickleBotStore.isAwaitingFormAnswers"
-                 class="flex-1 bg-white/5 border border-white/10 rounded-full px-5 py-3.5 text-sm md:text-base text-white outline-none focus:border-primary-500/50 focus:ring-4 focus:ring-primary-500/10 transition-all disabled:opacity-50"
+                 class="pickle-input flex-1 rounded-full px-5 py-3.5 text-sm outline-none transition-all disabled:opacity-40"
                  autocomplete="off">
           <button type="submit"
                   :disabled="!inputText.trim() || !userId || pickleBotStore.isSending || pickleBotStore.isAwaitingFormAnswers"
-                  class="w-12 h-12 md:w-14 md:h-14 shrink-0 bg-primary-500 hover:bg-primary-600 disabled:bg-slate-700 disabled:cursor-not-allowed text-white rounded-full flex items-center justify-center transition-all duration-200 shadow-lg shadow-primary-500/20">
+                  class="pickle-send-btn w-12 h-12 md:w-14 md:h-14 shrink-0 rounded-full flex items-center justify-center transition-all duration-200 shadow-lg disabled:opacity-40 disabled:cursor-not-allowed">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="ml-1"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
           </button>
         </form>
@@ -144,16 +143,16 @@
     <!-- Delete Modal -->
     <div v-if="showDeleteModal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 animate-fade-in">
       <div class="glass-panel w-full max-w-sm rounded-2xl p-6 text-center shadow-2xl animate-scale-in">
-        <div class="w-12 h-12 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center mx-auto mb-4">
+        <div class="pickle-danger-icon w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="14" y1="11" y2="17"/></svg>
         </div>
-        <h3 class="text-lg font-semibold text-white mb-2">¿Eliminar este chat?</h3>
-        <p class="text-sm text-slate-400 mb-6">Esta acción es permanente y no se puede deshacer.</p>
+        <h3 class="pickle-title text-base font-semibold mb-2">¿Eliminar este chat?</h3>
+        <p class="pickle-text-muted text-xs mb-6">Esta acción es permanente y no se puede deshacer.</p>
         <div class="flex gap-3 justify-center">
-          <button @click="showDeleteModal = false" class="px-5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white font-medium transition-colors text-sm flex-1">
+          <button @click="showDeleteModal = false" class="pickle-btn-cancel px-5 py-2.5 rounded-xl font-medium transition-colors text-xs flex-1">
             Cancelar
           </button>
-          <button @click="deleteChat" class="px-5 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-medium transition-colors text-sm flex-1">
+          <button @click="deleteChat" class="pickle-btn-danger px-5 py-2.5 rounded-xl font-medium transition-colors text-xs flex-1">
             Eliminar
           </button>
         </div>
@@ -205,10 +204,17 @@ const loadingMessagesList = [
 const loadingText = ref('Procesando...');
 let loadingInterval = null;
 
+// Algunos proveedores (ej. GPT-4o Mini) envuelven toda la respuesta en un
+// bloque de código ```markdown ... ```, que `marked` renderiza tal cual
+// (correcto para bloques de código reales), mostrando los "#" sin parsear.
+// Si el texto completo es un único bloque envolvente, se desenvuelve antes.
+const FENCE_WRAPPER_RE = /^\s*```(?:markdown|md)?\s*\n([\s\S]*?)\n?```\s*$/i;
+
 // Parse Markdown safely
 const parseMarkdown = (text) => {
   if (!text) return '';
-  return marked.parse(text);
+  const unwrapped = text.replace(FENCE_WRAPPER_RE, '$1');
+  return marked.parse(unwrapped);
 };
 
 // Scroll to bottom
@@ -355,6 +361,19 @@ onBeforeUnmount(() => {
      más corto que el otro según cuánto contenido tenga. */
   grid-auto-rows: 1fr;
   align-items: stretch;
+
+  /* Tokens de color: se derivan de las variables globales del proyecto
+     (src/assets/css/variables.css), que ya cambian con body.dark-theme,
+     así el chat se adapta automáticamente al tema claro/oscuro. */
+  --tint-1: color-mix(in srgb, var(--text-bold) 5%, transparent);
+  --tint-2: color-mix(in srgb, var(--text-bold) 9%, transparent);
+  --tint-3: color-mix(in srgb, var(--text-bold) 14%, transparent);
+  --primary-tint: color-mix(in srgb, var(--primary-color) 15%, transparent);
+  --primary-shadow: color-mix(in srgb, var(--primary-color) 25%, transparent);
+  --danger-hover: color-mix(in srgb, var(--danger-color) 88%, black);
+
+  background: var(--bg-main);
+  color: var(--text-main);
 }
 
 /* Ambos paneles deben ocupar el 100% de la fila del grid de forma
@@ -382,14 +401,188 @@ onBeforeUnmount(() => {
   box-sizing: border-box;
 }
 
-.model-menu {
+/* Acentos decorativos de fondo: sutiles en tema claro, más visibles en oscuro */
+.pickle-glow {
+  background: var(--primary-color);
+  opacity: 0.08;
+}
+body.dark-theme .pickle-glow {
+  opacity: 0.15;
+}
+
+.glass-panel {
+  background: var(--card-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border-color);
+}
+
+.chat-header {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.chat-input {
+  border-top: 1px solid var(--border-color);
+}
+
+.pickle-avatar {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+  color: var(--white);
+}
+
+.pickle-title {
+  color: var(--text-bold);
+}
+
+.pickle-text-muted {
+  color: var(--text-muted);
+}
+
+.pickle-label {
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.pickle-spinner {
+  color: var(--primary-color);
+}
+
+.pickle-primary-btn {
+  background: var(--primary-color);
+  color: var(--white);
+}
+.pickle-primary-btn:hover {
+  background: var(--primary-hover);
+}
+
+.pickle-chat-item {
+  border-left-color: transparent;
+  color: var(--text-muted);
+}
+.pickle-chat-item:hover {
+  background: var(--tint-1);
+}
+.pickle-chat-item--active {
+  background: var(--primary-tint);
+  border-left-color: var(--primary-color);
+  color: var(--text-bold);
+}
+
+.pickle-delete-btn {
+  color: var(--text-light);
+}
+.pickle-delete-btn:hover {
+  background: color-mix(in srgb, var(--danger-color) 15%, transparent);
+  color: var(--danger-color);
+}
+
+.pickle-msg {
+  color: var(--text-main);
+}
+.pickle-msg--assistant {
+  background: var(--tint-1);
+  border: 1px solid var(--border-color);
+}
+.pickle-msg--user {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+  color: var(--white);
+  box-shadow: 0 10px 20px -5px var(--primary-shadow);
+}
+
+.pickle-dot {
+  background: var(--primary-color);
+}
+
+.pickle-error-text {
+  color: var(--danger-color);
+}
+
+.pickle-input {
+  background: var(--tint-1);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+}
+.pickle-input::placeholder {
+  color: var(--text-muted);
+}
+.pickle-input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 4px var(--primary-tint);
+}
+
+.pickle-send-btn {
+  background: var(--primary-color);
+  color: var(--white);
+  box-shadow: 0 10px 20px -5px var(--primary-shadow);
+}
+.pickle-send-btn:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+
+.pickle-model-btn {
+  background: var(--tint-1);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+}
+.pickle-model-btn:hover {
+  background: var(--tint-2);
+}
+.pickle-model-btn--open {
+  background: var(--tint-2);
+}
+.pickle-model-btn:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px var(--primary-tint);
+}
+
+.pickle-model-menu {
   position: absolute;
   left: 0;
   bottom: calc(100% + 8px);
   width: 288px;
   max-width: calc(100vw - 3rem);
-  background: #131318;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--bg-main);
+  border: 1px solid var(--border-color);
+}
+
+.pickle-model-menu-item {
+  background: transparent;
+  color: var(--text-main);
+}
+.pickle-model-menu-item:hover {
+  background: var(--tint-1);
+}
+.pickle-model-menu-item--active {
+  background: var(--tint-2);
+}
+.pickle-model-menu-item-title {
+  color: var(--text-main);
+}
+.pickle-model-menu-item--active .pickle-model-menu-item-title {
+  color: var(--text-bold);
+}
+.pickle-check-icon {
+  color: var(--primary-color);
+}
+
+.pickle-danger-icon {
+  background: color-mix(in srgb, var(--danger-color) 18%, transparent);
+  color: var(--danger-color);
+}
+
+.pickle-btn-cancel {
+  background: var(--tint-1);
+  color: var(--text-bold);
+}
+.pickle-btn-cancel:hover {
+  background: var(--tint-2);
+}
+
+.pickle-btn-danger {
+  background: var(--danger-color);
+  color: var(--white);
+}
+.pickle-btn-danger:hover {
+  background: var(--danger-hover);
 }
 
 .model-menu-fade-enter-active,
@@ -402,19 +595,13 @@ onBeforeUnmount(() => {
   transform: translateY(6px);
 }
 
-.glass-panel {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
 .chat-list::-webkit-scrollbar,
 .chat-messages::-webkit-scrollbar {
   width: 6px;
 }
 .chat-list::-webkit-scrollbar-thumb,
 .chat-messages::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--tint-3);
   border-radius: 6px;
 }
 
@@ -443,17 +630,17 @@ onBeforeUnmount(() => {
 }
 
 /* Base styles for markdown rendered content inside .prose-invert */
-:deep(.prose-invert h1) { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; margin-top: 1rem; color: #f8fafc; }
-:deep(.prose-invert h2) { font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem; margin-top: 1rem; color: #f8fafc; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.25rem; }
-:deep(.prose-invert h3) { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; margin-top: 0.75rem; color: #e2e8f0; }
+:deep(.prose-invert h1) { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; margin-top: 1rem; color: var(--text-bold); }
+:deep(.prose-invert h2) { font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem; margin-top: 1rem; color: var(--text-bold); border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem; }
+:deep(.prose-invert h3) { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; margin-top: 0.75rem; color: var(--text-bold); }
 :deep(.prose-invert p) { margin-bottom: 0.75rem; }
 :deep(.prose-invert p:last-child) { margin-bottom: 0; }
 :deep(.prose-invert ul) { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 0.75rem; }
 :deep(.prose-invert ol) { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 0.75rem; }
 :deep(.prose-invert li) { margin-bottom: 0.25rem; }
-:deep(.prose-invert strong) { font-weight: 600; color: #fff; }
-:deep(.prose-invert a) { color: #818cf8; text-decoration: underline; }
-:deep(.prose-invert code) { background: rgba(0,0,0,0.3); padding: 0.125rem 0.25rem; border-radius: 0.25rem; font-family: monospace; font-size: 0.875em; }
-:deep(.prose-invert pre) { background: rgba(0,0,0,0.3); padding: 0.75rem; border-radius: 0.5rem; overflow-x: auto; margin-bottom: 0.75rem; }
+:deep(.prose-invert strong) { font-weight: 600; color: var(--text-bold); }
+:deep(.prose-invert a) { color: var(--primary-color); text-decoration: underline; }
+:deep(.prose-invert code) { background: var(--tint-2); padding: 0.125rem 0.25rem; border-radius: 0.25rem; font-family: monospace; font-size: 0.875em; }
+:deep(.prose-invert pre) { background: var(--tint-2); padding: 0.75rem; border-radius: 0.5rem; overflow-x: auto; margin-bottom: 0.75rem; }
 :deep(.prose-invert pre code) { background: transparent; padding: 0; }
 </style>

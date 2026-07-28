@@ -1,7 +1,8 @@
 module.exports = {
   content: [
     "../src/features/registration/views/PreregistroLandingView.vue",
-    "../src/features/picklebot/views/PickleBotView.vue"
+    "../src/features/picklebot/views/PickleBotView.vue",
+    "../src/features/picklebot/components/PickleFormMessage.vue"
   ],
   theme: {
     extend: {
