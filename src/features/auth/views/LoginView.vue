@@ -10,21 +10,29 @@
         <h2 class="login-title">Inicia sesión</h2>
         <p class="login-subtitle">Bienvenido de vuelta a la plataforma <strong>Promolíder</strong>.</p>
 
-        <!-- ALERTA DE ERROR PERSONALIZADA -->
-        <div class="notifications-container" :style="{ display: showErrorAlert ? 'flex' : 'none' }">
-          <div class="error-alert">
-            <div class="flex">
-              <div class="flex-shrink-0">
-                <svg aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" class="error-svg">
-                  <path clip-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" fill-rule="evenodd"></path>
-                </svg>
-              </div>
-              <div class="error-prompt-container">
-                <p class="error-prompt-heading">{{ errorTitle }}</p>
-                <div class="error-prompt-wrap">
-                  <p>{{ errorMessage }}</p>
-                </div>
-              </div>
+        <!-- ALERTA DE ERROR Y EXITO -->
+        <div class="notifications-container">
+          <div v-if="showErrorAlert" class="error-alert">
+            <div class="error-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm-1.72 6.97a.75.75 0 10-1.06 1.06L10.94 12l-1.72 1.72a.75.75 0 101.06 1.06L12 13.06l1.72 1.72a.75.75 0 101.06-1.06L13.06 12l1.72-1.72a.75.75 0 10-1.06-1.06L12 10.94l-1.72-1.72z" clip-rule="evenodd" />
+              </svg>
+            </div>
+            <div class="error-content">
+              <h4>{{ errorTitle }}</h4>
+              <p>{{ errorMessage }}</p>
+            </div>
+          </div>
+
+          <div v-if="showSuccessAlert" class="success-alert">
+            <div class="success-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clip-rule="evenodd" />
+              </svg>
+            </div>
+            <div class="success-content">
+              <h4>{{ successTitle }}</h4>
+              <p>{{ successMessage }}</p>
             </div>
           </div>
         </div>
@@ -145,12 +153,13 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import VueRecaptcha from 'vue3-recaptcha2';
 import { Eye, EyeOff, Key } from 'lucide-vue-next';
 
 const router = useRouter();
+const route = useRoute();
 const authStore = useAuthStore();
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -169,6 +178,10 @@ const recaptchaError = ref(false);
 const showErrorAlert = ref(false);
 const errorTitle = ref('');
 const errorMessage = ref('');
+
+const successTitle = ref('');
+const successMessage = ref('');
+const showSuccessAlert = ref(false);
 
 const currentSlide = ref(0);
 let slideInterval = null;
@@ -220,6 +233,7 @@ const showError = (title, message) => {
 
 const handleLogin = async () => {
   showErrorAlert.value = false;
+  showSuccessAlert.value = false;
 
   if (isProduction && !recaptchaToken.value) {
     recaptchaError.value = true;
@@ -248,6 +262,15 @@ const handleLogin = async () => {
     loading.value = false;
   }
 };
+
+onMounted(() => {
+  const route = useRoute();
+  if (route.query.id) {
+    successTitle.value = "Pago en Proceso";
+    successMessage.value = "Tu registro y pago están siendo validados por el banco. En cuanto se apruebe, recibirás un correo y podrás acceder a tu cuenta.";
+    showSuccessAlert.value = true;
+  }
+});
 </script>
 
 <style scoped>
@@ -318,6 +341,68 @@ const handleLogin = async () => {
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+
+.success-alert {
+  display: flex;
+  background-color: rgba(16, 185, 129, 0.1);
+  border-left: 4px solid #10b981;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+}
+
+.success-icon {
+  color: #10b981;
+  width: 24px;
+  height: 24px;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.success-content h4 {
+  color: #10b981;
+  margin: 0 0 4px 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.success-content p {
+  color: #d1d5db;
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.error-alert {
+  display: flex;
+  background-color: rgba(239, 68, 68, 0.1);
+  border-left: 4px solid #ef4444;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+}
+
+.error-icon {
+  color: #ef4444;
+  width: 24px;
+  height: 24px;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.error-content h4 {
+  color: #ef4444;
+  margin: 0 0 4px 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.error-content p {
+  color: #d1d5db;
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.4;
 }
 
 .form-group {

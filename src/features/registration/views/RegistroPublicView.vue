@@ -19,6 +19,9 @@
       </div>
       
       <div class="form-card">
+        <div class="logo-container">
+          <img src="/images/logo/promolider_logo.png" alt="Promolider Logo" class="registration-logo" />
+        </div>
         <h2>Crear tu cuenta Promolider</h2>
         <p class="subtitle">Completa tus datos para finalizar tu inscripción</p>
         
@@ -333,8 +336,10 @@ const submitForm = async () => {
 
   submitting.value = true;
   try {
-    // Si eligen Openpay (id_payment_method == 1 y el precio es mayor a 0)
-    if (totalCost.value > 0 && form.value.id_payment_method == 1) {
+    const selectedMethod = formDataLists.value.payment_methods.find(p => p.id == form.value.id_payment_method);
+    
+    // Si eligen Openpay (Tarjeta crédito / débito)
+    if (totalCost.value > 0 && selectedMethod && selectedMethod.name.toLowerCase().includes('tarjeta')) {
       const openpayPayload = {
         usuario: form.value.username,
         correo: form.value.email,
@@ -442,6 +447,16 @@ const submitForm = async () => {
   border-radius: 24px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.logo-container {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.registration-logo {
+  max-width: 250px;
+  height: auto;
 }
 
 .form-card h2 {
