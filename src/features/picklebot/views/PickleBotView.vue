@@ -69,7 +69,7 @@
         <template v-for="(msg, index) in pickleBotStore.messages" :key="index">
 
           <!-- Text Message -->
-          <div v-if="msg.type === 'text' || msg.type === 'form_answers'"
+          <div v-if="msg.type === 'text' || msg.type === 'form_answers' || msg.type === 'title_selection'"
                class="message py-3 px-4 rounded-2xl max-w-[85%] animate-fade-in-up break-words"
                :class="msg.role === 'user' ? 'pickle-msg pickle-msg--user user self-end rounded-br-sm shadow-lg' : 'pickle-msg pickle-msg--assistant assistant self-start rounded-bl-sm'">
             <div v-if="msg.role === 'assistant'" class="prose prose-invert max-w-none text-xs leading-relaxed" v-html="parseMarkdown(msg.content.text || msg.content)"></div>
@@ -80,6 +80,15 @@
           <PickleFormMessage v-if="msg.type === 'form'" :msg="msg"
                               :disabled="msg.formSubmitted || pickleBotStore.isSending"
                               @submit="submitForm(msg)" />
+
+          <!-- Title Selection Message -->
+          <PickleTitlesMessage v-if="msg.type === 'titles'" :msg="msg"
+                                :disabled="msg.titlesSubmitted || pickleBotStore.isSending"
+                                @select="(id) => selectTitle(msg, id)"
+                                @regenerate="(rec) => regenerateTitles(msg, rec)" />
+
+          <!-- Course Draft Message -->
+          <PickleCourseDraftMessage v-if="msg.type === 'course_draft'" :content="msg.content" />
         </template>
 
         <!-- Typing Indicator -->
@@ -128,11 +137,11 @@
           <input type="text"
                  v-model="inputText"
                  placeholder="Escribe tu mensaje aquí..."
-                 :disabled="!userId || pickleBotStore.isSending || pickleBotStore.isAwaitingFormAnswers"
+                 :disabled="!userId || pickleBotStore.isSending || pickleBotStore.isAwaitingFormAnswers || pickleBotStore.isAwaitingTitleSelection"
                  class="pickle-input flex-1 rounded-full px-5 py-3.5 text-sm outline-none transition-all disabled:opacity-40"
                  autocomplete="off">
           <button type="submit"
-                  :disabled="!inputText.trim() || !userId || pickleBotStore.isSending || pickleBotStore.isAwaitingFormAnswers"
+                  :disabled="!inputText.trim() || !userId || pickleBotStore.isSending || pickleBotStore.isAwaitingFormAnswers || pickleBotStore.isAwaitingTitleSelection"
                   class="pickle-send-btn w-12 h-12 md:w-14 md:h-14 shrink-0 rounded-full flex items-center justify-center transition-all duration-200 shadow-lg disabled:opacity-40 disabled:cursor-not-allowed">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="ml-1"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
           </button>
@@ -168,6 +177,8 @@ import { marked } from 'marked';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { usePickleBotStore } from '@/features/picklebot/stores/pickleBotStore';
 import PickleFormMessage from '@/features/picklebot/components/PickleFormMessage.vue';
+import PickleTitlesMessage from '@/features/picklebot/components/PickleTitlesMessage.vue';
+import PickleCourseDraftMessage from '@/features/picklebot/components/PickleCourseDraftMessage.vue';
 
 // Auth and User
 const authStore = useAuthStore();
@@ -276,6 +287,19 @@ const submitForm = async (msg) => {
   msg.formSubmitted = true;
 
   await pickleBotStore.sendFormAnswers(answers);
+  scrollToBottom();
+};
+
+// Title Selection Methods
+const selectTitle = async (msg, titleId) => {
+  msg.titlesSubmitted = true;
+  await pickleBotStore.sendTitleSelection(titleId);
+  scrollToBottom();
+};
+
+const regenerateTitles = async (msg, recommendation) => {
+  msg.titlesSubmitted = true;
+  await pickleBotStore.sendTitleSelection('regenerate', recommendation || undefined);
   scrollToBottom();
 };
 
