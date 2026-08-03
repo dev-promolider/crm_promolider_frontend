@@ -15,7 +15,7 @@ async function initApp() {
   const DYNAMIC_API_URL = isLocal ? "http://127.0.0.1:8000/api/v1" : "https://api.promolider.org/api/v1"; // Cambia esta URL por la de tu producción
 
   const apiUrl = import.meta.env.VITE_API_URL || DYNAMIC_API_URL;
-  const configUrl = apiUrl.replace('/api/v1', '/api/config')
+  const configUrl = `${apiUrl}/config`
   
   try {
     const response = await fetch(configUrl)
