@@ -27,6 +27,15 @@ export default {
   },
 
   /**
+   * Lista el historial de solicitudes aprobadas/rechazadas (paginado).
+   */
+  getApprovedRequests(page = 1, perPage = 15) {
+    return apiClient.get('/admin/requests/withdrawals/approved', {
+      params: { page, per_page: perPage }
+    });
+  },
+
+  /**
    * Aprueba una solicitud. Recibe FormData con: id, message?, support_image? (max 10MB).
    * @param {FormData} formData
    */

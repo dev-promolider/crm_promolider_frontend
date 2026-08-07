@@ -57,10 +57,11 @@ body.dark-theme .watermark-bg img {
   height: 70px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   padding: 0 20px;
   background-color: var(--sidebar-logo-bg);
   border-bottom: 1px solid rgba(255,255,255,0.05);
+  cursor: pointer;
 }
 
 .sidebar-logo-img {
@@ -68,7 +69,7 @@ body.dark-theme .watermark-bg img {
   transition: all 0.3s ease;
 }
 .sidebar.collapsed .sidebar-logo-img {
-  display: none; /* Podríamos mostrar un isologo mini aquí en un futuro */
+  max-width: 40px;
 }
 
 .collapse-btn {
@@ -585,8 +586,8 @@ body.dark-theme .watermark-bg img {
   color: var(--text-main);
   line-height: 1.4;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
+  -webkit-line-clamp: 5;
+  line-clamp: 5;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }

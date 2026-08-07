@@ -108,6 +108,27 @@
         </div>
       </div>
     </div>
+
+    <!-- Result Modal -->
+    <ModalComponent 
+      v-model="showResultModal" 
+      :color="resultModalData.type === 'success' ? 'success' : 'danger'"
+      size="small"
+    >
+      <template #title>
+        {{ resultModalData.title }}
+      </template>
+      <div class="text-center py-2">
+        <CheckCircle2 v-if="resultModalData.type === 'success'" :size="48" class="text-success mb-4 mx-auto" />
+        <XCircle v-else :size="48" class="text-danger mb-4 mx-auto" />
+        <p class="text-lg text-main">{{ resultModalData.message }}</p>
+      </div>
+      <template #footer>
+        <button class="btn-submit" :class="resultModalData.type === 'success' ? 'success' : 'danger'" @click="showResultModal = false">
+          Entendido
+        </button>
+      </template>
+    </ModalComponent>
   </div>
 </template>
 
@@ -115,6 +136,7 @@
 import { ref, onMounted, watch, computed } from 'vue';
 import { useAdminRequestsStore } from '../stores/adminRequestsStore';
 import { Loader2, ShieldAlert, CheckCircle2, XCircle, X } from 'lucide-vue-next';
+import ModalComponent from '@/components/common/ModalComponent.vue';
 
 const props = defineProps({
   type: String // 'role-courses' or 'role-tools'
@@ -123,6 +145,8 @@ const props = defineProps({
 const store = useAdminRequestsStore();
 const showApproveModal = ref(false);
 const showRejectModal = ref(false);
+const showResultModal = ref(false);
+const resultModalData = ref({ type: 'success', title: '', message: '' });
 const selectedRequest = ref(null);
 const rejectReason = ref('');
 
@@ -160,28 +184,62 @@ const openRejectModal = (request) => {
 const confirmApprove = async () => {
   if (!selectedRequest.value) return;
   const targetId = selectedRequest.value.id;
+  const userName = `${selectedRequest.value.name} ${selectedRequest.value.last_name}`;
   
-  if (props.type === 'role-courses') {
-    await store.approveRoleRequestCourses(targetId);
-  } else {
-    await store.approveRoleRequestTools(targetId);
+  try {
+    if (props.type === 'role-courses') {
+      await store.approveRoleRequestCourses(targetId);
+    } else {
+      await store.approveRoleRequestTools(targetId);
+    }
+    
+    resultModalData.value = {
+      type: 'success',
+      title: '¡Aprobación Exitosa!',
+      message: `Se concedieron los permisos correctamente a ${userName}.`
+    };
+  } catch (error) {
+    resultModalData.value = {
+      type: 'error',
+      title: 'Error al Aprobar',
+      message: `Ocurrió un error al intentar aprobar a ${userName}. ${error.response?.data?.error || error.message}`
+    };
   }
+  
   showApproveModal.value = false;
   selectedRequest.value = null;
+  showResultModal.value = true;
 };
 
 const confirmReject = async () => {
   if (!selectedRequest.value) return;
   const targetId = selectedRequest.value.id;
+  const userName = `${selectedRequest.value.name} ${selectedRequest.value.last_name}`;
   
-  if (props.type === 'role-courses') {
-    await store.rejectRoleRequestCourses(targetId, rejectReason.value);
-  } else {
-    await store.rejectRoleRequestTools(targetId, rejectReason.value);
+  try {
+    if (props.type === 'role-courses') {
+      await store.rejectRoleRequestCourses(targetId, rejectReason.value);
+    } else {
+      await store.rejectRoleRequestTools(targetId, rejectReason.value);
+    }
+    
+    resultModalData.value = {
+      type: 'success',
+      title: '¡Rechazo Exitoso!',
+      message: `Se ha rechazado la solicitud de ${userName}.`
+    };
+  } catch (error) {
+    resultModalData.value = {
+      type: 'error',
+      title: 'Error al Rechazar',
+      message: `Ocurrió un error al intentar rechazar a ${userName}. ${error.response?.data?.error || error.message}`
+    };
   }
+  
   showRejectModal.value = false;
   selectedRequest.value = null;
   rejectReason.value = '';
+  showResultModal.value = true;
 };
 </script>
 
@@ -232,7 +290,10 @@ const confirmReject = async () => {
 .table-custom {
   width: 100%;
   border-collapse: collapse;
-  text-align: left;
+}
+
+.table-custom th, .table-custom td {
+  text-align: left !important;
 }
 
 .table-custom th {

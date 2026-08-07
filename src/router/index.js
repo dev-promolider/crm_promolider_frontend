@@ -60,6 +60,18 @@ const routes = [
     ]
   },
   {
+    path: '/hazte-productor',
+    component: () => import('@/layouts/DashboardLayout.vue'),
+    meta: { requiresAuth: true, layout: 'DashboardLayout' },
+    children: [
+      {
+        path: '',
+        name: 'become-producer',
+        component: () => import('@/features/producer/views/BecomeProducerView.vue')
+      }
+    ]
+  },
+  {
     path: '/courses/create',
     component: () => import('@/layouts/DashboardLayout.vue'),
     meta: { requiresAuth: true, layout: 'DashboardLayout' },
@@ -155,7 +167,8 @@ const routes = [
       {
         path: '/solicitudes',
         name: 'dashboard-solicitudes',
-        component: () => import('@/features/requests/views/RequestsView.vue')
+        component: () => import('@/features/requests/views/RequestsView.vue'),
+        meta: { role: 'admin' }
       },
       {
         path: '/perfil',

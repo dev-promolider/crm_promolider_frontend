@@ -21,14 +21,11 @@
     </div>
 
     <!-- SIDEBAR -->
-    <aside class="sidebar" :class="{ 'collapsed': isSidebarCollapsed }">
-      <div class="sidebar-header">
+    <aside class="sidebar" :class="{ 'collapsed': isSidebarCollapsed }" @mouseenter="isSidebarCollapsed = false" @mouseleave="isSidebarCollapsed = true">
+      <div class="sidebar-header" @click="isSidebarCollapsed = !isSidebarCollapsed">
         <div class="sidebar-logo">
-          <img src="/images/logo/promolider_logo.png" alt="Promolider" class="sidebar-logo-img" />
+          <img :src="isSidebarCollapsed ? '/images/logo/promolider_logo_collapse.png' : '/images/promolider-logo.webp'" alt="Promolider" class="sidebar-logo-img" />
         </div>
-        <button class="collapse-btn" @click="isSidebarCollapsed = !isSidebarCollapsed">
-          <Menu :size="20" />
-        </button>
       </div>
 
       <div class="sidebar-scroll">
@@ -121,11 +118,55 @@
             </transition>
           </div>
 
-          <RouterLink to="/solicitudes" class="nav-item" active-class="active">
-            <Send :size="20" />
-            <span v-if="!isSidebarCollapsed">Solicitudes de Fondos</span>
-            <ChevronRight v-if="!isSidebarCollapsed" :size="16" class="ml-auto opacity-50" />
-          </RouterLink>
+          <!-- Solicitudes - Expandable Section -->
+          <div class="nav-section">
+            <button
+              class="nav-item nav-section-toggle"
+              :class="{ expanded: solicitudesExpanded }"
+              @click="solicitudesExpanded = !solicitudesExpanded"
+            >
+              <Send :size="20" />
+              <span v-if="!isSidebarCollapsed" class="nav-label">Solicitudes</span>
+              <ChevronDown
+                v-if="!isSidebarCollapsed"
+                :size="16"
+                class="nav-arrow"
+                :class="{ rotated: solicitudesExpanded }"
+              />
+            </button>
+
+            <transition name="submenu-slide">
+              <div v-if="solicitudesExpanded && !isSidebarCollapsed" class="nav-submenu">
+                <RouterLink to="/solicitudes" class="nav-subitem" active-class="active">
+                  <span class="submenu-dot"></span>
+                  <span>Retiro de fondos</span>
+                </RouterLink>
+                <!-- Opciones de Admin -->
+                <template v-if="isAdmin">
+                  <RouterLink to="/admin/solicitudes/nuevos-usuarios" class="nav-subitem" active-class="active">
+                    <span class="submenu-dot"></span>
+                    <span>Nuevos usuarios</span>
+                  </RouterLink>
+                  <RouterLink to="/admin/solicitudes/verificacion-cursos" class="nav-subitem" active-class="active">
+                    <span class="submenu-dot"></span>
+                    <span>Verificación de Info...</span>
+                  </RouterLink>
+                  <RouterLink to="/admin/solicitudes/role-cursos" class="nav-subitem" active-class="active">
+                    <span class="submenu-dot"></span>
+                    <span>Creación de cursos</span>
+                  </RouterLink>
+                  <RouterLink to="/admin/solicitudes/role-herramientas" class="nav-subitem" active-class="active">
+                    <span class="submenu-dot"></span>
+                    <span>Creación de Herra...</span>
+                  </RouterLink>
+                  <RouterLink to="/admin/solicitudes/examenes" class="nav-subitem" active-class="active">
+                    <span class="submenu-dot"></span>
+                    <span>Revisión de exáme...</span>
+                  </RouterLink>
+                </template>
+              </div>
+            </transition>
+          </div>
 
           <!-- Reportes - Collapsible Menu Section -->
           <div class="nav-section">
@@ -236,9 +277,38 @@
       <header class="topbar">
         <div class="topbar-left">
           <!-- Search input -->
-          <div class="search-box">
+          <div class="search-box" ref="searchContainer">
             <Search :size="18" />
-            <input type="text" placeholder="Buscar..." />
+            <input 
+              type="text" 
+              placeholder="Buscar módulos, reportes..." 
+              v-model="searchQuery"
+              @focus="isSearchDropdownOpen = true"
+            />
+            
+            <!-- Search Dropdown -->
+            <transition name="dropdown-fade">
+              <div v-if="isSearchDropdownOpen && searchQuery.length > 0" class="search-dropdown">
+                <div v-if="filteredModules.length === 0" class="search-empty">
+                  No se encontraron módulos
+                </div>
+                <RouterLink 
+                  v-for="mod in filteredModules" 
+                  :key="mod.path" 
+                  :to="mod.path" 
+                  class="search-item"
+                  @click="closeSearch"
+                >
+                  <div class="search-item-icon">
+                    <component :is="mod.icon" :size="16" />
+                  </div>
+                  <div class="search-item-text">
+                    <span class="search-item-title">{{ mod.title }}</span>
+                    <span class="search-item-desc" v-if="mod.desc">{{ mod.desc }}</span>
+                  </div>
+                </RouterLink>
+              </div>
+            </transition>
           </div>
         </div>
         
@@ -586,6 +656,38 @@ import {
 
 const router = useRouter();
 const route = useRoute();
+
+// Search State
+const searchQuery = ref('');
+const isSearchDropdownOpen = ref(false);
+const searchContainer = ref(null);
+
+const availableModules = [
+  { path: '/dashboard', title: 'Dashboards', desc: 'Resumen y estadísticas principales', icon: 'LayoutDashboard' },
+  { path: '/dashboard/preregistro', title: 'Preregistro', desc: 'Gestión de preregistros', icon: 'UserPlus' },
+  { path: '/registro', title: 'Registro', desc: 'Registrar nuevos usuarios', icon: 'Database' },
+  { path: '/infoproducts', title: 'Aula Virtual', desc: 'Cursos y educación', icon: 'MonitorPlay' },
+  { path: '/marketing/herramientas', title: 'Marketing', desc: 'Herramientas de ventas', icon: 'TrendingUp' },
+  { path: '/dashboard/billetera', title: 'Reportes', desc: 'Reportes financieros', icon: 'PieChart' },
+  { path: '/dashboard/bono-binario/puntos-activos', title: 'Mi Red Binaria', desc: 'Visualiza tu árbol binario', icon: 'Network' },
+  { path: '/perfil', title: 'Perfil', desc: 'Configuración de tu cuenta', icon: 'User' },
+  { path: '/logros', title: 'Logros', desc: 'Tus medallas y recompensas', icon: 'Medal' },
+  { path: '/configuracion', title: 'Configuración', desc: 'Ajustes del sistema', icon: 'Settings' }
+];
+
+const filteredModules = computed(() => {
+  if (!searchQuery.value) return [];
+  const query = searchQuery.value.toLowerCase();
+  return availableModules.filter(m => 
+    m.title.toLowerCase().includes(query) || 
+    m.desc.toLowerCase().includes(query)
+  );
+});
+
+const closeSearch = () => {
+  isSearchDropdownOpen.value = false;
+  searchQuery.value = '';
+};
 const authStore = useAuthStore();
 const user = computed(() => authStore.user);
 const isAdmin = computed(() => {
@@ -600,9 +702,10 @@ const getAvatarUrl = (photoPath) => {
   return `https://promolider-storage-user.s3.sa-east-1.amazonaws.com/${photoPath}`;
 };
 
-const isSidebarCollapsed = ref(false);
+const isSidebarCollapsed = ref(true);
 const isDropdownOpen = ref(false);
 const marketingExpanded = ref(route.path.startsWith('/marketing'));
+const solicitudesExpanded = ref(route.path.includes('/solicitudes'));
 const reportesExpanded = ref(route.path.includes('billetera') || route.path.includes('mis-compras') || route.path.includes('mis-ventas') || route.path.includes('bono-binario'));
 const carteraExpanded = ref(route.path.includes('billetera') || route.path.includes('mis-compras') || route.path.includes('mis-ventas'));
 const bonoRangoExpanded = ref(route.path.includes('bono-binario'));
@@ -953,6 +1056,12 @@ const handleOpcPayment = async () => {
 };
 
 onMounted(() => {
+  document.addEventListener('click', (e) => {
+    if (searchContainer.value && !searchContainer.value.contains(e.target)) {
+      isSearchDropdownOpen.value = false;
+    }
+  });
+  
   const savedTheme = localStorage.getItem('theme');
   if (savedTheme === 'dark') {
     isDarkTheme.value = true;
@@ -987,6 +1096,7 @@ onMounted(() => {
   // Auto-expand sección Marketing al navegar dentro de /marketing
   watch(() => route.path, (path) => {
     marketingExpanded.value = path.startsWith('/marketing');
+    solicitudesExpanded.value = path.includes('/solicitudes');
   }, { immediate: true });
 
   // Cargar estadísticas
@@ -1586,6 +1696,80 @@ onBeforeUnmount(() => {
 
 .opc-payment-method select { width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--main-bg); color: var(--text-main); font-size: 1rem; }
 .opc-payment-method select option { background-color: var(--card-bg); color: var(--text-main); }
+
+/* --- SEARCH BAR --- */
+.search-box input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  background: var(--bg-main);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.search-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 320px;
+  background: var(--bg-main);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  margin-top: 8px;
+  z-index: 1000;
+  max-height: 350px;
+  overflow-y: auto;
+  padding: 0.5rem 0;
+}
+.search-empty {
+  padding: 1rem;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+.search-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  text-decoration: none;
+  transition: background 0.2s;
+  gap: 12px;
+}
+.search-item:hover {
+  background: rgba(16, 185, 129, 0.08);
+}
+.search-item-icon {
+  color: #10b981;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: rgba(16, 185, 129, 0.1);
+}
+.search-item-text {
+  display: flex;
+  flex-direction: column;
+}
+.search-item-title {
+  color: var(--text-main);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+.search-item-desc {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+}
+
+.dropdown-fade-enter-active,
+.dropdown-fade-leave-active {
+  transition: all 0.2s ease;
+}
+.dropdown-fade-enter-from,
+.dropdown-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-5px);
+}
 </style>
 
 

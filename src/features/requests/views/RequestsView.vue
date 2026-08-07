@@ -6,10 +6,9 @@
       <div class="header-content">
         <div class="header-info">
           <span class="header-label"><Send :size="18" /> Solicitudes de Fondos</span>
-          <h1 class="header-title">Gestiona tus retiros</h1>
+          <h1 class="header-title">Aprobación de Retiros</h1>
           <p class="header-desc">
-            Solicita el retiro de tus fondos, revisa el estado de tus solicitudes
-            <template v-if="isAdmin">y procesa las solicitudes pendientes de los socios</template>.
+            Revisa y procesa las solicitudes pendientes de retiro de fondos, o consulta el historial de solicitudes procesadas.
           </p>
         </div>
       </div>
@@ -18,21 +17,6 @@
     <!-- Navigation Tabs -->
     <div class="requests-tabs">
       <button
-        class="tab-btn"
-        :class="{ active: activeTab === 'request' }"
-        @click="activeTab = 'request'"
-      >
-        <ArrowUpRight :size="16" /> Solicitar Retiro
-      </button>
-      <button
-        class="tab-btn"
-        :class="{ active: activeTab === 'history' }"
-        @click="activeTab = 'history'"
-      >
-        <ListTodo :size="16" /> Historial
-      </button>
-      <button
-        v-if="isAdmin"
         class="tab-btn admin-tab"
         :class="{ active: activeTab === 'pending' }"
         @click="activeTab = 'pending'"
@@ -40,29 +24,27 @@
         <ShieldAlert :size="16" /> Pendientes
         <span v-if="store.pendingCount > 0" class="pending-badge">{{ store.pendingCount }}</span>
       </button>
+      <button
+        class="tab-btn"
+        :class="{ active: activeTab === 'history' }"
+        @click="activeTab = 'history'"
+      >
+        <ListTodo :size="16" /> Historial de Aprobadas
+      </button>
     </div>
 
     <!-- Tab Contents -->
     <div class="tab-content-wrapper">
-      <RequestForm
-        v-if="activeTab === 'request'"
-        @submitted="handleRequestSubmitted"
-        @error="handleRequestError"
-      />
-
-      <RequestsHistory
-        v-if="activeTab === 'history'"
-        :requests="store.myRequests"
-        :loading="store.loading"
-        @view-support="openSupportModal"
-      />
-
       <PendingRequestsTable
-        v-if="activeTab === 'pending' && isAdmin"
+        v-if="activeTab === 'pending'"
         :requests="store.pendingRequests"
         :loading="store.loading"
         @approve="openApproveModal"
         @reject="handleReject"
+      />
+
+      <ApprovedRequestsTable
+        v-if="activeTab === 'history'"
       />
     </div>
 
@@ -129,22 +111,14 @@ import {
 } from 'lucide-vue-next';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useRequestsStore } from '../stores/requestsStore';
-import RequestForm from '../components/RequestForm.vue';
-import RequestsHistory from '../components/RequestsHistory.vue';
 import PendingRequestsTable from '../components/PendingRequestsTable.vue';
+import ApprovedRequestsTable from '../components/ApprovedRequestsTable.vue';
 import ApproveRequestModal from '../components/ApproveRequestModal.vue';
 
 const authStore = useAuthStore();
 const store = useRequestsStore();
 
-const userId = computed(() => authStore.user?.id);
-const isAdmin = computed(() => {
-  const roles = authStore.role || [];
-  const normalized = roles.map((r) => String(r).toLowerCase());
-  return normalized.includes('admin') || normalized.includes('super-admin');
-});
-
-const activeTab = ref('request');
+const activeTab = ref('pending');
 const showApproveModal = ref(false);
 const showSupportModal = ref(false);
 const selectedRequest = ref(null);
@@ -152,22 +126,8 @@ const selectedMovement = ref(null);
 const toast = ref({ show: false, message: '', type: 'success' });
 
 onMounted(() => {
-  store.fetchMyRequests(userId.value);
-  if (isAdmin.value) {
-    store.fetchPendingRequests();
-  }
+  store.fetchPendingRequests();
 });
-
-// ── Crear solicitud ──
-function handleRequestSubmitted() {
-  showToast('Solicitud de retiro enviada correctamente.', 'success');
-  store.fetchMyRequests(userId.value);
-  activeTab.value = 'history';
-}
-
-function handleRequestError(message) {
-  showToast(message, 'error');
-}
 
 // ── Aprobar / Rechazar (admin) ──
 function openApproveModal(request) {

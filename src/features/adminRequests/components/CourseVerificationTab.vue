@@ -199,7 +199,10 @@ const confirmReject = async () => {
 .table-custom {
   width: 100%;
   border-collapse: collapse;
-  text-align: left;
+}
+
+.table-custom th, .table-custom td {
+  text-align: left !important;
 }
 
 .table-custom th {
