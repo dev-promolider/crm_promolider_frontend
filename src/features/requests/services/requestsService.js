@@ -23,7 +23,7 @@ export default {
    * Cada item incluye wallet.user anidado.
    */
   getPendingRequests() {
-    return apiClient.get('/marketing/reports/movements/request-founds/list');
+    return apiClient.get('/admin/requests/withdrawals');
   },
 
   /**
@@ -31,7 +31,7 @@ export default {
    * @param {FormData} formData
    */
   approveRequest(formData) {
-    return apiClient.post('/marketing/reports/movements/request-founds/approve', formData, {
+    return apiClient.post('/admin/requests/withdrawals/approve', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
@@ -43,7 +43,7 @@ export default {
    * @param {number} id
    */
   rejectRequest(id) {
-    return apiClient.post('/marketing/reports/movements/request-founds/reject', { id });
+    return apiClient.post('/admin/requests/withdrawals/reject', { id });
   },
 
   /**

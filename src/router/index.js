@@ -171,6 +171,11 @@ const routes = [
         path: '/configuracion',
         name: 'dashboard-configuracion',
         component: () => import('@/features/profile/views/ProfileView.vue')
+      },
+      {
+        path: '/notifications',
+        name: 'notifications',
+        component: () => import('@/features/notifications/views/NotificationsView.vue')
       }
     ]
   },
@@ -225,6 +230,40 @@ const routes = [
         path: '',
         name: 'admin-panel',
         component: { template: '<div>Admin Panel Placeholder</div>' }
+      },
+      {
+        path: 'solicitudes',
+        name: 'admin-requests',
+        component: () => import('@/features/adminRequests/views/AdminRequestsView.vue'),
+        children: [
+          {
+            path: 'nuevos-usuarios',
+            name: 'admin-requests-new-users',
+            component: () => import('@/features/adminRequests/components/NewUsersTab.vue')
+          },
+          {
+            path: 'verificacion-cursos',
+            name: 'admin-requests-courses',
+            component: () => import('@/features/adminRequests/components/CourseVerificationTab.vue')
+          },
+          {
+            path: 'role-cursos',
+            name: 'admin-requests-role-courses',
+            component: () => import('@/features/adminRequests/components/RoleRequestsTab.vue'),
+            props: { type: 'role-courses' }
+          },
+          {
+            path: 'role-herramientas',
+            name: 'admin-requests-role-tools',
+            component: () => import('@/features/adminRequests/components/RoleRequestsTab.vue'),
+            props: { type: 'role-tools' }
+          },
+          {
+            path: 'examenes',
+            name: 'admin-requests-exams',
+            component: () => import('@/features/adminRequests/components/ExamReviewsTab.vue')
+          }
+        ]
       }
     ]
   },
@@ -427,8 +466,15 @@ router.beforeEach((to, from) => {
       return { name: 'login' }
     }
 
-    if (to.meta.role && !authStore.hasRole(to.meta.role)) {
-      return { name: 'dashboard' }
+    if (to.meta.role) {
+      const requiredRoles = Array.isArray(to.meta.role) ? to.meta.role : [to.meta.role];
+      const userRoles = Array.isArray(authStore.role) ? authStore.role.map(r => String(r).toLowerCase()) : [String(authStore.role).toLowerCase()];
+      
+      const hasAccess = requiredRoles.some(role => userRoles.includes(role.toLowerCase()));
+      
+      if (!hasAccess && !userRoles.includes('super-admin') && !userRoles.includes('admin')) {
+        return { name: 'dashboard' }
+      }
     }
   }
 

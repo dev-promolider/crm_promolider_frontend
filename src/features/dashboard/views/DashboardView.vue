@@ -26,22 +26,25 @@
         <ul class="condition-list">
           <li>
             <span class="cond-label">Membresía activa:</span>
-            <svg v-if="widgetsData.conditions.membershipActive" class="text-green" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <svg v-if="isAdmin || widgetsData.conditions.membershipActive" class="text-green" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
             <svg v-else class="text-red" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
           </li>
           <li>
             <span class="cond-label">OPC activos:</span>
-            <svg v-if="widgetsData.conditions.active" class="text-green" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <svg v-if="isAdmin || widgetsData.conditions.active" class="text-green" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
             <svg v-else class="text-red" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
           </li>
           <li>
             <span class="cond-label">Calificado:</span>
-            <svg v-if="widgetsData.conditions.qualified" class="text-green" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <svg v-if="isAdmin || widgetsData.conditions.qualified" class="text-green" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
             <svg v-else class="text-red" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
           </li>
         </ul>
         
-        <div class="condition-banner" :class="allConditionsMet ? 'banner-success' : 'banner-warning'">
+        <div v-if="isAdmin" style="display: flex; justify-content: center; width: 100%; margin-top: auto; margin-bottom: 0px;">
+          <AdminVoidBadge />
+        </div>
+        <div v-else class="condition-banner" :class="allConditionsMet ? 'banner-success' : 'banner-warning'">
           <template v-if="allConditionsMet">
             <TrendingUp :size="18" class="banner-icon" />
             <span>¡Excelente! Cumples todas las condiciones para cobrar bonos de red.</span>
@@ -460,9 +463,15 @@ import api from '@/services/apiClient';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import BinaryTreeView from '@/components/MLM/BinaryTreeView.vue';
 import UnilevelTreeNode from '@/features/dashboard/components/UnilevelTreeNode.vue';
+import AdminVoidBadge from '@/components/AdminVoidBadge.vue';
 
 const authStore = useAuthStore();
 const user = computed(() => authStore.user);
+  const isAdmin = computed(() => {
+    const roles = Array.isArray(authStore.role) ? authStore.role : (authStore.role ? [authStore.role] : []);
+    const normalized = roles.map((r) => String(r).toLowerCase());
+    return normalized.includes('admin') || normalized.includes('super-admin');
+  });
 
 const showToast = ref(false);
 

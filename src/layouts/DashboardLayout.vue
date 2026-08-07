@@ -379,6 +379,16 @@
                   </div>
                 </div>
               </div>
+              <!-- Ver todo button -->
+              <div class="notifications-footer">
+                <RouterLink 
+                  to="/notifications" 
+                  class="btn-view-all"
+                  @click="isNotificationsOpen = false"
+                >
+                  Ver todo
+                </RouterLink>
+              </div>
             </div>
           </div>
 
@@ -578,6 +588,11 @@ const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
 const user = computed(() => authStore.user);
+const isAdmin = computed(() => {
+  const rawRoles = Array.isArray(authStore.role) ? authStore.role : (authStore.role ? [authStore.role] : []);
+  const roles = rawRoles.map(r => String(r).toLowerCase());
+  return roles.includes('admin') || roles.includes('super-admin') || roles.includes('superadmin') || roles.includes('1');
+});
 
 const getAvatarUrl = (photoPath) => {
   if (!photoPath) return '';
@@ -659,35 +674,45 @@ const toggleRankDropdown = async (e) => {
 const isAulaOpen = ref(false);
 
 // --- Aula Virtual Navigation Items ---
-const aulaVirtualItems = [
-  {
-    to: '/infoproducts',
-    label: 'Infoproductos',
-    icon: BookOpen,
-    slug: 'infoproducts.index'
-  },
-  {
-    to: '/marketplace',
-    label: 'Marketplace',
-    icon: Store,
-    slug: 'marketplace.toggle'
-  },
-  {
-    to: '/course/subscriber',
-    label: 'Suscriptores',
-    icon: Users,
-    slug: 'courses.subs'
-  },
-  {
-    to: '/pickle-bot',
-    label: 'Pickle Bot',
-    icon: Bot,
-    slug: 'chatgpt.index'
+const aulaVirtualItems = computed(() => {
+  const items = [
+    {
+      to: '/infoproducts',
+      label: 'Infoproductos',
+      icon: BookOpen,
+      slug: 'infoproducts.index'
+    }
+  ];
+
+  if (isAdmin.value) {
+    items.push({
+      to: '/marketplace',
+      label: 'Marketplace',
+      icon: Store,
+      slug: 'marketplace.toggle'
+    });
   }
-];
+
+  items.push(
+    {
+      to: '/course/subscriber',
+      label: 'Suscriptores',
+      icon: Users,
+      slug: 'courses.subs'
+    },
+    {
+      to: '/pickle-bot',
+      label: 'Pickle Bot',
+      icon: Bot,
+      slug: 'chatgpt.index'
+    }
+  );
+
+  return items;
+});
 
 const isAulaActive = computed(() => {
-  return aulaVirtualItems.some(item => {
+  return aulaVirtualItems.value.some(item => {
     return route.path === item.to || route.path.startsWith(`${item.to}/`);
   });
 });

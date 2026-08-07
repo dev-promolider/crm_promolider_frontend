@@ -653,3 +653,5 @@ body.dark-theme .watermark-bg img {
   transform: translate(-50%, -50%) scale(8);
   transition: 1.5s ease;
 }
+
+.notifications-footer { padding: 12px; border-top: 1px solid var(--border-color); background: var(--main-bg); border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; } .btn-view-all { display: block; width: 100%; padding: 8px 0; text-align: center; background: #15c526; color: white; font-weight: 500; border-radius: 8px; text-decoration: none; transition: background 0.2s; } .btn-view-all:hover { background: #12a921; }
