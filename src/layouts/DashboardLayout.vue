@@ -52,14 +52,15 @@
 
               <span v-if="!isSidebarCollapsed">Aula virtual</span>
 
-              <ChevronRight
+              <ChevronDown
                 v-if="!isSidebarCollapsed"
                 :size="16"
-                class="ml-auto opacity-50 nav-chevron"
+                class="nav-arrow ml-auto"
+                :class="{ rotated: isAulaOpen }"
               />
             </button>
 
-            <transition name="submenu">
+            <transition name="submenu-slide">
               <div v-if="isAulaOpen && !isSidebarCollapsed" class="submenu">
                 <RouterLink
                   v-for="item in aulaVirtualItems"
@@ -153,7 +154,7 @@
                   </RouterLink>
                   <RouterLink to="/admin/solicitudes/role-cursos" class="nav-subitem" active-class="active">
                     <span class="submenu-dot"></span>
-                    <span>Creación de cursos</span>
+                    <span>Revisión de Productor</span>
                   </RouterLink>
                   <RouterLink to="/admin/solicitudes/role-herramientas" class="nav-subitem" active-class="active">
                     <span class="submenu-dot"></span>
@@ -259,6 +260,24 @@
       </div>
 
       <div class="sidebar-bottom" v-if="!isSidebarCollapsed">
+        
+        <RouterLink 
+          v-if="isDistributor && !isProducer"
+          to="/hazte-productor" 
+          class="hazte-creador-btn"
+        >
+          <div class="hazte-content">
+            <Sparkles :size="16" class="star-icon" />
+            <span>Hazte Creador</span>
+          </div>
+          <span class="unete-badge">UNETE</span>
+          <!-- Animación de chispitas -->
+          <div class="btn-sparkles">
+            <Sparkles :size="10" class="btn-sparkle bs-1" />
+            <Sparkles :size="12" class="btn-sparkle bs-2" />
+          </div>
+        </RouterLink>
+
         <div v-if="user" class="opc-status-container">
           <span class="status-indicator" :class="{ 'is-active': isOpcActive, 'is-inactive': !isOpcActive }">
             <span class="status-dot"></span>
@@ -601,6 +620,38 @@
     </div>
 
   </div>
+    <!-- Producer Congratulations Modal -->
+    <transition name="modal-fade">
+      <div v-if="showProducerModal" class="opc-modal-overlay">
+        <div class="producer-success-container">
+          <div class="producer-success-content">
+            <h2 class="producer-success-title">¡Felicidades, Productor!</h2>
+            
+            <div class="padlock-wrapper" :class="{ 'is-unlocked': padlockUnlocked }">
+              <div class="padlock-body">
+                <div class="padlock-shackle"></div>
+                <div class="padlock-keyhole"></div>
+              </div>
+              <div class="padlock-sparkles" v-if="padlockUnlocked">
+                <Sparkles :size="20" class="p-sparkle ps-1" />
+                <Sparkles :size="24" class="p-sparkle ps-2" />
+                <Sparkles :size="18" class="p-sparkle ps-3" />
+              </div>
+            </div>
+            
+            <p class="producer-success-desc">
+              Tu solicitud ha sido aprobada. Ahora tienes acceso a nuevas herramientas 
+              para crear infoproductos y generar nuevas fuentes de ingresos pasivos.
+            </p>
+            
+            <button class="btn-producer-start" @click="startProducerMode">
+              Empezar ahora
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
     <!-- Payment Success Modal -->
     <transition name="modal-fade">
       <div v-if="showSuccessPaymentModal" class="opc-modal-overlay" @click.self="showSuccessPaymentModal = false">
@@ -651,7 +702,7 @@ const isLoading = computed(() => globalLoading.value > 0);
 import { 
   LayoutDashboard, UserPlus, Database, MonitorPlay, Star, Send, PieChart, ChevronRight, ChevronDown, Menu, 
   Search, Bell, Moon, Sun, Award, Apple, User, Medal, Settings, LogOut, Loader2,
-  BookOpen, Store, Users, Bot, Wallet, X, Minus, Plus
+  BookOpen, Store, Users, Bot, Wallet, X, Minus, Plus, Sparkles, Tag, Check
 } from 'lucide-vue-next';
 
 const router = useRouter();
@@ -694,6 +745,16 @@ const isAdmin = computed(() => {
   const rawRoles = Array.isArray(authStore.role) ? authStore.role : (authStore.role ? [authStore.role] : []);
   const roles = rawRoles.map(r => String(r).toLowerCase());
   return roles.includes('admin') || roles.includes('super-admin') || roles.includes('superadmin') || roles.includes('1');
+});
+
+const isProducer = computed(() => {
+  const rawRoles = Array.isArray(authStore.role) ? authStore.role : (authStore.role ? [authStore.role] : []);
+  return rawRoles.map(r => String(r).toLowerCase()).includes('producer') || rawRoles.map(r => String(r).toLowerCase()).includes('productor');
+});
+
+const isDistributor = computed(() => {
+  const rawRoles = Array.isArray(authStore.role) ? authStore.role : (authStore.role ? [authStore.role] : []);
+  return rawRoles.map(r => String(r).toLowerCase()).includes('distributor') || rawRoles.map(r => String(r).toLowerCase()).includes('distribuidor');
 });
 
 const getAvatarUrl = (photoPath) => {
@@ -1055,7 +1116,33 @@ const handleOpcPayment = async () => {
   }
 };
 
+// Modal Productor state
+const showProducerModal = ref(false);
+const padlockUnlocked = ref(false);
+
+const triggerProducerSuccess = () => {
+  showProducerModal.value = true;
+  padlockUnlocked.value = false;
+  setTimeout(() => {
+    padlockUnlocked.value = true;
+  }, 800);
+};
+
+const startProducerMode = () => {
+  showProducerModal.value = false;
+  window.location.reload();
+};
+
 onMounted(() => {
+  if (window.Echo && user.value && user.value.id) {
+    window.Echo.private(`user.${user.value.id}`)
+      .listen('RoleRequestApproved', (e) => {
+        if (e.role_name === 'producer' || e.role_name === 'Productor') {
+          triggerProducerSuccess();
+        }
+      });
+  }
+
   document.addEventListener('click', (e) => {
     if (searchContainer.value && !searchContainer.value.contains(e.target)) {
       isSearchDropdownOpen.value = false;
@@ -1696,6 +1783,224 @@ onBeforeUnmount(() => {
 
 .opc-payment-method select { width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--main-bg); color: var(--text-main); font-size: 1rem; }
 .opc-payment-method select option { background-color: var(--card-bg); color: var(--text-main); }
+
+/* --- Hazte Creador Button --- */
+.hazte-creador-btn {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: linear-gradient(145deg, rgba(16, 185, 129, 0.1), rgba(0, 0, 0, 0.6));
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition: all 0.3s ease;
+}
+.hazte-creador-btn:hover {
+  background: linear-gradient(145deg, rgba(16, 185, 129, 0.2), rgba(0, 0, 0, 0.8));
+  border-color: rgba(16, 185, 129, 0.8);
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+  transform: translateY(-2px);
+}
+.hazte-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 2;
+}
+.star-icon {
+  color: #10b981;
+  opacity: 1;
+  filter: drop-shadow(0 0 4px rgba(16, 185, 129, 0.8));
+}
+.unete-badge {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 3px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.4);
+  z-index: 2;
+}
+
+/* Sparks Animation in the button */
+.btn-sparkles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+.btn-sparkle {
+  position: absolute;
+  color: rgba(16, 185, 129, 0.8);
+  animation: btn-sparkle-anim 2s infinite ease-in-out;
+}
+.bs-1 { top: 15%; left: 10%; animation-delay: 0s; }
+.bs-2 { bottom: 15%; right: 40%; animation-delay: 1s; }
+@keyframes btn-sparkle-anim {
+  0%, 100% { transform: scale(0) rotate(0deg); opacity: 0; }
+  50% { transform: scale(1) rotate(180deg); opacity: 1; }
+}
+
+/* --- Producer Success Modal --- */
+.producer-success-container {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  width: 90%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  position: relative;
+  padding: 2.5rem 2rem;
+  animation: modal-pop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.producer-success-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #10b981;
+  margin-bottom: 1.5rem;
+  margin-top: 0;
+}
+
+.producer-success-desc {
+  font-size: 0.95rem;
+  color: var(--text-main);
+  line-height: 1.5;
+  margin-bottom: 2rem;
+}
+
+.btn-producer-start {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  border: none;
+  padding: 0.75rem 2rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}
+
+.btn-producer-start:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+}
+
+/* Padlock Animation */
+.padlock-wrapper {
+  position: relative;
+  width: 80px;
+  height: 100px;
+  margin: 0 auto 2rem auto;
+}
+
+.padlock-body {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 50px;
+  background: #4b5563; /* Gray */
+  border-radius: 10px;
+  transition: all 0.5s ease;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.padlock-keyhole {
+  width: 8px;
+  height: 12px;
+  background: #1f2937;
+  border-radius: 50% 50% 0 0;
+  position: relative;
+}
+.padlock-keyhole::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px;
+  height: 8px;
+  background: #1f2937;
+  clip-path: polygon(20% 0, 80% 0, 100% 100%, 0% 100%);
+}
+
+.padlock-shackle {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 50px;
+  border: 8px solid #9ca3af; /* Light gray */
+  border-bottom: none;
+  border-radius: 20px 20px 0 0;
+  transition: all 0.5s cubic-bezier(0.68, -0.55, 0.26, 1.55);
+  transform-origin: left bottom;
+  z-index: 1;
+}
+
+/* Unlocked State */
+.padlock-wrapper.is-unlocked .padlock-body {
+  background: #10b981; /* Green */
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+}
+
+.padlock-wrapper.is-unlocked .padlock-shackle {
+  transform: translateX(-50%) translateY(-15px) rotate(20deg);
+  border-color: #d1d5db;
+}
+
+.padlock-sparkles {
+  position: absolute;
+  top: -20px;
+  left: -20px;
+  right: -20px;
+  bottom: -20px;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.p-sparkle {
+  position: absolute;
+  color: #10b981;
+  animation: sparkle-pop 1s forwards;
+  opacity: 0;
+}
+
+.ps-1 { top: 10%; left: 20%; animation-delay: 0.1s; }
+.ps-2 { top: 30%; right: 10%; animation-delay: 0.3s; }
+.ps-3 { bottom: 20%; left: -10%; animation-delay: 0.2s; }
+
+@keyframes sparkle-pop {
+  0% { transform: scale(0) rotate(0deg); opacity: 0; }
+  50% { transform: scale(1.2) rotate(90deg); opacity: 1; }
+  100% { transform: scale(1) rotate(180deg); opacity: 0; }
+}
 
 /* --- SEARCH BAR --- */
 .search-box input:focus {
