@@ -15,8 +15,18 @@ export const submitOpenpayPayment = async (data) => {
   return response.data;
 };
 
+export const submitMainRegistrationOpenpay = async (data) => {
+  const response = await apiClient.post('registration/openpay', data);
+  return response.data;
+};
+
 export const checkDuplicate = async (params) => {
   const response = await apiClient.get('registration/preregistro/check-duplicate', { params });
+  return response.data;
+};
+
+export const checkAvailability = async (data) => {
+  const response = await apiClient.post('registration/check-availability', data);
   return response.data;
 };
 

@@ -18,10 +18,10 @@ export const useRegistroDashboardStore = defineStore('registroDashboard', () => 
     }
   };
 
-  const generateLink = async () => {
+  const generateLink = async (position) => {
     isGenerating.value = true;
     try {
-      const response = await registroDashboardService.generateLink();
+      const response = await registroDashboardService.generateLink(position);
       activeLink.value = {
         link: response.data.resource,
         tiempoRestanteEnSegundos: 5 * 3600, // 5 hours approx for immediate UI update

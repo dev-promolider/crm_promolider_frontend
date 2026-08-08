@@ -11,8 +11,8 @@ export default {
   /**
    * Genera un nuevo enlace
    */
-  generateLink() {
-    return api.post('/dashboard/registro/link');
+  generateLink(position) {
+    return api.post('/dashboard/registro/link', { position });
   },
 
   /**

@@ -67,7 +67,8 @@ const startTimer = () => {
 
 const generateLink = async () => {
   try {
-    await store.generateLink();
+    const position = selectedLeg.value === 'derecha' ? 1 : 0;
+    await store.generateLink(position);
     startTimer();
     showNotification('Enlace generado', 'success');
   } catch (error) {

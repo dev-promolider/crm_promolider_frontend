@@ -14,7 +14,9 @@
             <th>ID</th>
             <th>Nombre Completo</th>
             <th>Email</th>
+            <th>Fecha de Registro</th>
             <th>País</th>
+            <th>Transacción</th>
             <th>Acciones</th>
           </tr>
         </thead>
@@ -28,7 +30,14 @@
               </div>
             </td>
             <td>{{ user.email }}</td>
+            <td>{{ user.formatted_created_at_string || 'N/A' }}</td>
             <td>{{ user.country || 'N/A' }}</td>
+            <td>
+              <span class="transaction-badge" v-if="user.transaction_id !== 'N/A'">
+                {{ user.transaction_id }}
+              </span>
+              <span v-else>N/A</span>
+            </td>
             <td>
               <button 
                 class="btn-table-action success" 
@@ -40,7 +49,7 @@
             </td>
           </tr>
           <tr v-if="store.newUsers.length === 0 && !store.loading">
-            <td colspan="5" class="empty-row">
+            <td colspan="7" class="empty-row">
               <Users :size="24" />
               <p>No hay nuevos usuarios pendientes de verificación.</p>
             </td>
@@ -195,6 +204,16 @@ const confirmApprove = async () => {
 .user-username {
   font-size: 0.75rem;
   color: var(--text-muted);
+}
+
+.transaction-badge {
+  background-color: rgba(99, 102, 241, 0.1);
+  color: #6366f1;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: monospace;
 }
 
 .btn-table-action {

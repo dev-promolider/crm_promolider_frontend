@@ -21,7 +21,7 @@
     </div>
 
     <!-- SIDEBAR -->
-    <aside class="sidebar" :class="{ 'collapsed': isSidebarCollapsed }" @mouseenter="isSidebarCollapsed = false" @mouseleave="isSidebarCollapsed = true">
+    <aside class="sidebar" :class="{ 'collapsed': isSidebarCollapsed }" @mouseenter="handleSidebarMouseEnter" @mouseleave="handleSidebarMouseLeave">
       <div class="sidebar-header" @click="isSidebarCollapsed = !isSidebarCollapsed">
         <div class="sidebar-logo">
           <img :src="isSidebarCollapsed ? '/images/logo/promolider_logo_collapse.png' : '/images/promolider-logo.webp'" alt="Promolider" class="sidebar-logo-img" />
@@ -47,7 +47,7 @@
 
 
           <div class="nav-group" :class="{ active: isAulaActive, open: isAulaOpen }">
-            <button type="button" class="nav-item nav-parent" @click="toggleAula">
+            <button type="button" class="nav-item nav-parent" @click="isAulaOpen = !isAulaOpen">
               <MonitorPlay :size="20" />
 
               <span v-if="!isSidebarCollapsed">Aula virtual</span>
@@ -77,7 +77,7 @@
           </div>
 
           <!-- Marketing - Expandable Section -->
-          <div class="nav-section">
+          <div class="nav-section" :class="{ active: isMarketingActive }">
             <button
               class="nav-item nav-section-toggle"
               :class="{ expanded: marketingExpanded }"
@@ -120,7 +120,7 @@
           </div>
 
           <!-- Solicitudes - Expandable Section -->
-          <div class="nav-section">
+          <div class="nav-section" :class="{ active: isSolicitudesActive }">
             <button
               class="nav-item nav-section-toggle"
               :class="{ expanded: solicitudesExpanded }"
@@ -170,7 +170,7 @@
           </div>
 
           <!-- Reportes - Collapsible Menu Section -->
-          <div class="nav-section">
+          <div class="nav-section" :class="{ active: isReportesActive }">
             <button
               class="nav-item nav-section-toggle"
               :class="{ expanded: reportesExpanded }"
@@ -463,7 +463,7 @@
                     <div class="notification-item-content">
                       <div class="notification-item-title">{{ notif.title }}</div>
                       <div class="notification-item-body">{{ notif.body }}</div>
-                      <div class="notification-item-time">{{ new Date(notif.created_at).toLocaleString() }}</div>
+                      <div class="notification-item-time">{{ notif.formatted_created_at_string || new Date(notif.created_at).toLocaleString() }}</div>
                     </div>
                   </div>
                 </div>
@@ -881,6 +881,29 @@ const isAulaActive = computed(() => {
   });
 });
 
+const isMarketingActive = computed(() => route.path.startsWith('/marketing'));
+const isSolicitudesActive = computed(() => route.path.includes('/solicitudes'));
+const isReportesActive = computed(() => route.path.includes('billetera') || route.path.includes('mis-compras') || route.path.includes('mis-ventas') || route.path.includes('bono-binario'));
+const isCarteraActive = computed(() => route.path.includes('billetera') || route.path.includes('mis-compras') || route.path.includes('mis-ventas'));
+const isBonoRangoActive = computed(() => route.path.includes('bono-binario'));
+
+const hoverTimeouts = {};
+
+const handleSidebarMouseEnter = () => {
+  clearTimeout(hoverTimeouts.sidebar);
+  hoverTimeouts.sidebar = setTimeout(() => {
+    isSidebarCollapsed.value = false;
+  }, 150);
+};
+
+const handleSidebarMouseLeave = () => {
+  clearTimeout(hoverTimeouts.sidebar);
+  hoverTimeouts.sidebar = setTimeout(() => {
+    isSidebarCollapsed.value = true;
+  }, 150);
+};
+
+
 const toggleAula = () => {
   if (isSidebarCollapsed.value) {
     isSidebarCollapsed.value = false;
@@ -1231,7 +1254,8 @@ onBeforeUnmount(() => {
   transform: rotate(90deg);
 }
 
-.nav-group.active > .nav-parent {
+.nav-group.active > .nav-parent,
+.nav-section.active > .nav-section-toggle {
   color: var(--primary-color);
 }
 
@@ -1436,29 +1460,24 @@ onBeforeUnmount(() => {
 }
 
 /* Submenu animation */
-.submenu-slide-enter-active {
-  transition: all 0.25s ease-out;
-  overflow: hidden;
-}
+.submenu-slide-enter-active,
 .submenu-slide-leave-active {
-  transition: all 0.2s ease-in;
+  transition: all 0.4s ease-in-out;
   overflow: hidden;
 }
-.submenu-slide-enter-from {
-  max-height: 0;
-  opacity: 0;
-  transform: translateY(-8px);
-}
+.submenu-slide-enter-from,
 .submenu-slide-leave-to {
   max-height: 0;
   opacity: 0;
-  transform: translateY(-8px);
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-top: 0;
+  padding-bottom: 0;
 }
 .submenu-slide-enter-to,
 .submenu-slide-leave-from {
-  max-height: 500px;
+  max-height: 250px;
   opacity: 1;
-  transform: translateY(0);
 }
 
 .nav-subsection {

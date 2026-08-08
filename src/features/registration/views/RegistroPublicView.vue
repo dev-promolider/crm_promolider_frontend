@@ -47,12 +47,14 @@
             <div class="form-grid">
               <div class="form-group">
                 <label>Nombre de Usuario *</label>
-                <input type="text" v-model="form.username" class="custom-input" minlength="3" />
+                <input type="text" v-model="form.username" class="custom-input" minlength="3" @blur="validateField('username', form.username)" />
+                <span class="error-text" v-if="fieldErrors.username">{{ fieldErrors.username }}</span>
               </div>
 
               <div class="form-group">
                 <label>Correo Electrónico *</label>
-                <input type="email" v-model="form.email" class="custom-input" />
+                <input type="email" v-model="form.email" class="custom-input" @blur="validateField('email', form.email)" />
+                <span class="error-text" v-if="fieldErrors.email">{{ fieldErrors.email }}</span>
               </div>
 
               <div class="form-group">
@@ -131,7 +133,8 @@
 
               <div class="form-group">
                 <label>Número de Documento *</label>
-                <input type="text" v-model="form.nro_document" class="custom-input" />
+                <input type="text" v-model="form.nro_document" class="custom-input" @blur="validateField('nro_document', form.nro_document, form.id_document_type)" />
+                <span class="error-text" v-if="fieldErrors.nro_document">{{ fieldErrors.nro_document }}</span>
               </div>
             </div>
 
@@ -202,7 +205,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { validateSponsorLink, getFormData, submitRegistration, submitOpenpayPayment } from '../services/registrationService';
+import { validateSponsorLink, getFormData, submitRegistration, submitMainRegistrationOpenpay, checkAvailability } from '../services/registrationService';
 
 const route = useRoute();
 const router = useRouter();
@@ -221,6 +224,11 @@ const submitting = ref(false);
 
 const currentStep = ref(1);
 const repassword = ref('');
+const fieldErrors = ref({
+  username: '',
+  email: '',
+  nro_document: ''
+});
 
 const form = ref({
   id_referrer_sponsor: '',
@@ -248,7 +256,8 @@ const selectedAccount = computed(() => {
 });
 
 const accountPrice = computed(() => selectedAccount.value ? parseFloat(selectedAccount.value.price) : 0);
-const accountIva = computed(() => selectedAccount.value ? parseFloat(selectedAccount.value.iva) : 0);
+const accountIvaPercentage = computed(() => selectedAccount.value ? parseFloat(selectedAccount.value.iva) : 0);
+const accountIva = computed(() => (accountPrice.value * accountIvaPercentage.value) / 100);
 const totalCost = computed(() => accountPrice.value + accountIva.value);
 
 const isOfflinePayment = computed(() => {
@@ -289,6 +298,32 @@ onMounted(async () => {
   }
 });
 
+const validateField = async (field, value, document_type = null) => {
+  if (!value) {
+    fieldErrors.value[field] = '';
+    return;
+  }
+  
+  try {
+    const payload = { field, value };
+    if (document_type) payload.document_type = document_type;
+    
+    const res = await checkAvailability(payload);
+    if (res && res.success && !res.available) {
+      let fieldName = 'Este dato';
+      if (field === 'username') fieldName = 'Este nombre de usuario';
+      if (field === 'email') fieldName = 'Este correo electrónico';
+      if (field === 'nro_document') fieldName = 'Este número de documento';
+      
+      fieldErrors.value[field] = `${fieldName} ya está en uso.`;
+    } else {
+      fieldErrors.value[field] = '';
+    }
+  } catch (error) {
+    console.error('Error validating field', error);
+  }
+};
+
 const nextStep = (step) => {
   if (step === 1) {
     if (!form.value.username || !form.value.email || !form.value.password || !form.value.user_type) {
@@ -299,10 +334,18 @@ const nextStep = (step) => {
       alert("Las contraseñas no coinciden");
       return;
     }
+    if (fieldErrors.value.username || fieldErrors.value.email) {
+      alert("Por favor corrige los errores antes de continuar.");
+      return;
+    }
   }
   if (step === 2) {
     if (!form.value.name || !form.value.last_name || !form.value.phone || !form.value.date_birth || !form.value.id_country || !form.value.id_document_type || !form.value.nro_document) {
       alert("Por favor completa todos los campos requeridos del Paso 2");
+      return;
+    }
+    if (fieldErrors.value.nro_document) {
+      alert("Por favor corrige los errores antes de continuar.");
       return;
     }
   }
@@ -354,7 +397,7 @@ const submitForm = async () => {
         lado: 'izquierda' // Default para registro
       };
       
-      const response = await submitOpenpayPayment(openpayPayload);
+      const response = await submitMainRegistrationOpenpay(openpayPayload);
       if (response.payment_url) {
         window.location.href = response.payment_url;
       } else {
@@ -618,6 +661,14 @@ const submitForm = async () => {
   -webkit-text-fill-color: #ffffff !important;
   border-color: rgba(255, 255, 255, 0.2) !important;
   transition: background-color 5000s ease-in-out 0s;
+}
+
+.error-text {
+  color: #ef4444;
+  font-size: 13px;
+  margin-top: 6px;
+  display: block;
+  font-weight: 500;
 }
 
 .custom-input:disabled, .custom-input[readonly] {
