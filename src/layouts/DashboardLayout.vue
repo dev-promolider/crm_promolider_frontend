@@ -485,7 +485,7 @@
               <div class="user-info">
                 <div class="user-text text-right">
                   <span class="user-name">{{ user?.name || user?.nombre || 'Cargando...' }} {{ user?.last_name || user?.apellido || '' }}</span>
-                  <span class="user-role">{{ user?.account_type?.name || user?.role || 'University' }}</span>
+                  <span class="user-role">{{ user?.account_type?.account || user?.role || '...' }}</span>
                 </div>
                 <div class="user-avatar">
                   <img v-if="user?.photo || user?.avatar" :src="getAvatarUrl(user.photo || user.avatar)" alt="Avatar" @error="$event.target.src = '/img_mantenimiento.png'; $event.target.onerror = null;" />
