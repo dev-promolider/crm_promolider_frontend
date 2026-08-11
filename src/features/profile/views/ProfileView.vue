@@ -413,7 +413,7 @@
                       <p style="margin-bottom: 24px;">La pasarela de pagos usada por Promolider en la tienda Virtual es Openpay.</p>
 
                       <strong style="display: block; margin-bottom: 8px; color: var(--text-bold);">4. VALIDEZ Y PRECIO</strong>
-                      <p style="margin-bottom: 12px;">Los precios exhibidos en www.promolider.org son exclusivos para las compras efectuadas en Tienda Virtual Promolider.</p>
+                      <p style="margin-bottom: 12px;">Los precios exhibidos en www.promolider.email son exclusivos para las compras efectuadas en Tienda Virtual Promolider.</p>
                       <p style="margin-bottom: 24px;">Los precios de los productos consignados en la Tienda Virtual Promolider son en moneda Dólar Americano (USD.), y de igual manera los comprobantes de pago que se emiten.</p>
 
                       <strong style="display: block; margin-bottom: 8px; color: var(--text-bold);">5. COMPROBANTES DE PAGO</strong>

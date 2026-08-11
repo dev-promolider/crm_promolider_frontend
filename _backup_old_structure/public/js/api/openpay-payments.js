@@ -37,7 +37,7 @@ async function sendOpenpayData() {
     order_id: order,
     confirm: 'false',
     send_email: 'false',
-    redirect_url: 'https://crm.promolider.org/' + 'login',
+    redirect_url: 'https://crm.promolider.email/' + 'login',
     due_date: fechaFormateada,
     customer: {
       name: user_name,
