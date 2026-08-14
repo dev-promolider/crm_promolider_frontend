@@ -4,7 +4,7 @@
     <div class="login-form-panel">
       <div class="form-container">
         <div class="mobile-logo-wrapper">
-          <img src="/images/logo/promolider_logo.png" alt="Promolider Logo" class="mobile-logo" @error="onImgError" />
+          <img src="/images/PromoliderCRMW.webp" alt="Promolider Logo" class="mobile-logo" @error="onImgError" />
         </div>
 
         <h2 class="login-title">Inicia sesión</h2>

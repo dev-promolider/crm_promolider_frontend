@@ -18,9 +18,12 @@ const apiCache = new Map();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
 export const clearApiCache = () => apiCache.clear();
 
+// Cola global para evitar que el servidor PHP en Windows se congele con peticiones concurrentes
+let currentRequestPromise = Promise.resolve();
+
 // Interceptor de Peticiones
 apiClient.interceptors.request.use(
-  (config) => {
+  async (config) => {
     // Si hay una mutación (post, put, etc), limpiamos la caché global
     if (['post', 'put', 'patch', 'delete'].includes(config.method.toLowerCase())) {
       clearApiCache();
@@ -64,8 +67,24 @@ apiClient.interceptors.request.use(
             }, 50);
           });
         };
+        // Si está en caché, no necesitamos encolarla
+        return config;
       }
     }
+
+    // --- INICIO DE LA COLA ESTRICTA ---
+    // Creamos una promesa que liberará a la SIGUIENTE petición cuando ESTA termine
+    let releaseQueue;
+    const unlockNext = new Promise(resolve => { releaseQueue = resolve; });
+    
+    config.releaseQueue = releaseQueue;
+
+    // Esperamos a que la petición ANTERIOR termine antes de continuar con ESTA
+    const waitPromise = currentRequestPromise;
+    currentRequestPromise = currentRequestPromise.then(() => unlockNext);
+
+    await waitPromise;
+    // --- FIN DE LA COLA ESTRICTA ---
 
     return config;
   },
@@ -78,6 +97,11 @@ apiClient.interceptors.request.use(
 // Interceptor de Respuestas
 apiClient.interceptors.response.use(
   (response) => {
+    // Liberar la cola para que pase la siguiente petición
+    if (response.config && response.config.releaseQueue) {
+      response.config.releaseQueue();
+    }
+
     if (response.config.hideLoader !== true) {
       stopGlobalLoading();
     }
@@ -99,6 +123,11 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
+    // Liberar la cola si la petición falló
+    if (error.config && error.config.releaseQueue) {
+      error.config.releaseQueue();
+    }
+
     if (error.config && error.config.hideLoader !== true) {
       stopGlobalLoading();
     }

@@ -131,11 +131,13 @@
 
 <script setup>
 import { ref, watch, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { createMasterclass, getCategories } from '../services/marketingService'
+import { compressImageToWebp } from '@/utils/imageUtils'
 import { ArrowLeft, Image, FileText, X, AlertCircle, Loader2 } from 'lucide-vue-next'
 
 const router = useRouter()
+const route = useRoute()
 const categories = ref([])
 const isSubmitting = ref(false)
 const errors = ref([])
@@ -214,6 +216,7 @@ async function submitForm() {
   isSubmitting.value = true
   try {
     const fd = new FormData()
+    if (route.query.course_id) fd.append('course_id', route.query.course_id)
     fd.append('title', form.value.title)
     fd.append('category_id', form.value.category_id)
     fd.append('description', form.value.description)
@@ -224,13 +227,25 @@ async function submitForm() {
     fd.append('meeting_link', form.value.meeting_link)
     fd.append('email', form.value.email)
     fd.append('phone', form.value.phone.replace(/\D/g, ''))
-    fd.append('image', form.value.image)
+    
+    // Convert to webp and compress if it's an image
+    const compressedImage = await compressImageToWebp(form.value.image, 0.8)
+    fd.append('image', compressedImage)
+    
     form.value.documents.forEach(doc => fd.append('documents[]', doc))
     await createMasterclass(fd)
     router.push('/marketing/herramientas')
   } catch (error) {
-    const msg = error.response?.data?.message || 'Error al crear la masterclass'
-    errors.value = [msg]
+    if (error.response?.status === 422 && error.response?.data?.errors) {
+      const errs = []
+      for (const key in error.response.data.errors) {
+        errs.push(...error.response.data.errors[key])
+      }
+      errors.value = errs
+    } else {
+      const msg = error.response?.data?.message || 'Error al crear la masterclass'
+      errors.value = [msg]
+    }
   } finally { isSubmitting.value = false }
 }
 

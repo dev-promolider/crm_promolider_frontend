@@ -3,14 +3,14 @@
     
     <!-- Watermark Logo -->
     <div class="watermark-bg">
-      <img src="/images/logo/promolider_logo.png" alt="watermark" />
+      <img src="/images/PromoliderCRMW.webp" alt="watermark" />
     </div>
 
     <!-- SIDEBAR -->
     <aside class="sidebar" :class="{ 'collapsed': isSidebarCollapsed }">
       <div class="sidebar-header">
         <div class="sidebar-logo">
-          <img src="/images/logo/promolider_logo.png" alt="Promolider" class="sidebar-logo-img" />
+          <img src="/images/PromoliderCRMW.webp" alt="Promolider" class="sidebar-logo-img" />
         </div>
         <button class="collapse-btn" @click="isSidebarCollapsed = !isSidebarCollapsed">
           <Menu :size="20" />

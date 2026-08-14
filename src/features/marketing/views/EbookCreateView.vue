@@ -126,11 +126,13 @@
 
 <script setup>
 import { ref, watch, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { createEbook, getCategories } from '../services/marketingService'
+import { compressImageToWebp } from '@/utils/imageUtils'
 import { ArrowLeft, Image, FileText, Plus, X, AlertCircle, Loader2 } from 'lucide-vue-next'
 
 const router = useRouter()
+const route = useRoute()
 const categories = ref([])
 const isSubmitting = ref(false)
 const errors = ref([])
@@ -174,14 +176,19 @@ async function submitForm() {
   isSubmitting.value = true
   try {
     const fd = new FormData()
+    if (route.query.course_id) fd.append('course_id', route.query.course_id)
     fd.append('title', form.value.title)
     fd.append('author', form.value.author)
     fd.append('price', form.value.price || 0)
     fd.append('pages', form.value.pages)
     fd.append('category_id', form.value.category_id)
     fd.append('description', form.value.description)
-    fd.append('cover', form.value.cover)
-    fd.append('pdf', form.value.pdf)
+    
+    // Convert to webp and compress if it's an image
+    const compressedImage = await compressImageToWebp(form.value.cover, 0.8)
+    fd.append('cover', compressedImage)
+    
+    if (form.value.pdf) fd.append('pdf', form.value.pdf)
     form.value.chapters.forEach((ch, i) => {
       fd.append(`chapters[${i}][title]`, ch.title)
       fd.append(`chapters[${i}][pages]`, ch.pages)
@@ -190,7 +197,16 @@ async function submitForm() {
     await createEbook(fd)
     router.push('/marketing/herramientas')
   } catch (error) {
-    errors.value = [error.response?.data?.message || 'Error al crear el e-book']
+    if (error.response?.status === 422 && error.response?.data?.errors) {
+      const errs = []
+      for (const key in error.response.data.errors) {
+        errs.push(...error.response.data.errors[key])
+      }
+      errors.value = errs
+    } else {
+      const msg = error.response?.data?.message || 'Error al crear el e-book'
+      errors.value = [msg]
+    }
   } finally { isSubmitting.value = false }
 }
 

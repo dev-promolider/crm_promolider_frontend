@@ -757,10 +757,11 @@ const loadUnilevelTree = async () => {
   }
 };
 
-onMounted(() => {
-  loadDashboardWidgets();
-  loadBinaryTree();
-  loadUnilevelTree();
+onMounted(async () => {
+  // Peticiones estrictamente secuenciales para evitar el bloqueo del servidor PHP en Windows
+  await loadDashboardWidgets();
+  await loadBinaryTree();
+  await loadUnilevelTree();
 
   // Mostrar el toast de bienvenida solo una vez por sesión
   if (!sessionStorage.getItem('dashboard_toast_shown')) {

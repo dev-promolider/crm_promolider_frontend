@@ -542,7 +542,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { getDinamicas, createDinamica, storeDinamicaSpecifications } from '../services/marketingService'
 import apiClient from '@/services/apiClient'
 import RuletaWheel from '../components/RuletaWheel.vue'
@@ -559,6 +559,7 @@ import {
 } from 'lucide-vue-next'
 
 const router = useRouter()
+const route = useRoute()
 
 const openDropdownId = ref(null)
 
@@ -871,6 +872,7 @@ async function saveRoulette() {
         descripcion: rouletteForm.value.descripcion.trim() || '',
         is_public: false,
       }
+      if (route.query.course_id) payload.course_id = route.query.course_id
       const res = await createDinamica(payload)
       const data = res?.data || res || {}
       const dinamicaId = data.dinamica_id || data.id
@@ -1071,6 +1073,7 @@ async function submitTrivia() {
         descripcion: triviaForm.value.description.trim() || '',
         is_public: false,
       }
+      if (route.query.course_id) createPayload.course_id = route.query.course_id
       const res = await createDinamica(createPayload)
       const createData = res?.data || res || {}
       const id = createData.dinamica_id || createData.id

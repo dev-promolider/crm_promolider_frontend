@@ -21,8 +21,9 @@ function normalizeType(type) {
 
 // ─── Tools ────────────────────────────────────────────────────────────────
 
-export async function getTools() {
-  const response = await apiClient.get('/marketing/tools')
+export async function getTools(courseId = null) {
+  const params = courseId ? { course_id: courseId } : {}
+  const response = await apiClient.get('/marketing/tools', { params })
   return response.data
 }
 

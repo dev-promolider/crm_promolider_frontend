@@ -17,14 +17,14 @@
     <!-- Watermark Logo -->
     <div class="watermark-bg">
       <!-- Un truco CSS para mostrar solo el ícono de Promolíder o la imagen difuminada -->
-      <img src="/images/logo/promolider_logo.png" alt="watermark" />
+      <img src="/images/PromoliderCRMW.webp" alt="watermark" />
     </div>
 
     <!-- SIDEBAR -->
     <aside class="sidebar" :class="{ 'collapsed': isSidebarCollapsed }" @mouseenter="handleSidebarMouseEnter" @mouseleave="handleSidebarMouseLeave">
       <div class="sidebar-header" @click="isSidebarCollapsed = !isSidebarCollapsed">
         <div class="sidebar-logo">
-          <img :src="isSidebarCollapsed ? '/images/logo/promolider_logo_collapse.png' : '/images/promolider-logo.webp'" alt="Promolider" class="sidebar-logo-img" />
+          <img :src="isSidebarCollapsed ? '/images/logo/promolider_logo_collapse.png' : '/images/PromoliderCRMW.webp'" alt="Promolider" class="sidebar-logo-img" />
         </div>
       </div>
 
@@ -84,7 +84,7 @@
               @click="marketingExpanded = !marketingExpanded"
             >
               <Star :size="20" />
-              <span v-if="!isSidebarCollapsed" class="nav-label">Marketing</span>
+              <span v-if="!isSidebarCollapsed" class="nav-label">Marketing y Ventas</span>
               <ChevronDown
                 v-if="!isSidebarCollapsed"
                 :size="16"
@@ -95,10 +95,6 @@
 
             <transition name="submenu-slide">
               <div v-if="marketingExpanded && !isSidebarCollapsed" class="nav-submenu">
-                <RouterLink to="/marketing/herramientas" class="nav-subitem" active-class="active">
-                  <span class="submenu-dot"></span>
-                  <span>Herramientas</span>
-                </RouterLink>
                 <RouterLink to="/marketing/marketplace" class="nav-subitem" active-class="active">
                   <span class="submenu-dot"></span>
                   <span>Marketplace</span>
@@ -113,7 +109,7 @@
                 </RouterLink>
                 <RouterLink to="/marketing/reportes" class="nav-subitem" active-class="active">
                   <span class="submenu-dot"></span>
-                  <span>Reportes</span>
+                  <span>Lista de Prospectos</span>
                 </RouterLink>
               </div>
             </transition>
@@ -848,6 +844,15 @@ const aulaVirtualItems = computed(() => {
     }
   ];
 
+  if (isProducer.value || isAdmin.value) {
+    items.push({
+      to: '/marketing/herramientas',
+      label: 'Mis Herramientas',
+      icon: Star,
+      slug: 'marketing.herramientas'
+    });
+  }
+
   if (isAdmin.value) {
     items.push({
       to: '/marketplace',
@@ -881,7 +886,8 @@ const isAulaActive = computed(() => {
   });
 });
 
-const isMarketingActive = computed(() => route.path.startsWith('/marketing'));
+const isMarketingToolsRoute = (path) => ['/marketing/herramientas', '/marketing/masterclass', '/marketing/ebook', '/marketing/dinamica', '/marketing/mini-course', '/marketing/categorias-preguntas'].some(p => path.startsWith(p));
+const isMarketingActive = computed(() => route.path.startsWith('/marketing') && !isMarketingToolsRoute(route.path));
 const isSolicitudesActive = computed(() => route.path.includes('/solicitudes'));
 const isReportesActive = computed(() => route.path.includes('billetera') || route.path.includes('mis-compras') || route.path.includes('mis-ventas') || route.path.includes('bono-binario'));
 const isCarteraActive = computed(() => route.path.includes('billetera') || route.path.includes('mis-compras') || route.path.includes('mis-ventas'));
@@ -1205,7 +1211,7 @@ onMounted(() => {
 
   // Auto-expand sección Marketing al navegar dentro de /marketing
   watch(() => route.path, (path) => {
-    marketingExpanded.value = path.startsWith('/marketing');
+    marketingExpanded.value = path.startsWith('/marketing') && !isMarketingToolsRoute(path);
     solicitudesExpanded.value = path.includes('/solicitudes');
   }, { immediate: true });
 

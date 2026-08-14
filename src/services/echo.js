@@ -14,8 +14,9 @@ const echo = new Echo({
   wsHost: window.location.hostname || '127.0.0.1',
   wsPort: 6001,
   forceTLS: false,
+  encrypted: false,
   disableStats: true,
-  enabledTransports: ['ws', 'wss'],
+  enabledTransports: ['ws'],
 });
 
 export default echo;

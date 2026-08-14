@@ -2,29 +2,56 @@
   <div class="marketing-tools-view">
     <div class="card">
       <div class="card-body">
-        <div class="card-header">
-          <div>
-            <h4 class="card-title">Herramientas de Marketing</h4>
-            <span class="card-meta">Gestiona tus herramientas promocionales</span>
+        <!-- Seleccionar Curso -->
+        <div v-if="!selectedCourseId" class="course-selection-view">
+          <div class="card-header mb-4">
+            <div>
+              <h4 class="card-title">Selecciona un curso</h4>
+              <span class="card-meta">Elige el curso para el cual deseas gestionar o crear herramientas de marketing.</span>
+            </div>
           </div>
-          <div class="create-buttons">
-            <button class="stats-tab-btn" @click="createTool('Masterclass')">
-              <Plus :size="14" /> Masterclass
-            </button>
-            <button class="stats-tab-btn" @click="createTool('Mini Curso')">
-              <Plus :size="14" /> Mini-Curso
-            </button>
-            <button class="stats-tab-btn" @click="createTool('E-book')">
-              <Plus :size="14" /> E-book
-            </button>
-            <button class="stats-tab-btn" @click="createTool('Dinamica')">
-              <Zap :size="14" /> Dinámica
-            </button>
+          <div v-if="loadingCourses" class="loading-state"><Loader2 class="spinner" :size="36" /><p>Cargando tus cursos...</p></div>
+          <div v-else-if="courses.length === 0" class="no-courses">
+            <p>Aún no tienes cursos creados.</p>
+            <router-link to="/infoproducts/crear-curso" class="btn-primary-custom">Crear mi primer curso</router-link>
+          </div>
+          <div v-else class="courses-grid">
+            <div class="course-card" v-for="course in courses" :key="course.id" @click="selectCourse(course)">
+              <img :src="getCourseImage(course)" alt="Curso" class="course-card-img" @error="$event.target.src = '/img_mantenimiento.png'; $event.target.onerror = null;" />
+              <div class="course-card-body">
+                <h5 class="course-title">{{ course.title || course.titulo }}</h5>
+                <p class="course-desc">Gestionar herramientas de marketing para este curso.</p>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Loading -->
-        <div v-if="loading" class="loading-state"><Loader2 class="spinner" :size="36" /><p>Cargando herramientas...</p></div>
+        <!-- Vista de Herramientas -->
+        <div v-else>
+          <div class="card-header">
+            <div>
+              <button class="btn-back" @click="clearCourseSelection">&larr; Volver a cursos</button>
+              <h4 class="card-title">Herramientas: {{ selectedCourse?.title || selectedCourse?.titulo }}</h4>
+              <span class="card-meta">Crea y gestiona tus herramientas promocionales para este curso</span>
+            </div>
+            <div class="create-buttons">
+              <button class="stats-tab-btn" @click="createTool('Masterclass')">
+                <Plus :size="14" /> Masterclass
+              </button>
+              <button class="stats-tab-btn" @click="createTool('Mini Curso')">
+                <Plus :size="14" /> Mini-Curso
+              </button>
+              <button class="stats-tab-btn" @click="createTool('E-book')">
+                <Plus :size="14" /> E-book
+              </button>
+              <button class="stats-tab-btn" @click="createTool('Dinamica')">
+                <Zap :size="14" /> Dinámica
+              </button>
+            </div>
+          </div>
+
+          <!-- Loading Tools -->
+          <div v-if="loading" class="loading-state"><Loader2 class="spinner" :size="36" /><p>Cargando herramientas...</p></div>
 
         <!-- DataTable -->
         <div v-else>
@@ -102,6 +129,8 @@
             </nav>
           </div>
         </div>
+        </div>
+        <!-- Fin vista herramientas -->
       </div>
     </div>
 
@@ -500,9 +529,15 @@ import {
   Plus, Zap, Loader2, Search, AlertTriangle, X, Link, Copy, ToggleLeft,
   CheckCircle2, AlertCircle, Edit3, Info, MessageCircle, Facebook
 } from 'lucide-vue-next'
+import { infoproductService } from '@/features/infoproducts/services/infoproductService'
 
 const router = useRouter()
 const store = useMarketingStore()
+
+const courses = ref([])
+const loadingCourses = ref(false)
+const selectedCourseId = ref(null)
+const selectedCourse = ref(null)
 
 const loading = ref(false)
 const searchQuery = ref('')
@@ -510,6 +545,14 @@ const perPage = ref(10)
 const currentPage = ref(1)
 const actionSelect = ref('')
 const toast = ref(null)
+
+const STORAGE_URL = import.meta.env.VITE_APP_STORAGE_URL || (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api/v1', '/storage') : 'http://localhost:8000/storage');
+
+function getCourseImage(course) {
+  if (course.url_portada) return `${STORAGE_URL}/${course.url_portada}`
+  if (course.path_url) return `${STORAGE_URL}/${course.path_url}`
+  return '/img_mantenimiento.png' // Default image
+}
 
 // ─── Tipos y utilidades ───────────────────────────────────────────────
 
@@ -622,10 +665,11 @@ function createTool(type) {
     'E-book': '/marketing/ebook/crear',
     Dinamica: '/marketing/dinamica/crear',
   }
-  const route = routes[type]
-  if (route) {
-    const exists = router.getRoutes().some(r => r.path === route)
-    if (exists) router.push(route)
+  const baseRoute = routes[type]
+  if (baseRoute) {
+    const fullRoute = `${baseRoute}?course_id=${selectedCourseId.value}`
+    const exists = router.getRoutes().some(r => r.path === baseRoute)
+    if (exists) router.push(fullRoute)
     else showToast('Próximamente', `Creación de ${type.toLowerCase()} próximamente`, 'error')
   }
 }
@@ -929,12 +973,35 @@ function getFacebookShareUrl() {
   return `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}`
 }
 
-// ─── Mount ───────────────────────────────────────────────────────────
+async function fetchCourses() {
+  loadingCourses.value = true
+  try {
+    const response = await infoproductService.getCreatedInfoproducts({ limit: 100 })
+    courses.value = response.data?.data || response.data || []
+  } catch (error) {
+    showToast('Error', 'No se pudieron cargar tus cursos', 'error')
+  } finally {
+    loadingCourses.value = false
+  }
+}
+
+async function selectCourse(course) {
+  selectedCourse.value = course
+  selectedCourseId.value = course.id
+  loading.value = true
+  await store.loadTools(course.id)
+  loading.value = false
+}
+
+function clearCourseSelection() {
+  selectedCourseId.value = null
+  selectedCourse.value = null
+  store.tools = []
+}
 
 onMounted(async () => {
-  loading.value = true
-  await Promise.all([store.loadTools(), store.loadCategories()])
-  loading.value = false
+  await fetchCourses()
+  await store.loadCategories()
 })
 </script>
 
@@ -954,6 +1021,34 @@ onMounted(async () => {
   color: var(--text-muted); cursor: pointer; transition: all 0.2s;
 }
 .stats-tab-btn:hover { border-color: var(--primary-color); color: var(--primary-color); background: rgba(24,214,0,0.04); }
+
+.btn-back {
+  background: transparent; border: none; color: var(--text-muted);
+  cursor: pointer; font-size: 13px; font-weight: 600; padding: 0;
+  margin-bottom: 8px; transition: color 0.2s;
+}
+.btn-back:hover { color: var(--primary-color); }
+
+.courses-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 20px; }
+.course-card {
+  border: 1px solid var(--border-color); border-radius: 12px;
+  background: var(--card-bg); cursor: pointer; transition: all 0.2s;
+  text-align: left; overflow: hidden; display: flex; flex-direction: column;
+}
+.course-card-img {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  border-bottom: 1px solid var(--border-color);
+}
+.course-card-body {
+  padding: 16px;
+}
+.course-card:hover { border-color: var(--primary-color); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+.course-title { font-size: 15px; font-weight: 700; color: var(--text-bold); margin-bottom: 4px; margin-top: 0; }
+.course-desc { font-size: 13px; color: var(--text-muted); margin: 0; }
+.no-courses { padding: 40px; text-align: center; color: var(--text-muted); }
+.no-courses p { margin-bottom: 16px; }
 
 .loading-state { display: flex; flex-direction: column; align-items: center; padding: 40px; color: var(--text-muted); gap: 12px; }
 .spinner { animation: spin 1s linear infinite; color: var(--primary-color); }

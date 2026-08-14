@@ -87,11 +87,13 @@
 
 <script setup>
 import { ref, watch, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { createMiniCourse, getCategories } from '../services/marketingService'
+import { compressImageToWebp } from '@/utils/imageUtils'
 import { ArrowLeft, Image, X, AlertCircle, Loader2 } from 'lucide-vue-next'
 
 const router = useRouter()
+const route = useRoute()
 const categories = ref([])
 const isSubmitting = ref(false)
 const errors = ref([])
@@ -129,16 +131,30 @@ async function submitForm() {
   isSubmitting.value = true
   try {
     const fd = new FormData()
+    if (route.query.course_id) fd.append('course_id', route.query.course_id)
     fd.append('title', form.value.title)
     fd.append('duration', form.value.duration)
     fd.append('level', form.value.level)
     fd.append('category_id', form.value.category_id)
     fd.append('description', form.value.description)
-    fd.append('image', form.value.image)
+    
+    // Convert to webp and compress if it's an image
+    const compressedImage = await compressImageToWebp(form.value.image, 0.8)
+    fd.append('image', compressedImage)
+    
     await createMiniCourse(fd)
     router.push('/marketing/herramientas')
   } catch (error) {
-    errors.value = [error.response?.data?.message || 'Error al crear el mini curso']
+    if (error.response?.status === 422 && error.response?.data?.errors) {
+      const errs = []
+      for (const key in error.response.data.errors) {
+        errs.push(...error.response.data.errors[key])
+      }
+      errors.value = errs
+    } else {
+      const msg = error.response?.data?.message || 'Error al crear el mini-curso'
+      errors.value = [msg]
+    }
   } finally { isSubmitting.value = false }
 }
 

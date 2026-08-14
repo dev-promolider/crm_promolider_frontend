@@ -406,7 +406,7 @@
             </div>
 
             <div class="promo-logo-wrapper d-flex justify-content-center align-items-center" style="opacity: 0.15; pointer-events: none; flex-grow: 1;">
-              <img src="/images/logo/promolider_logo.png" alt="Promolider" style="max-width: 80%; max-height: 250px; object-fit: contain;">
+              <img src="/images/PromoliderCRMB.webp" alt="Promolider" style="max-width: 80%; max-height: 250px; object-fit: contain;">
             </div>
             </div>
 

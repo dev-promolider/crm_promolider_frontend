@@ -26,11 +26,11 @@ export const useMarketingStore = defineStore('marketing', {
       return []
     },
 
-    async loadTools() {
+    async loadTools(courseId = null) {
       this.loading = true
       this.error = null
       try {
-        const response = await marketingService.getTools()
+        const response = await marketingService.getTools(courseId)
         this.tools = this.extractData(response)
       } catch (error) {
         console.error('Error al cargar herramientas:', error)

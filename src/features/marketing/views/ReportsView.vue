@@ -4,8 +4,8 @@
       <div class="card-body">
         <div class="card-header">
           <div>
-            <h4 class="card-title">Reporte de Herramientas de Marketing</h4>
-            <span class="card-meta">Estadísticas de tus herramientas de marketing</span>
+            <h4 class="card-title">Lista de Prospectos</h4>
+            <span class="card-meta">Personas captadas con tus herramientas de marketing</span>
           </div>
         </div>
 
