@@ -46,8 +46,8 @@
             <span class="template-desc">{{ tmpl.description || 'Plantilla personalizable' }}</span>
           </div>
           <div class="template-actions-overlay">
-            <button class="action-btn primary" @click.stop="openCourseModal(tmpl)">
-              <Edit3 :size="14" /> Usar para un Curso
+            <button class="action-btn primary" @click.stop="openEditor(tmpl)">
+              <Edit3 :size="14" /> Usar plantilla
             </button>
           </div>
         </div>
@@ -159,42 +159,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Course Selection Modal -->
-    <div v-if="showCourseModal" class="modal-overlay" @click.self="closeCourseModal">
-      <div class="modal-content medium">
-        <div class="modal-header">
-          <h4>¿Qué curso quieres publicitar?</h4>
-          <button class="btn-close" @click="closeCourseModal">&times;</button>
-        </div>
-        <div class="modal-body">
-          <p class="modal-desc">La plantilla se rellenará automáticamente con los datos del curso que elijas.</p>
-          
-          <div class="course-type-tabs">
-            <button :class="{ active: selectedCourseType === 'masterclass' }" @click="selectCourseType('masterclass')">Masterclasses</button>
-            <button :class="{ active: selectedCourseType === 'ebook' }" @click="selectCourseType('ebook')">Ebooks</button>
-            <button :class="{ active: selectedCourseType === 'minicourse' }" @click="selectCourseType('minicourse')">Mini Cursos</button>
-          </div>
-
-          <div v-if="loadingCourses" class="loading-state">
-            <Loader2 class="spinner" :size="24" />
-            <p>Buscando...</p>
-          </div>
-          <div v-else-if="coursesList.length === 0" class="empty-state">
-            <p>No hay productos disponibles en esta categoría.</p>
-          </div>
-          <div v-else class="courses-list">
-            <div v-for="course in coursesList" :key="course.id" class="course-item" @click="proceedToEditor(course)">
-              <img :src="getCourseImage(course)" class="course-item-img" :alt="course.title" />
-              <div class="course-item-info">
-                <h6>{{ course.title }}</h6>
-                <span>Seleccionar</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -219,13 +183,6 @@ const myTemplates = ref([])
 const filterStatus = ref('all')
 const sortBy = ref('updated_at')
 const deleteTarget = ref(null)
-
-// Modal State
-const showCourseModal = ref(false)
-const selectedTemplate = ref(null)
-const selectedCourseType = ref('masterclass')
-const coursesList = ref([])
-const loadingCourses = ref(false)
 
 onMounted(async () => {
   loading.value = true
@@ -309,65 +266,6 @@ function copyAffiliateLink(slug) {
 
 function getPublicUrl(slug) {
   return getAffiliateUrl(slug)
-}
-
-// -- Course Selection Modal --
-function openCourseModal(template) {
-  selectedTemplate.value = template
-  showCourseModal.value = true
-  selectedCourseType.value = 'masterclass'
-  fetchCourses()
-}
-
-function closeCourseModal() {
-  showCourseModal.value = false
-  selectedTemplate.value = null
-}
-
-function selectCourseType(type) {
-  selectedCourseType.value = type
-  fetchCourses()
-}
-
-async function fetchCourses() {
-  loadingCourses.value = true
-  coursesList.value = []
-  try {
-    let res
-    if (selectedCourseType.value === 'masterclass') res = await marketplaceService.getMasterclasses()
-    else if (selectedCourseType.value === 'ebook') res = await marketplaceService.getEbooks()
-    else if (selectedCourseType.value === 'minicourse') res = await marketplaceService.getMiniCourses()
-
-    if (res?.data) {
-      coursesList.value = Array.isArray(res.data) ? res.data : (res.data.data || [])
-    }
-  } catch (e) {
-    console.error('Error fetching courses:', e)
-  } finally {
-    loadingCourses.value = false
-  }
-}
-
-function getCourseImage(course) {
-  if (course.images && course.images.length > 0) return course.images[0].image
-  return ''
-}
-
-function proceedToEditor(course) {
-  const templateId = selectedTemplate.value.id
-  const courseType = selectedCourseType.value
-  
-  closeCourseModal()
-  
-  router.push({
-    name: 'marketing-pages-editor',
-    query: {
-      template: templateId,
-      userId: props.user?.id,
-      course_type: courseType,
-      course_id: course.id
-    }
-  })
 }
 
 function formatDate(dateStr) {
@@ -576,23 +474,6 @@ async function handleDelete() {
   .filters-left { justify-content: stretch; }
   .filter-select { flex: 1; }
 }
-
-/* Modal Extensions */
-.modal-content.medium { max-width: 500px; padding: 0; overflow: hidden; }
-.modal-header { padding: 16px 24px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
-.modal-header h4 { margin: 0; font-size: 16px; }
-.btn-close { background: transparent; border: none; font-size: 20px; cursor: pointer; color: var(--text-muted); }
-.modal-body { padding: 24px; max-height: 70vh; overflow-y: auto; }
-.modal-desc { margin-top: 0; font-size: 13px; margin-bottom: 16px; }
-.course-type-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
-.course-type-tabs button { flex: 1; padding: 8px; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; color: var(--text-muted); }
-.course-type-tabs button.active { background: var(--primary-color); color: white; border-color: var(--primary-color); }
-.courses-list { display: flex; flex-direction: column; gap: 12px; }
-.course-item { display: flex; gap: 12px; align-items: center; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; transition: all 0.2s; }
-.course-item:hover { border-color: var(--primary-color); background: rgba(24,214,0,0.03); }
-.course-item-img { width: 60px; height: 60px; border-radius: 6px; object-fit: cover; }
-.course-item-info h6 { margin: 0 0 4px 0; font-size: 14px; font-weight: 600; }
-.course-item-info span { font-size: 12px; color: var(--primary-color); font-weight: 600; }
 
 .public-link-container { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
 .btn-copy-link { background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 4px; padding: 4px 8px; font-size: 10px; cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: 600; }
