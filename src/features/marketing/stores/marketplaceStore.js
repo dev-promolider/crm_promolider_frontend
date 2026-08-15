@@ -6,6 +6,14 @@ export const useMarketplaceStore = defineStore('marketplace', {
     courses: [],
     coursesPagination: { currentPage: 1, lastPage: 1, perPage: 12, total: 0 },
 
+    currentCourse: null,
+    courseResources: {
+      masterclasses: [],
+      ebooks: [],
+      minicourses: [],
+      promotional_materials: []
+    },
+
     masterclasses: [],
     ebooks: [],
     miniCourses: [],
@@ -100,6 +108,28 @@ export const useMarketplaceStore = defineStore('marketplace', {
         console.error('Error fetching courses:', e)
         this.courses = []
         this.coursesPagination = { currentPage: 1, lastPage: 1, perPage: 12, total: 0 }
+        this.error = e.message
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async fetchCourseResources(courseId) {
+      this.loading = true
+      this.error = null
+      try {
+        const data = await marketplaceService.getCourseResources(courseId)
+        if (data && data.success) {
+          this.currentCourse = data.data.course
+          this.courseResources = {
+            masterclasses: data.data.masterclasses || [],
+            ebooks: data.data.ebooks || [],
+            minicourses: data.data.minicourses || [],
+            promotional_materials: data.data.promotional_materials || []
+          }
+        }
+      } catch (e) {
+        console.error('Error fetching course resources:', e)
         this.error = e.message
       } finally {
         this.loading = false

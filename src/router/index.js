@@ -330,6 +330,11 @@ const routes = [
         component: () => import('@/features/marketing/views/MarketplaceView.vue')
       },
       {
+        path: 'marketplace/curso/:id',
+        name: 'marketing-marketplace-course-detail',
+        component: () => import('@/features/marketing/views/MarketplaceCourseDetailView.vue')
+      },
+      {
         path: 'marketplace/masterclass/:id',
         name: 'marketing-marketplace-masterclass-detail',
         component: () => import('@/features/marketing/views/MasterclassDetailView.vue')
