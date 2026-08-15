@@ -5,104 +5,52 @@
         <div class="card-header">
           <div>
             <h4 class="card-title">Marketplace</h4>
-            <span class="card-meta">Explora y comparte contenido promocional</span>
+            <span class="card-meta">Explora los Cursos del Aula Virtual</span>
           </div>
-        </div>
-
-        <!-- Tabs principales -->
-        <div class="marketplace-tabs">
-          <button
-            v-for="tab in tabs"
-            :key="tab.key"
-            class="stats-tab-btn"
-            :class="{ active: activeTab === tab.key }"
-            @click="switchTab(tab.key)"
-          >
-            <component :is="tab.icon" :size="15" />
-            {{ tab.label }}
-          </button>
         </div>
 
         <!-- Search -->
         <div class="marketplace-search">
           <Search :size="16" class="search-icon" />
-          <input type="text" class="search-input" v-model="searchQuery" placeholder="Buscar..." @input="debouncedSearch" />
-        </div>
-
-        <!-- Sub-tabs de Campañas (solo visible en pestaña campañas) -->
-        <div v-if="activeTab === 'campaigns'" class="campaign-subtabs">
-          <button
-            v-for="st in campaignSubTabs"
-            :key="st.key"
-            class="stats-tab-btn"
-            :class="{ active: campaignFilter === st.key }"
-            @click="campaignFilter = st.key"
-          >
-            <component :is="st.icon" :size="14" />
-            {{ st.label }}
-          </button>
+          <input type="text" class="search-input" v-model="searchQuery" placeholder="Buscar cursos..." @input="debouncedSearch" />
         </div>
 
         <!-- Loading -->
         <div v-if="loading" class="loading-state">
           <Loader2 class="spinner" :size="36" />
-          <p>Cargando...</p>
+          <p>Cargando cursos...</p>
         </div>
 
         <!-- Content -->
         <div v-else class="tab-content mt-1">
-          <!-- Masterclasses -->
-          <div v-show="activeTab === 'masterclass'">
-            <div class="row">
-              <MasterclassCard :items="store.masterclasses" :loading="false" @view="(item) => goToDetail('masterclass', item.id)" />
-            </div>
+          <div v-if="store.courses.length === 0" class="empty-state">
+            <Monitor :size="40" class="empty-icon" />
+            <p>No se encontraron cursos activos</p>
           </div>
-
-          <!-- Ebooks -->
-          <div v-show="activeTab === 'ebook'">
-            <div class="row">
-              <EbookCard :items="store.ebooks" :loading="false" @view="(item) => goToDetail('ebook', item.id)" />
-            </div>
-          </div>
-
-          <!-- Mini Cursos -->
-          <div v-show="activeTab === 'minicourse'">
-            <div class="row">
-              <MiniCourseCard :items="store.miniCourses" :loading="false" @view="(item) => goToDetail('minicourse', item.id)" />
-            </div>
-          </div>
-
-          <!-- Campañas -->
-          <div v-show="activeTab === 'campaigns'">
-            <div v-if="filteredCampaigns.length === 0" class="empty-state">
-              <Megaphone :size="40" class="empty-icon" />
-              <p>No hay campañas {{ campaignFilter !== 'all' ? 'de este tipo' : 'disponibles' }}</p>
-            </div>
-            <div v-else class="row">
-              <div v-for="item in normalizedCampaigns" :key="item.id" class="col-md-4 mb-4 grid-col">
-                <div class="card c-card" @click="goToDetail(item.content_type, item.id)">
-                  <div class="c-card-img-wrapper">
-                    <img
-                      v-if="item.image"
-                      :src="getS3Url(item.image)"
-                      class="c-card-img"
-                      :alt="item.title"
-                      @error="$event.target.src = '/img_mantenimiento.png'; $event.target.onerror = null;"
-                    />
-                    <div v-else class="c-card-img-placeholder">
-                      <Megaphone :size="48" style="color:#ccc" />
-                    </div>
+          <div v-else class="row">
+            <div v-for="item in store.courses" :key="item.id" class="col-md-4 mb-4 grid-col">
+              <div class="card c-card" @click="goToDetail(item.id)">
+                <div class="c-card-img-wrapper">
+                  <img
+                    v-if="item.url_portada || item.portada"
+                    :src="getS3Url(item.url_portada || item.portada)"
+                    class="c-card-img"
+                    :alt="item.title"
+                    @error="$event.target.src = '/img_mantenimiento.png'; $event.target.onerror = null;"
+                  />
+                  <div v-else class="c-card-img-placeholder">
+                    <Monitor :size="48" style="color:#ccc" />
                   </div>
-                  <div class="c-card-body">
-                    <h5 class="c-card-title">{{ item.title }}</h5>
-                    <p class="c-card-text">
-                      <strong>Categoría:</strong> {{ item.category_name || 'General' }}
-                    </p>
-                    <div class="c-card-footer">
-                      <span class="c-badge" :class="'c-badge--' + (item.content_type || 'masterclass')">
-                        {{ item.content_type === 'masterclass' ? 'Masterclass' : item.content_type === 'ebook' ? 'E-book' : 'Mini Curso' }}
-                      </span>
-                    </div>
+                </div>
+                <div class="c-card-body">
+                  <h5 class="c-card-title">{{ item.title }}</h5>
+                  <p class="c-card-text">
+                    {{ item.description ? item.description.substring(0, 80) + '...' : 'Sin descripción' }}
+                  </p>
+                  <div class="c-card-footer">
+                    <span class="c-badge c-badge--course">
+                      Curso
+                    </span>
                   </div>
                 </div>
               </div>
@@ -118,12 +66,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMarketplaceStore } from '../stores/marketplaceStore'
-import MasterclassCard from '../components/marketplace/MasterclassCard.vue'
-import EbookCard from '../components/marketplace/EbookCard.vue'
-import MiniCourseCard from '../components/marketplace/MiniCourseCard.vue'
 import {
-  PlayCircle, BookOpen, Film, Megaphone, Search, Loader2,
-  Grid, Monitor
+  Search, Loader2, Monitor
 } from 'lucide-vue-next'
 
 const S3_BASE = 'https://promolider-storage-user.s3-accelerate.amazonaws.com'
@@ -141,29 +85,8 @@ function getS3Url(path) {
 const router = useRouter()
 const store = useMarketplaceStore()
 
-const activeTab = ref('masterclass')
 const searchQuery = ref('')
 const loading = ref(false)
-const campaignFilter = ref('all')
-
-const tabs = [
-  { key: 'masterclass', label: 'Masterclasses', icon: PlayCircle },
-  { key: 'ebook', label: 'E-books', icon: BookOpen },
-  { key: 'minicourse', label: 'Mini Cursos', icon: Film },
-  { key: 'campaigns', label: 'Mis Campañas', icon: Megaphone },
-]
-
-const campaignSubTabs = [
-  { key: 'all', label: 'Todas', icon: Grid },
-  { key: 'masterclass', label: 'Masterclasses', icon: PlayCircle },
-  { key: 'ebook', label: 'E-books', icon: BookOpen },
-  { key: 'minicourse', label: 'Mini Cursos', icon: Monitor },
-]
-
-const filteredCampaigns = computed(() => {
-  if (campaignFilter.value === 'all') return store.campaigns
-  return store.campaigns.filter(c => c.content_type === campaignFilter.value)
-})
 
 // Normalize campaigns data for uniform rendering
 const normalizedCampaigns = computed(() => {
@@ -190,32 +113,14 @@ async function loadTabData() {
   const params = {}
   if (searchQuery.value.trim()) params.search = searchQuery.value.trim()
   try {
-    switch (activeTab.value) {
-      case 'masterclass': await store.fetchMasterclasses(params); break
-      case 'ebook': await store.fetchEbooks(params); break
-      case 'minicourse': await store.fetchMiniCourses(params); break
-      case 'campaigns': await store.fetchCampaigns(); break
-    }
+    await store.fetchCourses(params)
   } finally {
     loading.value = false
   }
 }
 
-async function switchTab(tab) {
-  activeTab.value = tab
-  campaignFilter.value = 'all'
-  store.setActiveTab(tab)
-  await loadTabData()
-}
-
-function goToDetail(type, id) {
-  const routes = {
-    masterclass: { name: 'marketing-marketplace-masterclass-detail', params: { id } },
-    ebook: { name: 'marketing-marketplace-ebook-detail', params: { id } },
-    minicourse: { name: 'marketing-marketplace-minicourse-detail', params: { id } },
-  }
-  const route = routes[type]
-  if (route) router.push(route)
+function goToDetail(id) {
+  router.push({ name: 'marketing-marketplace-course-detail', params: { id } })
 }
 
 
@@ -345,29 +250,13 @@ onMounted(async () => { await loadTabData() })
   font-size: 0.72rem;
   font-weight: 700;
 }
-.c-badge--masterclass {
+.c-badge--course {
   background: rgba(40, 167, 69, 0.12);
   color: #166534;
 }
-.c-badge--ebook {
-  background: rgba(0, 208, 228, 0.12);
-  color: #0e7490;
-}
-.c-badge--minicourse {
-  background: rgba(255, 154, 60, 0.12);
-  color: #9a3412;
-}
-body.dark-theme .c-badge--masterclass {
+body.dark-theme .c-badge--course {
   background: rgba(40, 167, 69, 0.2);
   color: #4ade80;
-}
-body.dark-theme .c-badge--ebook {
-  background: rgba(0, 208, 228, 0.2);
-  color: #22d3ee;
-}
-body.dark-theme .c-badge--minicourse {
-  background: rgba(255, 154, 60, 0.2);
-  color: #fb923c;
 }
 </style>
 

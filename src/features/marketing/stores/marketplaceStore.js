@@ -3,6 +3,9 @@ import * as marketplaceService from '../services/marketplaceService'
 
 export const useMarketplaceStore = defineStore('marketplace', {
   state: () => ({
+    courses: [],
+    coursesPagination: { currentPage: 1, lastPage: 1, perPage: 12, total: 0 },
+
     masterclasses: [],
     ebooks: [],
     miniCourses: [],
@@ -23,6 +26,7 @@ export const useMarketplaceStore = defineStore('marketplace', {
 
     currentList: (state) => {
       switch (state.activeTab) {
+        case 'courses': return state.courses
         case 'ebook': return state.ebooks
         case 'minicourse': return state.miniCourses
         case 'campaigns': return state.campaigns
@@ -32,6 +36,7 @@ export const useMarketplaceStore = defineStore('marketplace', {
 
     currentPagination: (state) => {
       switch (state.activeTab) {
+        case 'courses': return state.coursesPagination
         case 'ebook': return state.ebooksPagination
         case 'minicourse': return state.miniCoursesPagination
         default: return state.masterclassesPagination
@@ -81,6 +86,24 @@ export const useMarketplaceStore = defineStore('marketplace', {
       }
 
       return { items: [], pagination: defaultPagination }
+    },
+
+    async fetchCourses(params = {}) {
+      this.loading = true
+      this.error = null
+      try {
+        const response = await marketplaceService.getCourses(params)
+        const { items, pagination } = this.extractPaginated(response)
+        this.courses = items
+        this.coursesPagination = pagination
+      } catch (e) {
+        console.error('Error fetching courses:', e)
+        this.courses = []
+        this.coursesPagination = { currentPage: 1, lastPage: 1, perPage: 12, total: 0 }
+        this.error = e.message
+      } finally {
+        this.loading = false
+      }
     },
 
     async fetchMasterclasses(params = {}) {
