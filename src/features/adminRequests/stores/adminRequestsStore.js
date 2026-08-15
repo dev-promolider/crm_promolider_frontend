@@ -8,6 +8,8 @@ export const useAdminRequestsStore = defineStore('adminRequests', {
     roleCourseRequests: [],
     roleToolRequests: [],
     examReviews: [],
+    examReviewCourses: [],
+    selectedCourseExams: [],
     loading: false,
     actionLoading: false,
     error: null,
@@ -128,6 +130,28 @@ export const useAdminRequestsStore = defineStore('adminRequests', {
         this.examReviews = Array.isArray(response.data.data) ? response.data.data : (Array.isArray(response.data) ? response.data : []);
       } catch (error) {
         this.error = error.response?.data?.message || 'Error al obtener revisiones de exámenes';
+      } finally {
+        this.loading = false;
+      }
+    },
+    async fetchExamReviewCourses() {
+      this.loading = true;
+      try {
+        const response = await adminRequestsService.getExamReviewCourses();
+        this.examReviewCourses = Array.isArray(response.data.data) ? response.data.data : (Array.isArray(response.data) ? response.data : []);
+      } catch (error) {
+        this.error = error.response?.data?.message || 'Error al obtener cursos con exámenes';
+      } finally {
+        this.loading = false;
+      }
+    },
+    async fetchExamReviewsByCourse(courseId) {
+      this.loading = true;
+      try {
+        const response = await adminRequestsService.getExamReviewsByCourse(courseId);
+        this.selectedCourseExams = Array.isArray(response.data.data) ? response.data.data : (Array.isArray(response.data) ? response.data : []);
+      } catch (error) {
+        this.error = error.response?.data?.message || 'Error al obtener exámenes del curso';
       } finally {
         this.loading = false;
       }

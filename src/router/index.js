@@ -237,12 +237,13 @@ const routes = [
   {
     path: '/admin',
     component: () => import('@/layouts/DashboardLayout.vue'),
-    meta: { requiresAuth: true, role: 'admin' },
+    meta: { requiresAuth: true, role: ['admin', 'productor', 'producer', 'super-admin', 'superadmin', '1'] },
     children: [
       {
         path: '',
         name: 'admin-panel',
-        component: { template: '<div>Admin Panel Placeholder</div>' }
+        component: { template: '<div>Admin Panel Placeholder</div>' },
+        meta: { role: 'admin' }
       },
       {
         path: 'solicitudes',
@@ -252,29 +253,34 @@ const routes = [
           {
             path: 'nuevos-usuarios',
             name: 'admin-requests-new-users',
-            component: () => import('@/features/adminRequests/components/NewUsersTab.vue')
+            component: () => import('@/features/adminRequests/components/NewUsersTab.vue'),
+            meta: { role: 'admin' }
           },
           {
             path: 'verificacion-cursos',
             name: 'admin-requests-courses',
-            component: () => import('@/features/adminRequests/components/CourseVerificationTab.vue')
+            component: () => import('@/features/adminRequests/components/CourseVerificationTab.vue'),
+            meta: { role: 'admin' }
           },
           {
             path: 'role-cursos',
             name: 'admin-requests-role-courses',
             component: () => import('@/features/adminRequests/components/RoleRequestsTab.vue'),
-            props: { type: 'role-courses' }
+            props: { type: 'role-courses' },
+            meta: { role: 'admin' }
           },
           {
             path: 'role-herramientas',
             name: 'admin-requests-role-tools',
             component: () => import('@/features/adminRequests/components/RoleRequestsTab.vue'),
-            props: { type: 'role-tools' }
+            props: { type: 'role-tools' },
+            meta: { role: 'admin' }
           },
           {
             path: 'examenes',
             name: 'admin-requests-exams',
             component: () => import('@/features/adminRequests/components/ExamReviewsTab.vue')
+            // This one does not have meta: { role: 'admin' } so producers can access it since parent allows it
           }
         ]
       }

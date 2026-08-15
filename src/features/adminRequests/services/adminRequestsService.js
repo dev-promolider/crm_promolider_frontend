@@ -49,6 +49,12 @@ export default {
   getExamReviews() {
     return apiClient.get('/admin/requests/exam-reviews');
   },
+  getExamReviewCourses() {
+    return apiClient.get('/admin/requests/exam-reviews/courses');
+  },
+  getExamReviewsByCourse(courseId) {
+    return apiClient.get(`/admin/requests/exam-reviews/courses/${courseId}/exams`);
+  },
   getExamReviewDetails(headerId) {
     return apiClient.get(`/admin/requests/exam-reviews/${headerId}/details`);
   },

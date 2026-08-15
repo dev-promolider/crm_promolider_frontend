@@ -215,10 +215,14 @@ import {
   ExternalLink, Copy, Loader2, Type,
   Pointer
 } from 'lucide-vue-next'
+import * as marketplaceService from '@/features/marketing/services/marketplaceService'
+import { generateCourseTemplate } from '@/features/marketing/utils/templateGenerators'
+import { useAuthStore } from '@/features/auth/stores/authStore'
 
 const route = useRoute()
 const router = useRouter()
 const store = usePageBuilderStore()
+const authStore = useAuthStore()
 
 // State
 const pageTitle = ref('')
@@ -253,6 +257,22 @@ function formatFieldName(name) {
 // Cargar datos al montar
 onMounted(async () => {
   const templateId = route.query.template
+  const courseId = route.query.course_id
+  const courseType = route.query.course_type
+  
+  let courseData = null
+  if (courseId && courseType) {
+    try {
+      let res
+      if (courseType === 'masterclass') res = await marketplaceService.getMasterclassDetail(courseId)
+      else if (courseType === 'ebook') res = await marketplaceService.getEbookDetail(courseId)
+      else if (courseType === 'minicourse') res = await marketplaceService.getMiniCourseDetail(courseId)
+      courseData = res?.data || null
+    } catch (e) {
+      console.warn('Could not fetch course data', e)
+    }
+  }
+
   if (pageId.value) {
     try {
       const page = await store.fetchPage(pageId.value)
@@ -270,15 +290,35 @@ onMounted(async () => {
     }
   } else if (templateId) {
     try {
-      const tmpl = store.templates.find(t => String(t.id) === String(templateId))
+      const isDemo = String(templateId).startsWith('demo-')
+      const tmpl = isDemo 
+        ? { id: templateId, name: 'Demo Template', description: 'Plantilla generada' }
+        : store.templates.find(t => String(t.id) === String(templateId))
+        
       if (tmpl) {
         baseTemplate.value = tmpl
-        rawContentHtml.value = tmpl.content_html || tmpl.content || ''
+        const refUsername = authStore.user?.username || ''
+        
+        if (isDemo) {
+          const fallbackCourse = courseData || {
+            title: 'Curso de Ejemplo',
+            description: 'Esta es una plantilla de demostración. Los datos se cargarán cuando selecciones un curso real.',
+            images: [],
+            user: { name: 'Autor', last_name: 'Demo', biography: 'Biografía de ejemplo.' },
+            category_name: 'Demo'
+          }
+          rawContentHtml.value = generateCourseTemplate(templateId, fallbackCourse, refUsername)
+          pageTitle.value = `Landing - ${fallbackCourse.title}`
+        } else {
+          rawContentHtml.value = tmpl.content_html || tmpl.content || ''
+          pageTitle.value = `Mi ${tmpl.name || 'página'} personalizada`
+        }
+        
         rawStylesCss.value = tmpl.styles_css || ''
-        pageTitle.value = `Mi ${tmpl.name || 'página'} personalizada`
-        loadEditedFields(tmpl)
+        loadEditedFields({ contentHtml: rawContentHtml.value }) // Parse from HTML directly
       }
     } catch (e) {
+      console.error('Error al cargar plantilla:', e)
       errorMsg.value = 'Error al cargar plantilla'
     }
   }
@@ -422,6 +462,10 @@ async function savePage() {
       content_html: previewHtml.value,
       edited_fields: JSON.stringify(editedFieldsObj),
       status: 'draft',
+      meta: {
+        course_id: route.query.course_id || null,
+        course_type: route.query.course_type || null
+      }
     }
 
     let response

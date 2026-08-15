@@ -105,7 +105,7 @@
                 </RouterLink>
                 <RouterLink to="/marketing/pages" class="nav-subitem" active-class="active">
                   <span class="submenu-dot"></span>
-                  <span>Páginas</span>
+                  <span>Creador de Páginas</span>
                 </RouterLink>
                 <RouterLink to="/marketing/reportes" class="nav-subitem" active-class="active">
                   <span class="submenu-dot"></span>
@@ -116,7 +116,7 @@
           </div>
 
           <!-- Solicitudes - Expandable Section -->
-          <div class="nav-section" :class="{ active: isSolicitudesActive }">
+          <div class="nav-section" :class="{ active: isSolicitudesActive }" v-if="isAdmin || isProducer">
             <button
               class="nav-item nav-section-toggle"
               :class="{ expanded: solicitudesExpanded }"
@@ -134,7 +134,7 @@
 
             <transition name="submenu-slide">
               <div v-if="solicitudesExpanded && !isSidebarCollapsed" class="nav-submenu">
-                <RouterLink to="/solicitudes" class="nav-subitem" active-class="active">
+                <RouterLink v-if="!isProducer || isAdmin" to="/solicitudes" class="nav-subitem" active-class="active">
                   <span class="submenu-dot"></span>
                   <span>Retiro de fondos</span>
                 </RouterLink>
@@ -156,11 +156,11 @@
                     <span class="submenu-dot"></span>
                     <span>Creación de Herra...</span>
                   </RouterLink>
-                  <RouterLink to="/admin/solicitudes/examenes" class="nav-subitem" active-class="active">
-                    <span class="submenu-dot"></span>
-                    <span>Revisión de exáme...</span>
-                  </RouterLink>
                 </template>
+                <RouterLink v-if="isAdmin || isProducer" to="/admin/solicitudes/examenes" class="nav-subitem" active-class="active">
+                  <span class="submenu-dot"></span>
+                  <span>Revisión de exáme...</span>
+                </RouterLink>
               </div>
             </transition>
           </div>

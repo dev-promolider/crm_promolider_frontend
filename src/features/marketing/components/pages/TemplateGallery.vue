@@ -46,8 +46,8 @@
             <span class="template-desc">{{ tmpl.description || 'Plantilla personalizable' }}</span>
           </div>
           <div class="template-actions-overlay">
-            <button class="action-btn primary" @click.stop="openEditor(tmpl)">
-              <Edit3 :size="14" /> Personalizar
+            <button class="action-btn primary" @click.stop="openCourseModal(tmpl)">
+              <Edit3 :size="14" /> Usar para un Curso
             </button>
           </div>
         </div>
@@ -103,15 +103,18 @@
             <h6 class="template-name">{{ tmpl.title }}</h6>
             <span class="template-desc">Actualizado {{ formatDate(tmpl.updated_at) }}</span>
             <!-- Public URL link -->
-            <a
-              v-if="tmpl.status === 'published' && tmpl.slug"
-              :href="getPublicUrl(tmpl.slug)"
-              target="_blank"
-              class="public-link"
-              @click.stop
-            >
-              <ExternalLink :size="12" /> Ver página pública
-            </a>
+            <div v-if="tmpl.status === 'published' && tmpl.slug" class="public-link-container" @click.stop>
+              <a
+                :href="getAffiliateUrl(tmpl.slug)"
+                target="_blank"
+                class="public-link"
+              >
+                <ExternalLink :size="12" /> Ver página
+              </a>
+              <button class="btn-copy-link" @click.stop="copyAffiliateLink(tmpl.slug)" title="Copiar Link de Afiliado">
+                <Copy :size="12" /> Copiar Link
+              </button>
+            </div>
           </div>
           <div class="template-actions">
             <button class="action-btn" @click.stop="openEditor(tmpl, true)" title="Editar">
@@ -156,6 +159,42 @@
         </div>
       </div>
     </div>
+
+    <!-- Course Selection Modal -->
+    <div v-if="showCourseModal" class="modal-overlay" @click.self="closeCourseModal">
+      <div class="modal-content medium">
+        <div class="modal-header">
+          <h4>¿Qué curso quieres publicitar?</h4>
+          <button class="btn-close" @click="closeCourseModal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-desc">La plantilla se rellenará automáticamente con los datos del curso que elijas.</p>
+          
+          <div class="course-type-tabs">
+            <button :class="{ active: selectedCourseType === 'masterclass' }" @click="selectCourseType('masterclass')">Masterclasses</button>
+            <button :class="{ active: selectedCourseType === 'ebook' }" @click="selectCourseType('ebook')">Ebooks</button>
+            <button :class="{ active: selectedCourseType === 'minicourse' }" @click="selectCourseType('minicourse')">Mini Cursos</button>
+          </div>
+
+          <div v-if="loadingCourses" class="loading-state">
+            <Loader2 class="spinner" :size="24" />
+            <p>Buscando...</p>
+          </div>
+          <div v-else-if="coursesList.length === 0" class="empty-state">
+            <p>No hay productos disponibles en esta categoría.</p>
+          </div>
+          <div v-else class="courses-list">
+            <div v-for="course in coursesList" :key="course.id" class="course-item" @click="proceedToEditor(course)">
+              <img :src="getCourseImage(course)" class="course-item-img" :alt="course.title" />
+              <div class="course-item-info">
+                <h6>{{ course.title }}</h6>
+                <span>Seleccionar</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -163,9 +202,10 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePageBuilderStore } from '@/features/marketing/stores/pageBuilderStore'
+import * as marketplaceService from '@/features/marketing/services/marketplaceService'
 import {
   Layout, FileText, Loader2, Edit3, Plus, Globe, EyeOff,
-  Trash2, ExternalLink
+  Trash2, ExternalLink, Copy
 } from 'lucide-vue-next'
 
 const props = defineProps({ user: { type: Object, default: null } })
@@ -180,11 +220,26 @@ const filterStatus = ref('all')
 const sortBy = ref('updated_at')
 const deleteTarget = ref(null)
 
+// Modal State
+const showCourseModal = ref(false)
+const selectedTemplate = ref(null)
+const selectedCourseType = ref('masterclass')
+const coursesList = ref([])
+const loadingCourses = ref(false)
+
 onMounted(async () => {
   loading.value = true
   try {
     await store.fetchTemplates()
-    templates.value = store.templates
+    
+    // Inject 3 Demo Templates as requested by the user
+    const demoTemplates = [
+      { id: 'demo-dark-pro', name: 'Dark Pro', description: 'Elegante y profesional con fondo oscuro', title: 'Dark Pro', type: 'demo' },
+      { id: 'demo-light-clean', name: 'Light Clean', description: 'Minimalista y claro, ideal para ebooks', title: 'Light Clean', type: 'demo' },
+      { id: 'demo-minimal-impact', name: 'Minimal Impact', description: 'Diseño directo para conversiones', title: 'Minimal Impact', type: 'demo' }
+    ];
+    templates.value = [...store.templates, ...demoTemplates]
+
     if (props.user?.id) {
       await store.fetchUserPages(props.user.id)
       myTemplates.value = store.userPages
@@ -230,6 +285,7 @@ function openEditor(template, isEdit = false) {
       query: { edit: template.id, userId: props.user?.id }
     })
   } else {
+    // Si no es edit, abrimos con curso null (desde crear desde cero)
     router.push({
       name: 'marketing-pages-editor',
       query: { template: template.id, userId: props.user?.id }
@@ -237,11 +293,81 @@ function openEditor(template, isEdit = false) {
   }
 }
 
-function getPublicUrl(slug) {
-  // Use the same API URL base as apiClient to ensure correct origin
+// -- Affiliates --
+function getAffiliateUrl(slug) {
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
   const origin = new URL(apiUrl).origin
-  return `${origin}/api/v1/pages/public/${slug}`
+  const username = props.user?.username || ''
+  return `${origin}/api/v1/pages/public/${slug}?ref=${username}`
+}
+
+function copyAffiliateLink(slug) {
+  const url = getAffiliateUrl(slug)
+  navigator.clipboard.writeText(url)
+  alert('Link de afiliado copiado: ' + url)
+}
+
+function getPublicUrl(slug) {
+  return getAffiliateUrl(slug)
+}
+
+// -- Course Selection Modal --
+function openCourseModal(template) {
+  selectedTemplate.value = template
+  showCourseModal.value = true
+  selectedCourseType.value = 'masterclass'
+  fetchCourses()
+}
+
+function closeCourseModal() {
+  showCourseModal.value = false
+  selectedTemplate.value = null
+}
+
+function selectCourseType(type) {
+  selectedCourseType.value = type
+  fetchCourses()
+}
+
+async function fetchCourses() {
+  loadingCourses.value = true
+  coursesList.value = []
+  try {
+    let res
+    if (selectedCourseType.value === 'masterclass') res = await marketplaceService.getMasterclasses()
+    else if (selectedCourseType.value === 'ebook') res = await marketplaceService.getEbooks()
+    else if (selectedCourseType.value === 'minicourse') res = await marketplaceService.getMiniCourses()
+
+    if (res?.data) {
+      coursesList.value = Array.isArray(res.data) ? res.data : (res.data.data || [])
+    }
+  } catch (e) {
+    console.error('Error fetching courses:', e)
+  } finally {
+    loadingCourses.value = false
+  }
+}
+
+function getCourseImage(course) {
+  if (course.images && course.images.length > 0) return course.images[0].image
+  return ''
+}
+
+function proceedToEditor(course) {
+  const templateId = selectedTemplate.value.id
+  const courseType = selectedCourseType.value
+  
+  closeCourseModal()
+  
+  router.push({
+    name: 'marketing-pages-editor',
+    query: {
+      template: templateId,
+      userId: props.user?.id,
+      course_type: courseType,
+      course_id: course.id
+    }
+  })
 }
 
 function formatDate(dateStr) {
@@ -450,4 +576,25 @@ async function handleDelete() {
   .filters-left { justify-content: stretch; }
   .filter-select { flex: 1; }
 }
+
+/* Modal Extensions */
+.modal-content.medium { max-width: 500px; padding: 0; overflow: hidden; }
+.modal-header { padding: 16px 24px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+.modal-header h4 { margin: 0; font-size: 16px; }
+.btn-close { background: transparent; border: none; font-size: 20px; cursor: pointer; color: var(--text-muted); }
+.modal-body { padding: 24px; max-height: 70vh; overflow-y: auto; }
+.modal-desc { margin-top: 0; font-size: 13px; margin-bottom: 16px; }
+.course-type-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+.course-type-tabs button { flex: 1; padding: 8px; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; color: var(--text-muted); }
+.course-type-tabs button.active { background: var(--primary-color); color: white; border-color: var(--primary-color); }
+.courses-list { display: flex; flex-direction: column; gap: 12px; }
+.course-item { display: flex; gap: 12px; align-items: center; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+.course-item:hover { border-color: var(--primary-color); background: rgba(24,214,0,0.03); }
+.course-item-img { width: 60px; height: 60px; border-radius: 6px; object-fit: cover; }
+.course-item-info h6 { margin: 0 0 4px 0; font-size: 14px; font-weight: 600; }
+.course-item-info span { font-size: 12px; color: var(--primary-color); font-weight: 600; }
+
+.public-link-container { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.btn-copy-link { background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 4px; padding: 4px 8px; font-size: 10px; cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: 600; }
+.btn-copy-link:hover { background: #e2e8f0; }
 </style>
