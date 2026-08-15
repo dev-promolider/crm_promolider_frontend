@@ -1,5 +1,15 @@
 import apiClient from '@/services/apiClient'
 
+export async function getCourses(params = {}) {
+  const response = await apiClient.get('/marketing/marketplace/courses', { params })
+  return response.data
+}
+
+export async function getCourseResources(courseId) {
+  const response = await apiClient.get(`/marketing/marketplace/courses/${courseId}/resources`)
+  return response.data
+}
+
 export async function getMasterclasses(params = {}) {
   const response = await apiClient.get('/marketing/marketplace/masterclasses', { params })
   return response.data
