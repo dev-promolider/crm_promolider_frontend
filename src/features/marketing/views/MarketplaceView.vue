@@ -27,9 +27,8 @@
             <Monitor :size="40" class="empty-icon" />
             <p>No se encontraron cursos activos</p>
           </div>
-          <div v-else class="row">
-            <div v-for="item in store.courses" :key="item.id" class="col-md-4 mb-4 grid-col">
-              <div class="card c-card" @click="goToDetail(item.id)">
+          <div v-else class="marketplace-grid">
+            <div v-for="item in store.courses" :key="item.id" class="card c-card" @click="goToDetail(item.id)">
                 <div class="c-card-img-wrapper">
                   <img
                     v-if="item.url_portada || item.portada"
@@ -41,19 +40,24 @@
                   <div v-else class="c-card-img-placeholder">
                     <Monitor :size="48" style="color:#ccc" />
                   </div>
+                  <!-- Badges on top of image -->
+                  <div class="c-card-badges">
+                    <span class="c-badge c-badge--course">CURSO</span>
+                    <span v-if="item.price == 0 || !item.price" class="c-badge c-badge--free">GRATIS</span>
+                  </div>
                 </div>
                 <div class="c-card-body">
                   <h5 class="c-card-title">{{ item.title }}</h5>
-                  <p class="c-card-text">
-                    {{ item.description ? item.description.substring(0, 80) + '...' : 'Sin descripción' }}
-                  </p>
-                  <div class="c-card-footer">
-                    <span class="c-badge c-badge--course">
-                      Curso
-                    </span>
+                  <span class="c-card-creator">{{ item.creator || 'Admin' }}</span>
+                  <div class="c-card-rating">
+                    <span class="rating-number">{{ item.ranking_by_user ? Number(item.ranking_by_user).toFixed(1) : '5.0' }}</span>
+                    <span class="rating-stars">★★★★★</span>
+                  </div>
+                  <div class="c-card-price">
+                    <span v-if="item.price > 0">${{ Number(item.price).toFixed(2) }}</span>
+                    <span v-else class="text-success">$0</span>
                   </div>
                 </div>
-              </div>
             </div>
           </div>
         </div>
@@ -87,20 +91,6 @@ const store = useMarketplaceStore()
 
 const searchQuery = ref('')
 const loading = ref(false)
-
-// Normalize campaigns data for uniform rendering
-const normalizedCampaigns = computed(() => {
-  return filteredCampaigns.value.map(item => ({
-    ...item,
-    id: item.id,
-    image: item.image ||
-      (item.images && item.images.length > 0
-        ? (item.images[0].image_path || item.images[0].image)
-        : null),
-    title: item.title || item.nombre,
-    category_name: item.category_name,
-  }))
-})
 
 let searchTimeout = null
 function debouncedSearch() {
@@ -175,7 +165,7 @@ onMounted(async () => { await loadTabData() })
 /* Campaign cards (c-card prefix to avoid conflict with outer .card-body) */
 .c-card {
   cursor: pointer;
-  border-radius: 12px;
+  border-radius: 0;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -250,46 +240,67 @@ onMounted(async () => { await loadTabData() })
   font-size: 0.72rem;
   font-weight: 700;
 }
+.c-badge--free {
+  background: #28a745;
+  color: white;
+}
+
+.c-card-creator {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  text-transform: lowercase;
+}
+.c-card-rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.c-card-rating .rating-number {
+  font-size: 11px;
+  font-weight: 700;
+  color: #ff9800; /* Orange star color */
+}
+.c-card-rating .rating-stars {
+  font-size: 12px;
+  color: #ffc107;
+}
+.c-card-price {
+  font-size: 16px;
+  font-weight: 700;
+  color: #28a745; /* Success green */
+}
+.c-card-badges {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.c-card-badges .c-badge {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 4px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
 .c-badge--course {
-  background: rgba(40, 167, 69, 0.12);
-  color: #166534;
+  background: #343a40;
+  color: white;
 }
-body.dark-theme .c-badge--course {
-  background: rgba(40, 167, 69, 0.2);
-  color: #4ade80;
-}
-</style>
-
-<!-- Global grid styles - non-scoped so they apply to child component elements -->
-<style>
-.marketplace-view .row {
-  display: flex;
-  flex-wrap: wrap;
-  margin: 0 -12px;
-}
-.marketplace-view .row > [class*="col-"] {
-  padding: 0 12px;
-}
-.marketplace-view .col-md-4 {
-  flex: 0 0 33.333%;
-  max-width: 33.333%;
-  display: flex;
+.c-badge--free {
+  background: #00e600; /* Vibrant green */
+  color: white;
 }
 
-/* Vertical spacing between card rows */
-.marketplace-view .mb-4 {
-  margin-bottom: 2rem;
-}
-@media (max-width: 992px) {
-  .marketplace-view .col-md-4 {
-    flex: 0 0 50%;
-    max-width: 50%;
-  }
-}
-@media (max-width: 768px) {
-  .marketplace-view .col-md-4 {
-    flex: 0 0 100%;
-    max-width: 100%;
-  }
+/* New Grid Layout */
+.marketplace-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+  padding: 8px 0;
 }
 </style>

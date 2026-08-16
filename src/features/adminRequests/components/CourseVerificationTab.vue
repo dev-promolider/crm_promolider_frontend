@@ -36,7 +36,7 @@
                   <CheckCircle2 :size="14" /> Aprobar
                 </button>
                 <button 
-                  class="btn-table-action danger" 
+                  class="btn-table-action warning" 
                   @click="openRejectModal(course)" 
                   :disabled="store.actionLoading"
                 >
@@ -262,6 +262,14 @@ const confirmReject = async () => {
 }
 .btn-table-action.success:hover:not(:disabled) {
   background-color: #10b981;
+  color: white;
+}
+.btn-table-action.warning {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+.btn-table-action.warning:hover:not(:disabled) {
+  background-color: #f59e0b;
   color: white;
 }
 .btn-table-action.danger {

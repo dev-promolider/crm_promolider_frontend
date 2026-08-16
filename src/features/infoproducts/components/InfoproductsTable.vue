@@ -198,34 +198,99 @@
     </div>
 
     <!-- Modal eliminar -->
-    <div v-if="isDeleteModalOpen && courseSelected" class="modal-backdrop">
-        <div class="modal-card">
-            <h3>
-                Borrar curso
-                <u>{{ courseSelected.title }}</u>
-            </h3>
+    <ModalComponent
+      v-model="isDeleteModalOpen"
+      color="danger"
+      size="small"
+    >
+      <template #title>
+        Borrar curso
+      </template>
 
-            <p>¿Seguro que desea eliminar este curso?</p>
+      <div v-if="courseSelected" class="text-slate-600">
+        ¿Seguro que desea eliminar el curso <span class="font-bold text-slate-800">{{ courseSelected.title }}</span>?
+      </div>
 
-            <div class="modal-actions">
-                <button class="btn-secondary" @click="closeCourseActionModals">
-                    Cancelar
-                </button>
+      <template #footer>
+        <button class="btn-secondary" @click="closeCourseActionModals">
+          Cancelar
+        </button>
+        <button class="btn-danger" @click="deleteCourse(courseSelected.id)">
+          Eliminar
+        </button>
+      </template>
+    </ModalComponent>
 
-                <button class="btn-danger" @click="deleteCourse(courseSelected.id)">
-                    Eliminar
-                </button>
+    <!-- Modal solicitar revisión -->
+    <ModalComponent
+      v-model="isReviewModalOpen"
+      color="info"
+      size="small"
+    >
+      <template #title>
+        Solicitar revisión
+      </template>
+
+      <div v-if="courseSelected" class="text-slate-600">
+        ¿Desea enviar el curso <span class="font-bold text-slate-800">{{ courseSelected.title }}</span> a revisión para publicarlo?
+      </div>
+
+      <template #footer>
+        <button class="btn-secondary" @click="closeCourseActionModals">
+          Cancelar
+        </button>
+        <button class="btn-primary" @click="sendRequest(courseSelected.id)">
+          Enviar
+        </button>
+      </template>
+    </ModalComponent>
+
+    <!-- Modal Ver Observaciones -->
+    <Teleport to="body">
+      <div
+        v-if="isObservationsModalOpen"
+        style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:9999;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;padding:16px;"
+        @click.self="isObservationsModalOpen = false"
+      >
+        <div class="obs-modal-container">
+          <!-- Header -->
+          <div class="obs-modal-header">
+            <span style="font-size:18px;font-weight:600;display:flex;align-items:center;gap:8px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+              Observaciones del curso
+            </span>
+            <button @click="isObservationsModalOpen = false" class="obs-modal-close">✕</button>
+          </div>
+          <!-- Body -->
+          <div class="obs-modal-body">
+            <div class="obs-modal-alert">
+              {{ currentObservation }}
             </div>
+          </div>
+          <!-- Footer -->
+          <div class="obs-modal-footer">
+            <button class="obs-modal-btn" @click="isObservationsModalOpen = false">
+              Entendido
+            </button>
+          </div>
         </div>
-    </div>
+      </div>
+    </Teleport>
 
-    <!-- Modal preparando certificado -->
-    <div v-if="isPreparingCertificate" class="modal-backdrop">
-        <div class="modal-card small">
-            <h3>Preparando certificado...</h3>
-            <p>Cargando plantillas y datos del curso...</p>
-        </div>
-    </div>
+      <!-- Modal preparando certificado -->
+    <ModalComponent
+      v-model="isPreparingCertificate"
+      color="default"
+      size="small"
+      :closeOnBackdrop="false"
+    >
+      <template #title>
+        Preparando certificado...
+      </template>
+      <div class="text-slate-600 text-center py-4">
+        Cargando plantillas y datos del curso...
+      </div>
+    </ModalComponent>
 
     <!--
     <CourseEditModal
@@ -265,7 +330,10 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { ElMessage } from 'element-plus';
+import 'element-plus/theme-chalk/el-message.css';
 import { infoproductService } from '../services/infoproductService';
+import ModalComponent from '@/components/common/ModalComponent.vue';
 
 const props = defineProps({
   user: {
@@ -303,6 +371,10 @@ const userCertificates = ref([]);
 const isPreparingCertificate = ref(false);
 const isEditModalOpen = ref(false);
 const isDeleteModalOpen = ref(false);
+const isReviewModalOpen = ref(false);
+const isObservationsModalOpen = ref(false);
+const currentObservation = ref('');
+
 const isCertificatesModalOpen = ref(false);
 const isCertificateModalOpen = ref(false);
 const outerVisible = ref(false);
@@ -353,6 +425,10 @@ const options = [
   {
     value: '11',
     label: 'Gestionar contenido',
+  },
+  {
+    value: '12',
+    label: 'Ver observaciones',
   },
 ];
 
@@ -522,7 +598,7 @@ const getStatusLabel = (status) => {
     4: 'Nueva revisión',
   };
 
-  return statuses[status] || 'Desconocido';
+  return statuses[status] || 'Borrador';
 };
 
 const getStatusClass = (status) => {
@@ -565,6 +641,9 @@ const getAvailableOptions = (course) => {
     if (option.value === '7' || option.value === '9') {
       return Boolean(course.certificate);
     }
+    if (option.value === '12') {
+      return Number(course.status) === 3;
+    }
 
     return true;
   });
@@ -574,10 +653,14 @@ const getAvailableOptions = (course) => {
 
 const handleActionChange = async (event, course) => {
   const option = event.target.value;
+  console.log('[DEBUG] handleActionChange option:', JSON.stringify(option), 'type:', typeof option);
 
   event.target.value = '';
 
-  closeCourseActionModals();
+  // Close modals only for options that don't open a new one, or handle per-case
+  if (option !== '12') {
+    closeCourseActionModals();
+  }
 
   switch (option) {
     case '1':
@@ -585,7 +668,8 @@ const handleActionChange = async (event, course) => {
       break;
 
     case '2':
-      await sendRequest(course.id);
+      courseSelected.value = course;
+      isReviewModalOpen.value = true;
       break;
 
     case '3':
@@ -629,6 +713,13 @@ const handleActionChange = async (event, course) => {
       router.push(`/course/${course.id}/book-content`);
       break;
 
+    case '12':
+      courseSelected.value = course;
+      currentObservation.value = 'Cargando...';
+      isObservationsModalOpen.value = true;
+      loadObservations(course.id); // sin await para no bloquear el modal
+      break;
+
     default:
       break;
   }
@@ -641,34 +732,35 @@ const sendRequest = async (courseId) => {
 
     switch (result) {
       case 'ok':
-        alert('Curso enviado a revisión correctamente');
+        ElMessage.success('Curso enviado a revisión correctamente');
         break;
 
       case 'request':
-        alert('Ya se ha enviado el curso para su revisión');
+        ElMessage.info('Ya se ha enviado el curso para su revisión');
         break;
 
       case 'empty':
-        alert('El curso debe tener al menos un módulo y una clase');
+        ElMessage.warning('El curso debe tener al menos un módulo y una clase');
         break;
 
       case 'misconfigured':
-        alert('Configure la entrega del certificado');
+        ElMessage.warning('Configure la entrega del certificado');
         break;
 
       case 'signaturetemplate':
-        alert('Seleccione la plantilla y firma para el certificado');
+        ElMessage.warning('Seleccione la plantilla y firma para el certificado');
         break;
 
       default:
-        alert('Error al validar datos');
+        ElMessage.error('Error al validar datos');
         break;
     }
 
+    closeCourseActionModals();
     await listCourses();
   } catch (error) {
     console.error('Error enviando solicitud:', error);
-    alert('Error al enviar la solicitud.');
+    ElMessage.error('Error al enviar la solicitud.');
   }
 };
 
@@ -698,6 +790,16 @@ const loadUserCertificates = async (courseId) => {
   } catch (error) {
     console.error('Error al cargar certificados:', error);
     alert('Error al cargar los certificados.');
+  }
+};
+
+const loadObservations = async (courseId) => {
+  try {
+    const response = await infoproductService.getCourseObservations(courseId);
+    currentObservation.value = response.data?.data?.observation || 'No hay observaciones.';
+  } catch (error) {
+    console.error('Error al cargar las observaciones:', error);
+    currentObservation.value = 'Ocurrió un error al cargar las observaciones.';
   }
 };
 
@@ -742,6 +844,8 @@ const handleCertificateGeneration = async (course) => {
 const closeCourseActionModals = () => {
   isEditModalOpen.value = false;
   isDeleteModalOpen.value = false;
+  isReviewModalOpen.value = false;
+  isObservationsModalOpen.value = false;
   isCertificatesModalOpen.value = false;
   isCertificateModalOpen.value = false;
 };
@@ -1004,5 +1108,97 @@ const onCertificateDownloaded = () => {
 .pagination-dots {
   padding: 0 4px;
   color: var(--text-muted);
+}
+
+/* Modal Observaciones */
+.obs-modal-container {
+  background: var(--bg-primary, #ffffff);
+  border-radius: 12px;
+  max-width: 480px;
+  width: 100%;
+  overflow: hidden;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+}
+
+.obs-modal-header {
+  background: var(--primary-color, #00f02b);
+  color: white;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.obs-modal-close {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.obs-modal-close:hover {
+  opacity: 1;
+}
+
+.obs-modal-body {
+  padding: 24px;
+  background: var(--bg-secondary, #f8fafc);
+}
+
+.obs-modal-alert {
+  background: rgba(0, 240, 43, 0.1);
+  border: 1px solid rgba(0, 240, 43, 0.3);
+  border-radius: 8px;
+  padding: 16px;
+  color: var(--text-primary, #334155);
+  font-size: 15px;
+  line-height: 1.6;
+  white-space: pre-line;
+  font-weight: 500;
+}
+
+.obs-modal-footer {
+  padding: 16px 24px;
+  background: var(--bg-primary, #ffffff);
+  border-top: 1px solid var(--border-color, #e2e8f0);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.obs-modal-btn {
+  background: var(--primary-color, #00f02b);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 24px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: filter 0.2s;
+}
+
+.obs-modal-btn:hover {
+  filter: brightness(1.1);
+}
+
+/* Modo oscuro */
+body.dark-theme .obs-modal-container {
+  background: #1e293b;
+}
+body.dark-theme .obs-modal-body {
+  background: #0f172a;
+}
+body.dark-theme .obs-modal-alert {
+  color: #f1f5f9;
+}
+body.dark-theme .obs-modal-footer {
+  background: #1e293b;
+  border-top-color: #334155;
 }
 </style>

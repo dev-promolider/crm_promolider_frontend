@@ -4,6 +4,9 @@ import router from './router'
 import App from './App.vue'
 
 import './assets/css/main.css'
+import 'element-plus/theme-chalk/el-message.css'
+import 'element-plus/theme-chalk/el-notification.css'
+import 'element-plus/theme-chalk/el-message-box.css'
 
 // Laravel Echo + Pusher (WebSocket)
 // Static imports so window.Echo is available synchronously for composables

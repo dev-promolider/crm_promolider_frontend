@@ -517,6 +517,9 @@ const updateClass = async (cls) => {
     cls.name = editingClassForm.value.title;
     cls.description = editingClassForm.value.description;
     editingClassId.value = null;
+    
+    // Recargar la data completa para que se reflejen los videos subidos a S3
+    await loadModulePage();
   } catch (error) {
     console.error('Error updating class en el paso actual', error);
     if (error.response) {
