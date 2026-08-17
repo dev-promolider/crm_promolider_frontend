@@ -115,27 +115,29 @@
             <div class="form-row">
               <div class="form-group">
                 <label>Portada (Imagen) *</label>
-                <label for="coverFile" class="custom-file-upload" :class="{ 'has-file': coverFile }">
+                <label for="coverFile" class="custom-file-upload" :class="{ 'has-file': coverFile || coverPreviewUrl }">
                   <div class="upload-icon-wrapper">
-                    <ImageIcon v-if="!coverFile" class="upload-icon" />
+                    <ImageIcon v-if="!coverFile && !coverPreviewUrl" class="upload-icon" />
                     <CheckCircle2 v-else class="upload-icon success" />
                   </div>
                   <div class="upload-text">
-                    <span v-if="!coverFile"><strong>Haz clic para subir</strong> o arrastra una imagen</span>
+                    <span v-if="!coverFile && !coverPreviewUrl"><strong>Haz clic para subir</strong> o arrastra una imagen</span>
+                    <span v-else-if="!coverFile && coverPreviewUrl">Imagen actual ya cargada (haz clic para cambiar)</span>
                     <span v-else class="file-name">{{ coverFile.name }}</span>
                   </div>
-                  <input type="file" id="coverFile" @change="handleCoverUpload" accept="image/*" required class="hidden-input" />
+                  <input type="file" id="coverFile" @change="handleCoverUpload" accept="image/*" :required="!isEditing" class="hidden-input" />
                 </label>
               </div>
               <div class="form-group">
                 <label>Video Promocional</label>
-                <label for="promoFile" class="custom-file-upload" :class="{ 'has-file': promoFile }">
+                <label for="promoFile" class="custom-file-upload" :class="{ 'has-file': promoFile || promoPreviewUrl }">
                   <div class="upload-icon-wrapper">
-                    <Film v-if="!promoFile" class="upload-icon" />
+                    <Film v-if="!promoFile && !promoPreviewUrl" class="upload-icon" />
                     <CheckCircle2 v-else class="upload-icon success" />
                   </div>
                   <div class="upload-text">
-                    <span v-if="!promoFile"><strong>Haz clic para subir</strong> o arrastra un video</span>
+                    <span v-if="!promoFile && !promoPreviewUrl"><strong>Haz clic para subir</strong> o arrastra un video</span>
+                    <span v-else-if="!promoFile && promoPreviewUrl">Video actual ya cargado (haz clic para cambiar)</span>
                     <span v-else class="file-name">{{ promoFile.name }}</span>
                   </div>
                   <input type="file" id="promoFile" @change="handlePromoUpload" accept="video/*, image/*" class="hidden-input" />
@@ -150,7 +152,7 @@
               <span class="progress-text">{{ uploadProgress }}% Completado</span>
             </div>
             <button type="submit" class="btn-submit btn-primary" :disabled="isSubmitting">
-              {{ isSubmitting ? 'Guardando...' : 'Crear Curso' }}
+              {{ isSubmitting ? 'Guardando...' : (isEditing ? 'Guardar Cambios' : 'Crear Curso') }}
             </button>
           </div>
         </form>
@@ -233,10 +235,10 @@
             <div class="vcr-buy-card">
               <div class="vcr-buy-img">
                 <template v-if="isPlayingPromo">
-                  <video :src="promoPreviewUrl" controls autoplay class="vcr-promo-video"></video>
+                  <video :src="promoPreviewUrl" controls autoplay class="vcr-promo-video" referrerpolicy="no-referrer"></video>
                 </template>
                 <template v-else>
-                  <img v-if="coverPreviewUrl" :src="coverPreviewUrl" alt="Portada" />
+                  <img v-if="coverPreviewUrl" :src="coverPreviewUrl" alt="Portada" referrerpolicy="no-referrer" />
                   <div v-else class="img-placeholder">Sube una portada</div>
                   
                   <div v-if="promoPreviewUrl" class="play-overlay" @click="isPlayingPromo = true">
@@ -269,17 +271,20 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { infoproductService } from '../services/infoproductService';
 import apiClient from '@/services/apiClient';
 import { ElNotification } from 'element-plus';
 import { MonitorPlay, Download, Smartphone, Award, Lock, Zap, CheckCircle2, PlayCircle, UploadCloud, ImageIcon, Film } from 'lucide-vue-next';
 
 const router = useRouter();
+const route = useRoute();
 
 const categories = ref([]);
 const levels = ref([]);
 const isSubmitting = ref(false);
+const isEditing = computed(() => !!route.params.id);
+const currentCourseId = computed(() => route.params.id);
 
 const form = ref({
   product_type_id: '1', // 1 para Curso
@@ -329,15 +334,49 @@ onMounted(async () => {
     const catRes = await infoproductService.getCategories();
     categories.value = catRes.data?.data || catRes.data || [];
     
-    // Static course levels since Gamification levels don't make sense here
     levels.value = [
       { id: 1, name: 'Principiante' },
       { id: 2, name: 'Intermedio' },
       { id: 3, name: 'Avanzado' },
       { id: 4, name: 'Todos los niveles' }
     ];
+
+    if (isEditing.value) {
+      const courseRes = await apiClient.get(`/course/${currentCourseId.value}`);
+      const courseData = courseRes.data?.data || courseRes.data;
+      if (courseData) {
+        form.value = {
+          product_type_id: courseData.product_type_id?.toString() || '1',
+          title: courseData.title || '',
+          id_categories: courseData.id_categories || '',
+          description: courseData.description || '',
+          price_base: courseData.price_base || 0,
+          old_price: courseData.old_price || '',
+          course_level_id: courseData.course_level_id || '',
+          language: courseData.language || 'Español',
+          course_about: courseData.course_about || '',
+          will_learn: courseData.will_learn || '',
+          prev_knowledge: courseData.prev_knowledge || 'Ninguno',
+          course_for: courseData.course_for || '',
+          includes: courseData.includes || ['mobile'],
+          certificate: courseData.certificate === 1 || courseData.certificate === true,
+        };
+        if (courseData.url_portada) {
+            coverPreviewUrl.value = courseData.url_portada.startsWith('http') 
+                ? courseData.url_portada 
+                : 'https://promolider-storage-user.s3.amazonaws.com/' + courseData.url_portada;
+            console.log('Cover preview URL set to:', coverPreviewUrl.value);
+        }
+        if (courseData.path_url) {
+            promoPreviewUrl.value = courseData.path_url.startsWith('http')
+                ? courseData.path_url
+                : 'https://promolider-storage-user.s3.amazonaws.com/' + courseData.path_url;
+            console.log('Promo preview URL set to:', promoPreviewUrl.value);
+        }
+      }
+    }
   } catch (error) {
-    console.error('Error loading options', error);
+    console.error('Error loading options or course data', error);
   }
 });
 
@@ -386,17 +425,18 @@ const submitForm = async () => {
   }
 
   try {
-    const response = await apiClient.post('/me/infoproducts', formData, {
+    const url = isEditing.value ? `/me/infoproducts/${currentCourseId.value}` : '/me/infoproducts';
+    const response = await apiClient.post(url, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
       onUploadProgress: (progressEvent) => {
         uploadProgress.value = Math.round((progressEvent.loaded * 100) / progressEvent.total);
       }
     });
 
-    if (response.data?.data?.status === 'ok') {
+    if (response.data?.data?.status === 'ok' || response.data?.status === 'ok' || response.data?.data?.message) {
       ElNotification({
         title: 'Éxito',
-        message: 'Curso pre-registrado con éxito. Ahora puedes configurar sus módulos.',
+        message: isEditing.value ? 'Curso actualizado con éxito.' : 'Curso pre-registrado con éxito. Ahora puedes configurar sus módulos.',
         type: 'success',
       });
       router.push({ name: 'infoproducts' });

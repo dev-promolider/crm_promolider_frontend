@@ -673,8 +673,7 @@ const handleActionChange = async (event, course) => {
       break;
 
     case '3':
-      courseSelected.value = course;
-      isEditModalOpen.value = true;
+      router.push(`/courses/edit/${course.id}`);
       break;
 
     case '4':

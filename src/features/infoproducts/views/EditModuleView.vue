@@ -48,8 +48,8 @@
                   <strong>Módulo {{ index + 1 }}:</strong> {{ module.name }}
                 </div>
                 <div class="module-actions">
-                  <button class="btn-icon" @click.stop="startEditModule(module)" title="Editar Módulo"><Edit :size="14" /></button>
-                  <button class="btn-icon text-danger" @click.stop="deleteModule(module)" title="Eliminar Módulo"><Trash2 :size="14" /></button>
+                  <button class="btn-icon" @click="startEditModule(module)" title="Editar Módulo"><Edit :size="14" /></button>
+                  <button class="btn-icon text-danger" @click.stop="requestDeleteModule(module)" title="Eliminar Módulo"><Trash2 :size="14" /></button>
                   <ChevronDown class="chevron" :class="{ 'open': openModules.includes(module.id) }" @click="toggleModule(module.id)" :size="16" />
                 </div>
               </div>
@@ -111,7 +111,7 @@
                         </div>
                         <div class="class-actions">
                           <button class="btn-icon" @click="startEditClass(cls)" title="Editar Clase"><Edit :size="14" /></button>
-                          <button class="btn-icon text-danger" @click="deleteClass(module.id, cls)" title="Eliminar Clase"><Trash2 :size="14" /></button>
+                          <button class="btn-icon text-danger" @click="requestDeleteClass(module.id, cls)" title="Eliminar Clase"><Trash2 :size="14" /></button>
                         </div>
                       </div>
                     </li>
@@ -200,6 +200,31 @@
         </div>
       </div>
     </div>
+
+
+    <!-- Modal de Confirmación de Eliminación -->
+    <ModalComponent v-model="isDeleteModalOpen" color="warning" size="small">
+      <template #title>
+        <div class="flex items-center text-amber-500">
+          <AlertTriangle :size="20" class="mr-2" />
+          <span>Advertencia</span>
+        </div>
+      </template>
+      <template #body>
+        <p class="text-base text-gray-700">
+          <span v-if="deleteModalType === 'module'">
+            ¿Estás seguro de eliminar el módulo <strong>"{{ itemToDelete?.name }}"</strong> y TODAS sus clases? Esta acción no se puede deshacer.
+          </span>
+          <span v-else-if="deleteModalType === 'class'">
+            ¿Estás seguro de eliminar la clase <strong>"{{ itemToDelete?.cls?.name }}"</strong>? Esta acción no se puede deshacer.
+          </span>
+        </p>
+      </template>
+      <template #footer>
+        <button class="btn-cancel" @click="isDeleteModalOpen = false">Cancelar</button>
+        <button class="btn-save !bg-red-600 hover:!bg-red-700 !border-red-600" @click="confirmDelete">Eliminar</button>
+      </template>
+    </ModalComponent>
   </div>
 </template>
 
@@ -211,8 +236,9 @@ import { courseModuleService } from '@/features/infoproducts/services/course/cou
 import apiClient from '@/services/apiClient';
 import axios from 'axios';
 import draggable from 'vuedraggable';
-import { ElNotification, ElMessageBox } from 'element-plus';
-import { BookOpen, GripVertical, Edit, Trash2, ChevronDown, Save, X, PlayCircle, UploadCloud } from 'lucide-vue-next';
+import { ElMessage } from 'element-plus';
+import ModalComponent from '@/components/common/ModalComponent.vue';
+import { BookOpen, GripVertical, Edit, Trash2, ChevronDown, Save, X, PlayCircle, UploadCloud, AlertTriangle } from 'lucide-vue-next';
 
 const route = useRoute();
 const courseId = route.params.courseId;
@@ -234,6 +260,44 @@ const editingModuleTitle = ref('');
 // Edit Class
 const editingClassId = ref(null);
 const editingClassForm = ref({ title: '', description: '', file: null });
+
+const showAlert = (title, message, type) => {
+  ElMessage({ message, type, duration: 3000 });
+};
+
+// Delete Modal State
+const isDeleteModalOpen = ref(false);
+const deleteModalType = ref(''); // 'module' | 'class'
+const itemToDelete = ref(null);
+
+const confirmDelete = async () => {
+  if (!itemToDelete.value) return;
+  isDeleteModalOpen.value = false;
+  
+  if (deleteModalType.value === 'module') {
+    try {
+      await apiClient.delete(`/course/module/${itemToDelete.value.id}/delete`);
+      modules.value = modules.value.filter(m => m.id !== itemToDelete.value.id);
+      showAlert('Éxito', 'Módulo eliminado', 'success');
+    } catch (error) {
+      console.error('Error deleting module', error);
+      showAlert('Error', 'No se pudo eliminar el módulo', 'error');
+    }
+  } else if (deleteModalType.value === 'class') {
+    try {
+      await apiClient.delete(`/course/module/class/${itemToDelete.value.cls.id}/delete`);
+      const module = modules.value.find(m => m.id === itemToDelete.value.moduleId);
+      if (module) {
+        module.classes = module.classes.filter(c => c.id !== itemToDelete.value.cls.id);
+      }
+      showAlert('Éxito', 'Clase eliminada', 'success');
+    } catch (error) {
+      console.error('Error deleting class', error);
+      showAlert('Error', 'No se pudo eliminar la clase', 'error');
+    }
+  }
+  itemToDelete.value = null;
+};
 const editUploadProgress = ref(0);
 
 // Class Form
@@ -315,7 +379,7 @@ const saveModule = async () => {
     
     isAddingModule.value = false;
     newModuleTitle.value = '';
-    ElNotification({ title: 'Éxito', message: 'Módulo creado', type: 'success' });
+    showAlert('Éxito', 'Módulo creado', 'success');
   } catch (error) {
     console.error('Error saving module', error);
   }
@@ -333,30 +397,17 @@ const updateModule = async (module) => {
     });
     module.name = editingModuleTitle.value;
     editingModuleId.value = null;
-    ElNotification({ title: 'Éxito', message: 'Módulo actualizado', type: 'success' });
+    showAlert('Éxito', 'Módulo actualizado', 'success');
   } catch (error) {
     console.error('Error updating module', error);
-    ElNotification({ title: 'Error', message: 'No se pudo actualizar el módulo', type: 'error' });
+    showAlert('Error', 'No se pudo actualizar el módulo', 'error');
   }
 };
 
-const deleteModule = async (module) => {
-  try {
-    await ElMessageBox.confirm(`¿Estás seguro de eliminar el módulo "${module.name}" y TODAS sus clases?`, 'Advertencia', {
-      confirmButtonText: 'Eliminar',
-      cancelButtonText: 'Cancelar',
-      type: 'warning',
-    });
-    
-    await apiClient.delete(`/course/module/${module.id}/delete`);
-    modules.value = modules.value.filter(m => m.id !== module.id);
-    ElNotification({ title: 'Éxito', message: 'Módulo eliminado', type: 'success' });
-  } catch (error) {
-    if (error !== 'cancel') {
-      console.error('Error deleting module', error);
-      ElNotification({ title: 'Error', message: 'No se pudo eliminar el módulo', type: 'error' });
-    }
-  }
+const requestDeleteModule = (module) => {
+  deleteModalType.value = 'module';
+  itemToDelete.value = module;
+  isDeleteModalOpen.value = true;
 };
 
 const onModuleReorder = async () => {
@@ -393,7 +444,7 @@ const handleEditVideoUpload = (e) => {
 
 const saveClass = async (moduleId) => {
   if (!newClassForm.value.title || !newClassForm.value.file) {
-    ElNotification({ title: 'Atención', message: 'El título y el video son requeridos.', type: 'warning' });
+    showAlert('Atención', 'El título y el video son requeridos.', 'warning');
     return;
   }
   
@@ -444,12 +495,12 @@ const saveClass = async (moduleId) => {
       }, { hideLoader: true });
     }
     
-    ElNotification({ title: 'Éxito', message: 'Clase creada correctamente', type: 'success' });
+    showAlert('Éxito', 'Clase creada correctamente', 'success');
     await loadClasses(moduleId);
     closeClassForm(moduleId);
   } catch (error) {
     console.error('Error saving class', error);
-    ElNotification({ title: 'Error', message: 'Hubo un error al guardar la clase.', type: 'error' });
+    showAlert('Error', 'Hubo un error al guardar la clase.', 'error');
   } finally {
     isSavingClass.value = false;
     uploadProgress.value = 0;
@@ -513,7 +564,7 @@ const updateClass = async (cls) => {
     }
     
     console.log('¡Actualización terminada con éxito!');
-    ElNotification({ title: 'Éxito', message: 'Clase actualizada correctamente', type: 'success' });
+    showAlert('Éxito', 'Clase actualizada correctamente!', 'success');
     cls.name = editingClassForm.value.title;
     cls.description = editingClassForm.value.description;
     editingClassId.value = null;
@@ -527,33 +578,17 @@ const updateClass = async (cls) => {
     } else {
       console.error('Network Error / CORS Issue');
     }
-    ElNotification({ title: 'Error', message: 'Hubo un error al actualizar la clase.', type: 'error' });
+    showAlert('Error', 'Hubo un error al actualizar la clase.', 'error');
   } finally {
     isSavingClass.value = false;
     editUploadProgress.value = 0;
   }
 };
 
-const deleteClass = async (moduleId, cls) => {
-  try {
-    await ElMessageBox.confirm(`¿Estás seguro de eliminar la clase "${cls.name}"?`, 'Advertencia', {
-      confirmButtonText: 'Eliminar',
-      cancelButtonText: 'Cancelar',
-      type: 'warning',
-    });
-    
-    await apiClient.delete(`/course/module/class/${cls.id}/delete`);
-    const module = modules.value.find(m => m.id === moduleId);
-    if (module) {
-      module.classes = module.classes.filter(c => c.id !== cls.id);
-    }
-    ElNotification({ title: 'Éxito', message: 'Clase eliminada', type: 'success' });
-  } catch (error) {
-    if (error !== 'cancel') {
-      console.error('Error deleting class', error);
-      ElNotification({ title: 'Error', message: 'No se pudo eliminar la clase', type: 'error' });
-    }
-  }
+const requestDeleteClass = (moduleId, cls) => {
+  deleteModalType.value = 'class';
+  itemToDelete.value = { moduleId, cls };
+  isDeleteModalOpen.value = true;
 };
 
 const onClassReorder = async (module) => {
