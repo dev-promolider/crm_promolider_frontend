@@ -68,32 +68,47 @@
         <!-- Render Messages -->
         <template v-for="(msg, index) in pickleBotStore.messages" :key="index">
 
-          <!-- Text Message -->
-          <div v-if="msg.type === 'text' || msg.type === 'form_answers' || msg.type === 'title_selection'"
+          <!-- Text Message (also covers the persisted echo of the user's form/title submissions,
+               which share the 'form'/'titles' type with the assistant's own messages but carry
+               no questions/options of their own) -->
+          <div v-if="msg.type === 'text' || msg.type === 'form_answers' || msg.type === 'title_selection' || (msg.role === 'user' && (msg.type === 'form' || msg.type === 'titles'))"
                class="message py-3 px-4 rounded-2xl max-w-[85%] animate-fade-in-up break-words"
                :class="msg.role === 'user' ? 'pickle-msg pickle-msg--user user self-end rounded-br-sm shadow-lg' : 'pickle-msg pickle-msg--assistant assistant self-start rounded-bl-sm'">
             <div v-if="msg.role === 'assistant'" class="prose prose-invert max-w-none text-xs leading-relaxed" v-html="parseMarkdown(msg.content.text || msg.content)"></div>
-            <div v-else class="text-xs whitespace-pre-wrap">{{ msg.content.text || 'Respuestas enviadas' }}</div>
+            <div v-else class="text-xs whitespace-pre-wrap">{{ msg.content.text || (msg.type === 'titles' ? 'Título seleccionado.' : 'Respuestas enviadas.') }}</div>
           </div>
 
           <!-- Form Message -->
-          <PickleFormMessage v-if="msg.type === 'form'" :msg="msg"
+          <PickleFormMessage v-if="msg.type === 'form' && msg.role === 'assistant'" :msg="msg"
                               :disabled="msg.formSubmitted || pickleBotStore.isSending"
                               @submit="submitForm(msg)" />
 
           <!-- Title Selection Message -->
-          <PickleTitlesMessage v-if="msg.type === 'titles'" :msg="msg"
+          <PickleTitlesMessage v-if="msg.type === 'titles' && msg.role === 'assistant'" :msg="msg"
                                 :disabled="msg.titlesSubmitted || pickleBotStore.isSending"
                                 @select="(id) => selectTitle(msg, id)"
                                 @regenerate="(rec) => regenerateTitles(msg, rec)" />
 
           <!-- Course Draft Message -->
-          <PickleCourseDraftMessage v-if="msg.type === 'course_draft'" :content="msg.content" />
+          <PickleCourseDraftMessage v-if="msg.type === 'course_draft' && msg.role === 'assistant'" :content="msg.content" />
+
+          <!-- Fallback: unrecognized message type from the backend — never fail silently -->
+          <div v-if="!KNOWN_MESSAGE_TYPES.includes(msg.type)"
+               class="pickle-msg pickle-msg--assistant assistant self-start rounded-2xl rounded-bl-sm py-3 px-4 max-w-[85%] animate-fade-in-up">
+            <p class="pickle-error-text text-[11px] font-medium mb-1">Tipo de mensaje no reconocido: "{{ msg.type }}"</p>
+            <pre class="text-[10px] whitespace-pre-wrap break-all opacity-70">{{ JSON.stringify(msg.content, null, 2) }}</pre>
+          </div>
         </template>
 
         <!-- Typing Indicator -->
         <div v-show="pickleBotStore.isSending" class="pickle-msg pickle-msg--assistant typing-indicator assistant self-start rounded-2xl rounded-bl-sm py-3 px-4 max-w-[85%] flex items-center gap-3 animate-fade-in-up">
-          <div class="flex gap-1.5">
+          <div v-if="pendingAction === 'titles'" class="typing-icon typing-icon--search shrink-0 w-6 h-6 rounded-full flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          </div>
+          <div v-else-if="pendingAction === 'draft'" class="typing-icon typing-icon--draft shrink-0 w-6 h-6 rounded-full flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 4.9L5 9.8l4.1 3-1.5 5.2L12 15l4.4 3-1.5-5.2 4.1-3-5.1-1.9L12 3Z"/></svg>
+          </div>
+          <div v-else class="flex gap-1.5">
             <div class="pickle-dot w-1.5 h-1.5 rounded-full animate-bounce" style="animation-delay: -0.32s"></div>
             <div class="pickle-dot w-1.5 h-1.5 rounded-full animate-bounce" style="animation-delay: -0.16s"></div>
             <div class="pickle-dot w-1.5 h-1.5 rounded-full animate-bounce"></div>
@@ -129,6 +144,32 @@
                     <div class="pickle-text-muted text-xs mt-0.5">{{ m.description }}</div>
                   </div>
                   <svg v-if="m.value === selectedModel" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="pickle-check-icon shrink-0 mt-0.5"><path d="M20 6 9 17l-5-5"/></svg>
+                </button>
+              </div>
+            </Transition>
+          </div>
+
+          <!-- Embedding Provider Selector (RAG) -->
+          <div class="model-selector relative shrink-0" @click.stop title="Proveedor de embeddings (RAG)">
+            <button type="button" @click="toggleEmbeddingMenu"
+                    class="pickle-model-btn flex items-center gap-2 h-12 md:h-14 text-xs px-3.5 rounded-full outline-none transition-all cursor-pointer"
+                    :class="{ 'pickle-model-btn--open': isEmbeddingMenuOpen }">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0" :style="{ color: selectedEmbeddingModelInfo.color }"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+              <span class="truncate max-w-[90px] sm:max-w-[130px]">{{ selectedEmbeddingModelInfo.label }}</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="pickle-text-muted transition-transform duration-150 shrink-0" :class="{ 'rotate-180': isEmbeddingMenuOpen }"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+
+            <Transition name="model-menu-fade">
+              <div v-if="isEmbeddingMenuOpen" class="pickle-model-menu model-menu rounded-xl p-1.5 shadow-2xl z-30 overflow-hidden">
+                <button v-for="m in embeddingModels" :key="m.value" type="button" @click="chooseEmbeddingModel(m.value)"
+                        class="pickle-model-menu-item w-full flex items-start gap-2.5 text-left px-3 py-2.5 rounded-lg transition-colors"
+                        :class="{ 'pickle-model-menu-item--active': m.value === selectedEmbeddingModel }">
+                  <span class="w-2.5 h-2.5 rounded-full shrink-0 mt-1" :style="{ backgroundColor: m.color }"></span>
+                  <div class="flex-1 min-w-0">
+                    <div class="pickle-model-menu-item-title text-xs font-medium">{{ m.label }}</div>
+                    <div class="pickle-text-muted text-xs mt-0.5">{{ m.description }}</div>
+                  </div>
+                  <svg v-if="m.value === selectedEmbeddingModel" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="pickle-check-icon shrink-0 mt-0.5"><path d="M20 6 9 17l-5-5"/></svg>
                 </button>
               </div>
             </Transition>
@@ -185,6 +226,8 @@ const authStore = useAuthStore();
 const pickleBotStore = usePickleBotStore();
 const userId = computed(() => authStore.userId);
 
+const KNOWN_MESSAGE_TYPES = ['text', 'form_answers', 'title_selection', 'form', 'titles', 'course_draft'];
+
 // Local UI state
 const inputText = ref('');
 const selectedModel = ref(pickleBotStore.provider);
@@ -192,12 +235,24 @@ const messagesContainer = ref(null);
 
 // Model Selector
 const models = [
+  { value: 'deepseek', label: 'DeepSeek Chat', description: 'Proveedor por defecto de Pickle', color: '#4f6bed' },
   { value: 'nvidia', label: 'NVIDIA Llama 3', description: 'Modelo open-source, rápido y económico', color: '#76b900' },
   { value: 'gemini', label: 'Gemini 2.0 Flash', description: 'Rápido y equilibrado', color: '#4285f4' },
   { value: 'openai', label: 'GPT-4o Mini', description: 'Modelo compacto de OpenAI', color: '#10a37f' },
 ];
 const isModelMenuOpen = ref(false);
 const selectedModelInfo = computed(() => models.find(m => m.value === selectedModel.value) || models[0]);
+
+// Embedding Provider Selector (RAG) — switch independiente del LLM, DeepSeek
+// no ofrece embeddings así que queda fuera de esta lista.
+const selectedEmbeddingModel = ref(pickleBotStore.embeddingProvider);
+const embeddingModels = [
+  { value: 'nvidia', label: 'NVIDIA e5-v5', description: 'Proveedor por defecto de embeddings', color: '#76b900' },
+  { value: 'gemini', label: 'Gemini Embeddings', description: 'Embeddings de Google', color: '#4285f4' },
+  { value: 'openai', label: 'OpenAI Embeddings', description: 'Embeddings de OpenAI', color: '#10a37f' },
+];
+const isEmbeddingMenuOpen = ref(false);
+const selectedEmbeddingModelInfo = computed(() => embeddingModels.find(m => m.value === selectedEmbeddingModel.value) || embeddingModels[0]);
 
 // Modal state
 const showDeleteModal = ref(false);
@@ -212,6 +267,29 @@ const loadingMessagesList = [
   "Diseñando la respuesta...",
   "Casi listo..."
 ];
+// Se muestran mientras se generan/regeneran títulos, que implica scraping en
+// vivo y puede tardar bastante más que una respuesta de chat normal.
+const titleSearchMessagesList = [
+  "Buscando cursos similares en internet...",
+  "Explorando qué se vende mejor ahora mismo...",
+  "Comparando precios del mercado...",
+  "Analizando títulos exitosos de la competencia...",
+  "Afinando los mejores títulos para tu curso...",
+  "Casi listo..."
+];
+// Se muestran mientras se genera el boceto completo del curso a partir del
+// título elegido.
+const draftGenerationMessagesList = [
+  "Creando el boceto de tu curso...",
+  "Redactando la descripción...",
+  "Definiendo los objetivos de aprendizaje...",
+  "Armando el contenido del curso...",
+  "Puliendo los últimos detalles...",
+  "Casi listo..."
+];
+// Qué está esperando el usuario en este envío: define qué lista de mensajes
+// y qué ícono muestra el indicador de carga.
+const pendingAction = ref('default');
 const loadingText = ref('Procesando...');
 let loadingInterval = null;
 
@@ -236,19 +314,28 @@ const scrollToBottom = async () => {
   }
 };
 
+const LOADING_MESSAGES_BY_ACTION = {
+  default: loadingMessagesList,
+  titles: titleSearchMessagesList,
+  draft: draftGenerationMessagesList,
+};
+
 // Drive the rotating loading text off the store's isSending flag
 watch(() => pickleBotStore.isSending, (sending) => {
   if (sending) {
-    loadingText.value = 'Procesando...';
+    const messages = LOADING_MESSAGES_BY_ACTION[pendingAction.value] || loadingMessagesList;
     let index = 0;
+    loadingText.value = messages[index];
+    index++;
     loadingInterval = setInterval(() => {
-      loadingText.value = loadingMessagesList[index % loadingMessagesList.length];
+      loadingText.value = messages[index % messages.length];
       index++;
     }, 2500);
     scrollToBottom();
   } else if (loadingInterval) {
     clearInterval(loadingInterval);
     loadingInterval = null;
+    pendingAction.value = 'default';
     scrollToBottom();
   }
 });
@@ -285,7 +372,7 @@ const submitForm = async (msg) => {
   });
 
   msg.formSubmitted = true;
-
+  pendingAction.value = 'titles';
   await pickleBotStore.sendFormAnswers(answers);
   scrollToBottom();
 };
@@ -293,13 +380,15 @@ const submitForm = async (msg) => {
 // Title Selection Methods
 const selectTitle = async (msg, titleId) => {
   msg.titlesSubmitted = true;
+  pendingAction.value = 'draft';
   await pickleBotStore.sendTitleSelection(titleId);
   scrollToBottom();
 };
 
-const regenerateTitles = async (msg, recommendation) => {
+const regenerateTitles = async (msg, instructions) => {
   msg.titlesSubmitted = true;
-  await pickleBotStore.sendTitleSelection('regenerate', recommendation || undefined);
+  pendingAction.value = 'titles';
+  await pickleBotStore.regenerateTitles(instructions || undefined);
   scrollToBottom();
 };
 
@@ -316,6 +405,7 @@ const sendMessage = async () => {
   const text = inputText.value.trim();
   inputText.value = '';
 
+  pendingAction.value = 'default';
   await pickleBotStore.sendTextMessage(userId.value, text);
   scrollToBottom();
 };
@@ -339,6 +429,7 @@ const deleteChat = async () => {
 // Provider Switch Logic
 const toggleModelMenu = (e) => {
   e.stopPropagation();
+  isEmbeddingMenuOpen.value = false;
   isModelMenuOpen.value = !isModelMenuOpen.value;
 };
 
@@ -353,15 +444,35 @@ const chooseModel = async (value) => {
   await pickleBotStore.switchProvider(value);
 };
 
+// Embedding Provider Switch Logic
+const toggleEmbeddingMenu = (e) => {
+  e.stopPropagation();
+  isModelMenuOpen.value = false;
+  isEmbeddingMenuOpen.value = !isEmbeddingMenuOpen.value;
+};
+
+const closeEmbeddingMenu = () => {
+  isEmbeddingMenuOpen.value = false;
+};
+
+const chooseEmbeddingModel = async (value) => {
+  isEmbeddingMenuOpen.value = false;
+  if (value === selectedEmbeddingModel.value) return;
+  selectedEmbeddingModel.value = value;
+  await pickleBotStore.switchEmbeddingProvider(value);
+};
+
 onMounted(() => {
   if (userId.value) {
     pickleBotStore.fetchChats(userId.value);
   }
   window.addEventListener('click', closeModelMenu);
+  window.addEventListener('click', closeEmbeddingMenu);
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener('click', closeModelMenu);
+  window.removeEventListener('click', closeEmbeddingMenu);
 });
 </script>
 
@@ -514,6 +625,29 @@ body.dark-theme .pickle-glow {
 
 .pickle-dot {
   background: var(--primary-color);
+}
+
+.typing-icon--search {
+  background: color-mix(in srgb, var(--primary-color) 14%, transparent);
+  color: var(--primary-color);
+  animation: pickle-search-pulse 1.6s ease-in-out infinite;
+}
+
+.typing-icon--draft {
+  background: color-mix(in srgb, var(--primary-color) 14%, transparent);
+  color: var(--primary-color);
+  animation: pickle-draft-spin 1.8s linear infinite;
+}
+
+@keyframes pickle-search-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.85; }
+  50% { transform: scale(1.12); opacity: 1; }
+}
+
+@keyframes pickle-draft-spin {
+  0% { transform: rotate(0deg) scale(1); opacity: 0.85; }
+  50% { transform: rotate(180deg) scale(1.1); opacity: 1; }
+  100% { transform: rotate(360deg) scale(1); opacity: 0.85; }
 }
 
 .pickle-error-text {

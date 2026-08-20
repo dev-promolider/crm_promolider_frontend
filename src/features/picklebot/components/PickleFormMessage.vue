@@ -1,6 +1,7 @@
 <template>
+  <Transition name="pfm-collapse" mode="out-in">
   <!-- Compact summary once the form has been answered -->
-  <div v-if="msg.formSubmitted" class="pfm-summary message assistant self-start rounded-2xl rounded-bl-sm py-2.5 px-3.5 max-w-[85%] md:max-w-[640px] animate-fade-in-up w-full">
+  <div v-if="msg.formSubmitted" key="summary" class="pfm-summary message assistant self-start rounded-2xl rounded-bl-sm py-2.5 px-3.5 max-w-[85%] md:max-w-[640px] w-full">
     <div class="flex items-center gap-2 mb-1.5">
       <span class="pfm-summary-icon shrink-0 w-4 h-4 rounded-full flex items-center justify-center">
         <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
@@ -10,13 +11,13 @@
     <div class="flex flex-col gap-1">
       <div v-for="q in questions" :key="q.id" class="text-xs leading-snug">
         <span class="pfm-muted">{{ q.question }}</span>
-        <span class="pfm-title font-medium"> {{ answerText(q) }}</span>
+        <span class="pfm-title font-medium"> — {{ answerText(q) }}</span>
       </div>
     </div>
   </div>
 
   <!-- Interactive stepper while the form is being answered -->
-  <div v-else class="pfm-root message assistant self-start rounded-2xl rounded-bl-sm py-3 px-4 max-w-[85%] md:max-w-[640px] animate-fade-in-up w-full">
+  <div v-else key="stepper" class="pfm-root message assistant self-start rounded-2xl rounded-bl-sm py-3 px-4 max-w-[85%] md:max-w-[640px] animate-fade-in-up w-full">
     <div class="flex items-center justify-between mb-2.5">
       <p class="pfm-title text-xs font-medium">Cuéntame más para continuar</p>
       <span class="pfm-muted text-xs shrink-0 ml-3">{{ msg.currentStep + 1 }} / {{ totalSteps }}</span>
@@ -67,11 +68,11 @@
       </button>
       <button type="button" @click="goNext" :disabled="disabled || !canGoNext"
               class="pfm-btn-next flex-1 disabled:opacity-50 disabled:cursor-not-allowed py-1.5 rounded-lg font-medium transition-all text-xs flex items-center justify-center gap-2">
-        <svg v-if="msg.formSubmitted" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-        <span>{{ msg.formSubmitted ? 'Respuestas Enviadas' : (isLastStep ? 'Enviar Respuestas' : 'Siguiente') }}</span>
+        <span>{{ isLastStep ? 'Enviar Respuestas' : 'Siguiente' }}</span>
       </button>
     </div>
   </div>
+  </Transition>
 </template>
 
 <script setup>
@@ -150,7 +151,7 @@ const stepClass = (i) => {
   --primary-border: color-mix(in srgb, var(--primary-color) 60%, transparent);
 
   background: var(--tint-1);
-  border: 1px solid var(--border-color);
+  border: 1px solid color-mix(in srgb, var(--border-color) 55%, transparent);
   color: var(--text-main);
 }
 
@@ -181,21 +182,22 @@ const stepClass = (i) => {
 
 .pfm-answer {
   background: var(--tint-1);
-  border-color: var(--border-color);
+  border-color: transparent;
+  border-radius: 0.85rem;
   color: var(--text-muted);
+  transition: background-color 0.2s ease, transform 0.15s ease;
 }
 .pfm-answer:hover {
   background: var(--tint-2);
-  border-color: var(--border-strong);
+  transform: translateY(-1px);
 }
 .pfm-answer--selected {
   background: var(--primary-tint);
-  border-color: var(--primary-border);
   color: var(--text-bold);
 }
 
 .pfm-answer-dot {
-  border-color: var(--border-strong);
+  border-color: color-mix(in srgb, var(--text-bold) 25%, transparent);
 }
 .pfm-answer:hover .pfm-answer-dot {
   border-color: color-mix(in srgb, var(--text-bold) 40%, transparent);
@@ -207,20 +209,22 @@ const stepClass = (i) => {
 
 .pfm-input {
   background: var(--tint-2);
-  border: 1px solid var(--border-color);
+  border: 1px solid transparent;
+  border-radius: 0.75rem;
   color: var(--text-main);
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
 }
 .pfm-input::placeholder {
   color: var(--text-muted);
 }
 .pfm-input:focus {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 1px var(--primary-color);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-color) 35%, transparent);
 }
 
 .pfm-btn-back {
   background: var(--tint-1);
   color: var(--text-main);
+  border-radius: 0.75rem;
 }
 .pfm-btn-back:hover {
   background: var(--tint-2);
@@ -229,8 +233,22 @@ const stepClass = (i) => {
 .pfm-btn-next {
   background: var(--primary-color);
   color: var(--white);
+  border-radius: 0.75rem;
 }
 .pfm-btn-next:hover:not(:disabled) {
   background: var(--primary-hover);
+}
+
+.pfm-collapse-enter-active,
+.pfm-collapse-leave-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.pfm-collapse-enter-from {
+  opacity: 0;
+  transform: translateY(4px) scale(0.98);
+}
+.pfm-collapse-leave-to {
+  opacity: 0;
+  transform: translateY(-4px) scale(0.98);
 }
 </style>

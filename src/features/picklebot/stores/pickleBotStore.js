@@ -26,6 +26,11 @@ const extractErrorMessage = (e, fallback) => {
 };
 
 const hydrateMessage = (message, chatStatus) => {
+  // El backend también persiste el mensaje 'user' que ecoa el envío (form/titles)
+  // con el mismo `type` que el mensaje del asistente — esos no llevan preguntas
+  // ni opciones propias, así que no se les agrega estado de UI interactiva.
+  if (message.role !== 'assistant') return message;
+
   if (message.type === 'form') {
     return {
       ...message,
@@ -51,7 +56,8 @@ export const usePickleBotStore = defineStore('pickleBot', {
     messages: [],
     loadingChats: false,
     isSending: false,
-    provider: 'nvidia',
+    provider: 'deepseek',
+    embeddingProvider: 'nvidia',
     error: null,
   }),
   getters: {
@@ -78,6 +84,20 @@ export const usePickleBotStore = defineStore('pickleBot', {
         const data = await pickleBotService.getChat(chatId);
         this.currentChat = { id: data.id, title: data.title, status: data.status };
         this.messages = data.messages.map((m) => hydrateMessage(m, data.status));
+
+        // El texto de cada respuesta solo vive en el mensaje 'user' que sigue
+        // al formulario del asistente (content.answers), no en el propio
+        // mensaje 'form' — sin esto, el resumen "Respuestas enviadas" muestra
+        // "—" en todo tras recargar el historial.
+        this.messages.forEach((m, i) => {
+          if (m.role !== 'assistant' || m.type !== 'form') return;
+          const answerMsg = data.messages[i + 1];
+          if (answerMsg?.role === 'user' && answerMsg.type === 'form' && Array.isArray(answerMsg.content?.answers)) {
+            const selectedAnswers = {};
+            answerMsg.content.answers.forEach((a) => { selectedAnswers[a.questionId] = a.answer; });
+            m.selectedAnswers = selectedAnswers;
+          }
+        });
 
         if (data.status === 'awaiting_form_answers') {
           const lastFormMsg = [...this.messages].reverse().find((m) => m.type === 'form');
@@ -153,21 +173,29 @@ export const usePickleBotStore = defineStore('pickleBot', {
       await this.sendPayload({ role: 'user', type: 'form', content: { answers } });
     },
 
-    async sendTitleSelection(selectedTitleId, recommendation) {
+    async sendTitleSelection(selectedId) {
       if (!this.currentChat) return;
-
-      const echoText = selectedTitleId === 'regenerate'
-        ? 'Quiero otras opciones de título.'
-        : 'Título seleccionado.';
 
       this.messages.push({
         type: 'title_selection',
         role: 'user',
-        content: { text: echoText },
+        content: { text: 'Título seleccionado.' },
       });
 
-      const content = { selectedTitleId };
-      if (recommendation) content.recommendation = recommendation;
+      await this.sendPayload({ role: 'user', type: 'titles', content: { selectedId } });
+    },
+
+    async regenerateTitles(instructions) {
+      if (!this.currentChat) return;
+
+      this.messages.push({
+        type: 'title_selection',
+        role: 'user',
+        content: { text: 'Quiero otras opciones de título.' },
+      });
+
+      const content = { regenerate: true };
+      if (instructions) content.instructions = instructions;
 
       await this.sendPayload({ role: 'user', type: 'titles', content });
     },
@@ -218,6 +246,15 @@ export const usePickleBotStore = defineStore('pickleBot', {
         this.provider = data.provider;
       } catch (e) {
         this.error = extractErrorMessage(e, 'Error al cambiar el proveedor.');
+      }
+    },
+
+    async switchEmbeddingProvider(provider) {
+      try {
+        const data = await pickleBotService.switchEmbeddingProvider(provider);
+        this.embeddingProvider = data.provider;
+      } catch (e) {
+        this.error = extractErrorMessage(e, 'Error al cambiar el proveedor de embeddings.');
       }
     },
   },
