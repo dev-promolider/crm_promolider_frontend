@@ -26,7 +26,7 @@
               class="ptm-card group w-full flex items-start justify-between gap-3 text-left px-3.5 py-2.5 rounded-xl border transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-60">
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-1.5 flex-wrap">
-            <span class="ptm-card-title text-xs font-medium">{{ t.title }}</span>
+            <span class="ptm-card-title text-xs font-medium break-words">{{ t.title }}</span>
             <span v-if="t.recommended" class="ptm-badge text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0">Recomendado</span>
           </div>
           <span class="ptm-price text-xs mt-1 block">USD {{ t.suggestedPriceUsd }}</span>
@@ -35,7 +35,8 @@
     </div>
 
     <div class="ptm-regenerate pt-2">
-      <input type="text"
+      <label for="ptm-instructions" class="sr-only">Instrucciones opcionales para los nuevos títulos</label>
+      <input id="ptm-instructions" type="text"
              v-model="instructions"
              placeholder="Instrucciones opcionales para los nuevos títulos..."
              :disabled="disabled"
@@ -62,7 +63,7 @@
             <svg v-else xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20z"/></svg>
           </span>
           <div class="flex-1 min-w-0">
-            <p class="ptm-muted text-xs leading-snug truncate">{{ m.sourceTitle }}</p>
+            <p class="ptm-muted text-xs leading-snug truncate" :title="m.sourceTitle">{{ m.sourceTitle }}</p>
             <p class="ptm-source-caption text-[10px] mt-0.5">{{ sourceLabel(m.source) }}</p>
           </div>
           <span class="ptm-title text-xs font-medium shrink-0">{{ m.price }}</span>
@@ -105,7 +106,7 @@ const sourceLabel = (source) => (source === 'pinecone' ? 'Caché interna' : 'Bus
   --primary-tint: color-mix(in srgb, var(--primary-color) 12%, transparent);
 
   background: var(--tint-1);
-  border: 1px solid color-mix(in srgb, var(--border-color) 55%, transparent);
+  border: 1px solid color-mix(in srgb, var(--text-bold) 8%, transparent);
   color: var(--text-main);
 }
 
@@ -147,7 +148,7 @@ const sourceLabel = (source) => (source === 'pinecone' ? 'Caché interna' : 'Bus
 }
 
 .ptm-regenerate {
-  border-top: 1px solid color-mix(in srgb, var(--border-color) 60%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--text-bold) 10%, transparent);
 }
 
 .ptm-input {
@@ -176,7 +177,7 @@ const sourceLabel = (source) => (source === 'pinecone' ? 'Caché interna' : 'Bus
 }
 
 .ptm-sources {
-  border-top: 1px solid color-mix(in srgb, var(--border-color) 60%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--text-bold) 10%, transparent);
 }
 
 .ptm-sources-toggle {
@@ -205,5 +206,25 @@ const sourceLabel = (source) => (source === 'pinecone' ? 'Caché interna' : 'Bus
 
 .ptm-source-caption {
   color: var(--text-light, var(--text-muted));
+}
+
+.ptm-card:focus-visible,
+.ptm-input:focus-visible,
+.ptm-btn-regenerate:focus-visible,
+.ptm-sources-toggle:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }
 </style>

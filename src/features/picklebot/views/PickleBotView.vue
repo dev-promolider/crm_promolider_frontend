@@ -36,15 +36,20 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="opacity-60"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             <span class="text-xs">No hay chats recientes</span>
           </div>
-          <div v-else v-for="chat in pickleBotStore.chats" :key="chat.id"
+          <div v-else v-for="chat in pickleBotStore.chats" :key="chat.id" role="button" tabindex="0"
                class="pickle-chat-item group flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl cursor-pointer transition-colors duration-150 border-l-2"
                :class="{ 'pickle-chat-item--active': pickleBotStore.currentChat?.id === chat.id }"
-               @click="loadChat(chat.id)">
+               :aria-current="pickleBotStore.currentChat?.id === chat.id ? 'true' : undefined"
+               :title="chat.title || 'Nuevo Chat'"
+               @click="loadChat(chat.id)"
+               @keydown.enter="loadChat(chat.id)"
+               @keydown.space.prevent="loadChat(chat.id)">
             <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 opacity-60"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             <span class="chat-title truncate flex-1 text-xs">{{ chat.title || 'Nuevo Chat' }}</span>
-            <button @click.stop="confirmDeleteChat(chat.id)"
-                    class="pickle-delete-btn shrink-0 w-7 h-7 flex items-center justify-center rounded-lg bg-transparent md:opacity-0 md:group-hover:opacity-100 transition-all duration-150"
-                    title="Eliminar chat">
+            <button type="button"
+                    @click.stop="confirmDeleteChat(chat.id)"
+                    class="pickle-delete-btn shrink-0 w-7 h-7 flex items-center justify-center rounded-lg bg-transparent opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition-all duration-150"
+                    :aria-label="`Eliminar chat ${chat.title || 'Nuevo Chat'}`">
               <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
             </button>
           </div>
@@ -56,7 +61,8 @@
     <div class="chat-container order-1 md:order-2 min-h-0 glass-panel flex flex-col rounded-2xl z-10 overflow-hidden shadow-2xl">
 
       <!-- Messages -->
-      <div class="chat-messages flex-1 overflow-y-auto p-4 md:p-6 flex flex-col gap-5 scroll-smooth" ref="messagesContainer">
+      <div class="chat-messages flex-1 overflow-y-auto p-4 md:p-6 flex flex-col gap-5 scroll-smooth" ref="messagesContainer"
+           role="log" aria-live="polite" aria-relevant="additions" aria-label="Conversación con Pickle Bot">
 
         <!-- Welcome Message (only if new chat) -->
         <div v-if="!pickleBotStore.currentChat && pickleBotStore.messages.length === 0" class="pickle-msg pickle-msg--assistant message assistant self-start rounded-2xl rounded-bl-sm py-3 px-4 max-w-[85%] animate-fade-in-up">
@@ -101,7 +107,8 @@
         </template>
 
         <!-- Typing Indicator -->
-        <div v-show="pickleBotStore.isSending" class="pickle-msg pickle-msg--assistant typing-indicator assistant self-start rounded-2xl rounded-bl-sm py-3 px-4 max-w-[85%] flex items-center gap-3 animate-fade-in-up">
+        <div v-show="pickleBotStore.isSending" class="pickle-msg pickle-msg--assistant typing-indicator assistant self-start rounded-2xl rounded-bl-sm py-3 px-4 max-w-[85%] flex items-center gap-3 animate-fade-in-up"
+             role="status" aria-live="polite">
           <div v-if="pendingAction === 'titles'" class="typing-icon typing-icon--search shrink-0 w-6 h-6 rounded-full flex items-center justify-center">
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
           </div>
@@ -119,25 +126,34 @@
 
       <!-- Input Area -->
       <div class="chat-input p-4 md:p-5">
-        <p v-if="!userId" class="pickle-error-text text-xs mb-2">
+        <p v-if="!userId" class="pickle-error-text text-xs mb-2" role="alert">
           No se pudo identificar tu usuario. Vuelve a iniciar sesión para usar Pickle Bot.
         </p>
+        <div v-else-if="pickleBotStore.error" class="pickle-error-banner flex items-start gap-2 text-xs mb-2 px-3 py-2 rounded-lg" role="alert">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 mt-0.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span class="flex-1 min-w-0 break-words">{{ pickleBotStore.error }}</span>
+          <button type="button" class="pickle-error-dismiss shrink-0" @click="pickleBotStore.error = null" aria-label="Cerrar aviso">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </button>
+        </div>
         <form @submit.prevent="sendMessage" class="flex items-center gap-3 relative">
           <!-- Model Selector -->
           <div class="model-selector relative shrink-0" @click.stop>
             <button type="button" @click="toggleModelMenu"
                     class="pickle-model-btn flex items-center gap-2 h-12 md:h-14 text-xs px-3.5 rounded-full outline-none transition-all cursor-pointer"
-                    :class="{ 'pickle-model-btn--open': isModelMenuOpen }">
+                    :class="{ 'pickle-model-btn--open': isModelMenuOpen }"
+                    aria-haspopup="listbox" :aria-expanded="isModelMenuOpen" aria-label="Elegir modelo de IA">
               <span class="w-2 h-2 rounded-full shrink-0" :style="{ backgroundColor: selectedModelInfo.color }"></span>
               <span class="truncate max-w-[90px] sm:max-w-[130px]">{{ selectedModelInfo.label }}</span>
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="pickle-text-muted transition-transform duration-150 shrink-0" :class="{ 'rotate-180': isModelMenuOpen }"><path d="m6 9 6 6 6-6"/></svg>
             </button>
 
             <Transition name="model-menu-fade">
-              <div v-if="isModelMenuOpen" class="pickle-model-menu model-menu rounded-xl p-1.5 shadow-2xl z-30 overflow-hidden">
+              <div v-if="isModelMenuOpen" class="pickle-model-menu model-menu rounded-xl p-1.5 shadow-2xl z-30 overflow-hidden" role="listbox">
                 <button v-for="m in models" :key="m.value" type="button" @click="chooseModel(m.value)"
                         class="pickle-model-menu-item w-full flex items-start gap-2.5 text-left px-3 py-2.5 rounded-lg transition-colors"
-                        :class="{ 'pickle-model-menu-item--active': m.value === selectedModel }">
+                        :class="{ 'pickle-model-menu-item--active': m.value === selectedModel }"
+                        role="option" :aria-selected="m.value === selectedModel">
                   <span class="w-2.5 h-2.5 rounded-full shrink-0 mt-1" :style="{ backgroundColor: m.color }"></span>
                   <div class="flex-1 min-w-0">
                     <div class="pickle-model-menu-item-title text-xs font-medium">{{ m.label }}</div>
@@ -153,17 +169,19 @@
           <div class="model-selector relative shrink-0" @click.stop title="Proveedor de embeddings (RAG)">
             <button type="button" @click="toggleEmbeddingMenu"
                     class="pickle-model-btn flex items-center gap-2 h-12 md:h-14 text-xs px-3.5 rounded-full outline-none transition-all cursor-pointer"
-                    :class="{ 'pickle-model-btn--open': isEmbeddingMenuOpen }">
+                    :class="{ 'pickle-model-btn--open': isEmbeddingMenuOpen }"
+                    aria-haspopup="listbox" :aria-expanded="isEmbeddingMenuOpen" aria-label="Elegir proveedor de embeddings (RAG)">
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0" :style="{ color: selectedEmbeddingModelInfo.color }"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
               <span class="truncate max-w-[90px] sm:max-w-[130px]">{{ selectedEmbeddingModelInfo.label }}</span>
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="pickle-text-muted transition-transform duration-150 shrink-0" :class="{ 'rotate-180': isEmbeddingMenuOpen }"><path d="m6 9 6 6 6-6"/></svg>
             </button>
 
             <Transition name="model-menu-fade">
-              <div v-if="isEmbeddingMenuOpen" class="pickle-model-menu model-menu rounded-xl p-1.5 shadow-2xl z-30 overflow-hidden">
+              <div v-if="isEmbeddingMenuOpen" class="pickle-model-menu model-menu rounded-xl p-1.5 shadow-2xl z-30 overflow-hidden" role="listbox">
                 <button v-for="m in embeddingModels" :key="m.value" type="button" @click="chooseEmbeddingModel(m.value)"
                         class="pickle-model-menu-item w-full flex items-start gap-2.5 text-left px-3 py-2.5 rounded-lg transition-colors"
-                        :class="{ 'pickle-model-menu-item--active': m.value === selectedEmbeddingModel }">
+                        :class="{ 'pickle-model-menu-item--active': m.value === selectedEmbeddingModel }"
+                        role="option" :aria-selected="m.value === selectedEmbeddingModel">
                   <span class="w-2.5 h-2.5 rounded-full shrink-0 mt-1" :style="{ backgroundColor: m.color }"></span>
                   <div class="flex-1 min-w-0">
                     <div class="pickle-model-menu-item-title text-xs font-medium">{{ m.label }}</div>
@@ -175,7 +193,8 @@
             </Transition>
           </div>
 
-          <input type="text"
+          <label for="pickle-chat-input" class="sr-only">Mensaje para Pickle Bot</label>
+          <input id="pickle-chat-input" type="text"
                  v-model="inputText"
                  placeholder="Escribe tu mensaje aquí..."
                  :disabled="!userId || pickleBotStore.isSending || pickleBotStore.isAwaitingFormAnswers || pickleBotStore.isAwaitingTitleSelection"
@@ -183,7 +202,8 @@
                  autocomplete="off">
           <button type="submit"
                   :disabled="!inputText.trim() || !userId || pickleBotStore.isSending || pickleBotStore.isAwaitingFormAnswers || pickleBotStore.isAwaitingTitleSelection"
-                  class="pickle-send-btn w-12 h-12 md:w-14 md:h-14 shrink-0 rounded-full flex items-center justify-center transition-all duration-200 shadow-lg disabled:opacity-40 disabled:cursor-not-allowed">
+                  class="pickle-send-btn w-12 h-12 md:w-14 md:h-14 shrink-0 rounded-full flex items-center justify-center transition-all duration-200 shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"
+                  aria-label="Enviar mensaje">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="ml-1"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
           </button>
         </form>
@@ -191,15 +211,17 @@
     </div>
 
     <!-- Delete Modal -->
-    <div v-if="showDeleteModal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 animate-fade-in">
-      <div class="glass-panel w-full max-w-sm rounded-2xl p-6 text-center shadow-2xl animate-scale-in">
+    <div v-if="showDeleteModal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 animate-fade-in"
+         @click.self="showDeleteModal = false" @keydown.esc="showDeleteModal = false">
+      <div class="glass-panel w-full max-w-sm rounded-2xl p-6 text-center shadow-2xl animate-scale-in"
+           role="alertdialog" aria-modal="true" aria-labelledby="pickle-delete-title" aria-describedby="pickle-delete-desc">
         <div class="pickle-danger-icon w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="14" y1="11" y2="17"/></svg>
         </div>
-        <h3 class="pickle-title text-base font-semibold mb-2">¿Eliminar este chat?</h3>
-        <p class="pickle-text-muted text-xs mb-6">Esta acción es permanente y no se puede deshacer.</p>
+        <h3 id="pickle-delete-title" class="pickle-title text-base font-semibold mb-2">¿Eliminar este chat?</h3>
+        <p id="pickle-delete-desc" class="pickle-text-muted text-xs mb-6">Esta acción es permanente y no se puede deshacer.</p>
         <div class="flex gap-3 justify-center">
-          <button @click="showDeleteModal = false" class="pickle-btn-cancel px-5 py-2.5 rounded-xl font-medium transition-colors text-xs flex-1">
+          <button ref="cancelDeleteBtn" @click="showDeleteModal = false" class="pickle-btn-cancel px-5 py-2.5 rounded-xl font-medium transition-colors text-xs flex-1">
             Cancelar
           </button>
           <button @click="deleteChat" class="pickle-btn-danger px-5 py-2.5 rounded-xl font-medium transition-colors text-xs flex-1">
@@ -257,6 +279,16 @@ const selectedEmbeddingModelInfo = computed(() => embeddingModels.find(m => m.va
 // Modal state
 const showDeleteModal = ref(false);
 const chatToDelete = ref(null);
+const cancelDeleteBtn = ref(null);
+
+// Foco por defecto en "Cancelar" al abrir el modal: es una acción destructiva,
+// así que el foco no debe caer accidentalmente sobre "Eliminar".
+watch(showDeleteModal, async (open) => {
+  if (open) {
+    await nextTick();
+    cancelDeleteBtn.value?.focus();
+  }
+});
 
 // Loading messages
 const loadingMessagesList = [
@@ -652,6 +684,44 @@ body.dark-theme .pickle-glow {
 
 .pickle-error-text {
   color: var(--danger-color);
+}
+
+.pickle-error-banner {
+  background: color-mix(in srgb, var(--danger-color) 12%, transparent);
+  color: var(--danger-color);
+  border: 1px solid color-mix(in srgb, var(--danger-color) 25%, transparent);
+}
+.pickle-error-dismiss {
+  color: var(--danger-color);
+  opacity: 0.7;
+  transition: opacity 0.15s ease;
+}
+.pickle-error-dismiss:hover {
+  opacity: 1;
+}
+
+/* Foco visible consistente para navegación por teclado en todo el módulo */
+.pickle-chat-item:focus-visible,
+.pickle-delete-btn:focus-visible,
+.pickle-primary-btn:focus-visible,
+.pickle-send-btn:focus-visible,
+.pickle-error-dismiss:focus-visible,
+.pickle-btn-cancel:focus-visible,
+.pickle-btn-danger:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }
 
 .pickle-input {

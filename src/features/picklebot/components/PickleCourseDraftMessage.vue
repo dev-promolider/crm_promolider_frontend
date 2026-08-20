@@ -165,7 +165,7 @@ const levelClass = computed(() => LEVEL_CLASSES[props.content?.level] || '');
   --primary-tint: color-mix(in srgb, var(--primary-color) 12%, transparent);
 
   background: var(--tint-1);
-  border: 1px solid color-mix(in srgb, var(--border-color) 40%, transparent);
+  border: 1px solid color-mix(in srgb, var(--text-bold) 8%, transparent);
   color: var(--text-main);
   box-shadow: 0 10px 30px -16px rgba(0, 0, 0, 0.16);
   overflow: visible;
@@ -304,13 +304,13 @@ const levelClass = computed(() => LEVEL_CLASSES[props.content?.level] || '');
 }
 
 .pcd-topic-list {
-  border-left: 2px solid color-mix(in srgb, var(--border-color) 45%, transparent);
+  border-left: 2px solid color-mix(in srgb, var(--text-bold) 10%, transparent);
   margin-left: 0.9rem;
   padding-left: 0.85rem;
 }
 
 .pcd-topic + .pcd-topic {
-  border-top: 1px solid color-mix(in srgb, var(--border-color) 30%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--text-bold) 8%, transparent);
 }
 
 .pcd-topic-icon {
