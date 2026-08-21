@@ -42,4 +42,22 @@ export const infoproductService = {
     getCourseObservations(courseId) {
         return apiClient.get(`/course/${courseId}/observations`);
     },
+
+    getBookFiles(courseId) {
+        return apiClient.get(`/course/${courseId}/book-files`, { skipCache: true });
+    },
+
+    uploadBookFile(courseId, file, onUploadProgress) {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        return apiClient.post(`/course/${courseId}/book-files`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+            onUploadProgress,
+        });
+    },
+
+    deleteBookFile(bookFileId) {
+        return apiClient.delete(`/course/book-files/${bookFileId}`);
+    },
 };

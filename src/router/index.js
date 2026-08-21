@@ -96,6 +96,18 @@ const routes = [
     ]
   },
   {
+    path: '/course/:id/book-content',
+    component: () => import('@/layouts/DashboardLayout.vue'),
+    meta: { requiresAuth: true, layout: 'DashboardLayout' },
+    children: [
+      {
+        path: '',
+        name: 'book.content',
+        component: () => import('@/features/infoproducts/views/BookContentView.vue')
+      }
+    ]
+  },
+  {
     path: '/course/module/:courseId/editModule',
     component: () => import('@/layouts/DashboardLayout.vue'),
     meta: { requiresAuth: true, layout: 'DashboardLayout' },

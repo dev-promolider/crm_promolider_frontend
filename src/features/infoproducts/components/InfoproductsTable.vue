@@ -617,8 +617,10 @@ const getAvailableOptions = (course) => {
   let availableOptions = options.map((option) => ({ ...option }));
 
   if (course.product_type_id == 2) {
+    // Los libros no tienen módulos, exámenes, dinámicas, previsualización
+    // ni certificados ('7' Ver certificados, '9' Generar certificado).
     availableOptions = availableOptions.filter((option) => {
-      return !['1', '5', '6', '8'].includes(option.value);
+      return !['1', '5', '6', '7', '8', '9'].includes(option.value);
     });
 
     availableOptions = availableOptions.map((option) => {
