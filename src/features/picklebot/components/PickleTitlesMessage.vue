@@ -8,7 +8,7 @@
       <span class="ptm-title text-xs font-medium">Títulos propuestos</span>
     </div>
     <div class="flex flex-col gap-1">
-      <div v-for="t in realTitles" :key="t.id" class="text-xs leading-snug">
+      <div v-for="t in options" :key="t.id" class="text-xs leading-snug">
         <span class="ptm-muted">{{ t.title }}</span>
         <span class="ptm-title font-medium"> — USD {{ t.suggestedPriceUsd }}</span>
       </div>
@@ -20,13 +20,13 @@
     <p class="ptm-title text-xs font-medium mb-2.5">Elegí un título para tu curso</p>
 
     <div class="flex flex-col gap-2 mb-3">
-      <button v-for="t in realTitles" :key="t.id" type="button"
+      <button v-for="t in options" :key="t.id" type="button"
               @click="selectTitle(t.id)"
               :disabled="disabled"
               class="ptm-card group w-full flex items-start justify-between gap-3 text-left px-3.5 py-2.5 rounded-xl border transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-60">
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-1.5 flex-wrap">
-            <span class="ptm-card-title text-xs font-medium">{{ t.title }}</span>
+            <span class="ptm-card-title text-xs font-medium break-words">{{ t.title }}</span>
             <span v-if="t.recommended" class="ptm-badge text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0">Recomendado</span>
           </div>
           <span class="ptm-price text-xs mt-1 block">USD {{ t.suggestedPriceUsd }}</span>
@@ -35,8 +35,9 @@
     </div>
 
     <div class="ptm-regenerate pt-2">
-      <input type="text"
-             v-model="recommendation"
+      <label for="ptm-instructions" class="sr-only">Instrucciones opcionales para los nuevos títulos</label>
+      <input id="ptm-instructions" type="text"
+             v-model="instructions"
              placeholder="Instrucciones opcionales para los nuevos títulos..."
              :disabled="disabled"
              maxlength="300"
@@ -45,6 +46,29 @@
               class="ptm-btn-regenerate w-full py-1.5 rounded-lg font-medium transition-all text-xs disabled:opacity-50 disabled:cursor-not-allowed">
         Generar nuevos títulos
       </button>
+    </div>
+
+    <!-- Sources / metadata accordion: informational only, not part of selection -->
+    <div v-if="metadata.length" class="ptm-sources pt-3 mt-2">
+      <button type="button" @click="sourcesOpen = !sourcesOpen"
+              class="ptm-sources-toggle w-full flex items-center gap-1.5 text-xs font-medium py-1">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <span>Fuentes en las que nos inspiramos</span>
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-auto transition-transform duration-200" :class="{ 'rotate-180': sourcesOpen }"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <div v-if="sourcesOpen" class="flex flex-col gap-1.5 mt-2 animate-fade-in-up">
+        <div v-for="m in metadata" :key="m.id" class="ptm-source-card flex items-center gap-2.5 rounded-xl px-3 py-2">
+          <span class="ptm-source-icon shrink-0 w-6 h-6 rounded-full flex items-center justify-center">
+            <svg v-if="m.source === 'pinecone'" xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>
+            <svg v-else xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20z"/></svg>
+          </span>
+          <div class="flex-1 min-w-0">
+            <p class="ptm-muted text-xs leading-snug truncate" :title="m.sourceTitle">{{ m.sourceTitle }}</p>
+            <p class="ptm-source-caption text-[10px] mt-0.5">{{ sourceLabel(m.source) }}</p>
+          </div>
+          <span class="ptm-title text-xs font-medium shrink-0">{{ m.price }}</span>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -58,15 +82,19 @@ const props = defineProps({
 });
 const emit = defineEmits(['select', 'regenerate']);
 
-// El backend siempre incluye una quinta entrada con id "regenerate" dentro
-// de content.titles (sin precio real) — se renderiza aparte como acción,
-// no como una card de título más.
-const realTitles = computed(() => (props.msg.content.titles || []).filter((t) => t.id !== 'regenerate'));
+// El backend manda dos arrays paralelos correlacionados por "id":
+// options (título + precio sugerido, seleccionable) y metadata (fuente real
+// de scraping/RAG, solo informativo).
+const options = computed(() => props.msg.content.options || []);
+const metadata = computed(() => props.msg.content.metadata || []);
 
-const recommendation = ref('');
+const instructions = ref('');
+const sourcesOpen = ref(false);
 
 const selectTitle = (id) => emit('select', id);
-const regenerate = () => emit('regenerate', recommendation.value.trim());
+const regenerate = () => emit('regenerate', instructions.value.trim());
+
+const sourceLabel = (source) => (source === 'pinecone' ? 'Caché interna' : 'Buscado en vivo');
 </script>
 
 <style scoped>
@@ -78,7 +106,7 @@ const regenerate = () => emit('regenerate', recommendation.value.trim());
   --primary-tint: color-mix(in srgb, var(--primary-color) 12%, transparent);
 
   background: var(--tint-1);
-  border: 1px solid var(--border-color);
+  border: 1px solid color-mix(in srgb, var(--text-bold) 8%, transparent);
   color: var(--text-main);
 }
 
@@ -96,11 +124,14 @@ const regenerate = () => emit('regenerate', recommendation.value.trim());
 
 .ptm-card {
   background: var(--tint-1);
-  border-color: var(--border-color);
+  border-color: transparent;
+  border-radius: 1rem;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 .ptm-card:hover:not(:disabled) {
   background: var(--tint-2);
-  border-color: var(--border-strong);
+  box-shadow: 0 4px 14px -6px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
 }
 
 .ptm-card-title {
@@ -117,28 +148,83 @@ const regenerate = () => emit('regenerate', recommendation.value.trim());
 }
 
 .ptm-regenerate {
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid color-mix(in srgb, var(--text-bold) 10%, transparent);
 }
 
 .ptm-input {
-  background: var(--tint-2);
-  border: 1px solid var(--border-color);
+  background: var(--tint-1);
+  border: 1px solid transparent;
+  border-radius: 0.75rem;
   color: var(--text-main);
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
 }
 .ptm-input::placeholder {
   color: var(--text-muted);
 }
 .ptm-input:focus {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 1px var(--primary-color);
+  background: var(--tint-2);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-color) 35%, transparent);
 }
 
 .ptm-btn-regenerate {
-  background: var(--tint-2);
+  background: var(--tint-1);
   color: var(--text-bold);
-  border: 1px solid var(--border-color);
+  border: none;
+  border-radius: 0.75rem;
 }
 .ptm-btn-regenerate:hover:not(:disabled) {
+  background: var(--tint-2);
+}
+
+.ptm-sources {
+  border-top: 1px solid color-mix(in srgb, var(--text-bold) 10%, transparent);
+}
+
+.ptm-sources-toggle {
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+.ptm-sources-toggle:hover {
+  color: var(--text-bold);
+}
+
+.ptm-source-card {
   background: var(--tint-1);
+  transition: background-color 0.15s ease;
+}
+.ptm-source-card:hover {
+  background: var(--tint-2);
+}
+
+.ptm-source-icon {
+  background: color-mix(in srgb, var(--primary-color) 12%, transparent);
+  color: var(--primary-color);
+}
+
+.ptm-source-caption {
+  color: var(--text-light, var(--text-muted));
+}
+
+.ptm-card:focus-visible,
+.ptm-input:focus-visible,
+.ptm-btn-regenerate:focus-visible,
+.ptm-sources-toggle:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }
 </style>

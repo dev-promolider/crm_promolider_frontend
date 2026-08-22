@@ -33,3 +33,8 @@ export async function switchProvider(provider) {
   const response = await pickleBotApiClient.put('/ai/provider', { provider });
   return response.data;
 }
+
+export async function switchEmbeddingProvider(provider) {
+  const response = await pickleBotApiClient.put('/ai/embedding-provider', { provider });
+  return response.data;
+}

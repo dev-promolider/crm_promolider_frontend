@@ -36,15 +36,20 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="opacity-60"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             <span class="text-xs">No hay chats recientes</span>
           </div>
-          <div v-else v-for="chat in pickleBotStore.chats" :key="chat.id"
+          <div v-else v-for="chat in pickleBotStore.chats" :key="chat.id" role="button" tabindex="0"
                class="pickle-chat-item group flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl cursor-pointer transition-colors duration-150 border-l-2"
                :class="{ 'pickle-chat-item--active': pickleBotStore.currentChat?.id === chat.id }"
-               @click="loadChat(chat.id)">
+               :aria-current="pickleBotStore.currentChat?.id === chat.id ? 'true' : undefined"
+               :title="chat.title || 'Nuevo Chat'"
+               @click="loadChat(chat.id)"
+               @keydown.enter="loadChat(chat.id)"
+               @keydown.space.prevent="loadChat(chat.id)">
             <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 opacity-60"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             <span class="chat-title truncate flex-1 text-xs">{{ chat.title || 'Nuevo Chat' }}</span>
-            <button @click.stop="confirmDeleteChat(chat.id)"
-                    class="pickle-delete-btn shrink-0 w-7 h-7 flex items-center justify-center rounded-lg bg-transparent md:opacity-0 md:group-hover:opacity-100 transition-all duration-150"
-                    title="Eliminar chat">
+            <button type="button"
+                    @click.stop="confirmDeleteChat(chat.id)"
+                    class="pickle-delete-btn shrink-0 w-7 h-7 flex items-center justify-center rounded-lg bg-transparent opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition-all duration-150"
+                    :aria-label="`Eliminar chat ${chat.title || 'Nuevo Chat'}`">
               <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
             </button>
           </div>
@@ -56,7 +61,8 @@
     <div class="chat-container order-1 md:order-2 min-h-0 glass-panel flex flex-col rounded-2xl z-10 overflow-hidden shadow-2xl">
 
       <!-- Messages -->
-      <div class="chat-messages flex-1 overflow-y-auto p-4 md:p-6 flex flex-col gap-5 scroll-smooth" ref="messagesContainer">
+      <div class="chat-messages flex-1 overflow-y-auto p-4 md:p-6 flex flex-col gap-5 scroll-smooth" ref="messagesContainer"
+           role="log" aria-live="polite" aria-relevant="additions" aria-label="Conversación con Pickle Bot">
 
         <!-- Welcome Message (only if new chat) -->
         <div v-if="!pickleBotStore.currentChat && pickleBotStore.messages.length === 0" class="pickle-msg pickle-msg--assistant message assistant self-start rounded-2xl rounded-bl-sm py-3 px-4 max-w-[85%] animate-fade-in-up">
@@ -68,32 +74,48 @@
         <!-- Render Messages -->
         <template v-for="(msg, index) in pickleBotStore.messages" :key="index">
 
-          <!-- Text Message -->
-          <div v-if="msg.type === 'text' || msg.type === 'form_answers' || msg.type === 'title_selection'"
+          <!-- Text Message (also covers the persisted echo of the user's form/title submissions,
+               which share the 'form'/'titles' type with the assistant's own messages but carry
+               no questions/options of their own) -->
+          <div v-if="msg.type === 'text' || msg.type === 'form_answers' || msg.type === 'title_selection' || (msg.role === 'user' && (msg.type === 'form' || msg.type === 'titles'))"
                class="message py-3 px-4 rounded-2xl max-w-[85%] animate-fade-in-up break-words"
                :class="msg.role === 'user' ? 'pickle-msg pickle-msg--user user self-end rounded-br-sm shadow-lg' : 'pickle-msg pickle-msg--assistant assistant self-start rounded-bl-sm'">
             <div v-if="msg.role === 'assistant'" class="prose prose-invert max-w-none text-xs leading-relaxed" v-html="parseMarkdown(msg.content.text || msg.content)"></div>
-            <div v-else class="text-xs whitespace-pre-wrap">{{ msg.content.text || 'Respuestas enviadas' }}</div>
+            <div v-else class="text-xs whitespace-pre-wrap">{{ msg.content.text || (msg.type === 'titles' ? 'Título seleccionado.' : 'Respuestas enviadas.') }}</div>
           </div>
 
           <!-- Form Message -->
-          <PickleFormMessage v-if="msg.type === 'form'" :msg="msg"
+          <PickleFormMessage v-if="msg.type === 'form' && msg.role === 'assistant'" :msg="msg"
                               :disabled="msg.formSubmitted || pickleBotStore.isSending"
                               @submit="submitForm(msg)" />
 
           <!-- Title Selection Message -->
-          <PickleTitlesMessage v-if="msg.type === 'titles'" :msg="msg"
+          <PickleTitlesMessage v-if="msg.type === 'titles' && msg.role === 'assistant'" :msg="msg"
                                 :disabled="msg.titlesSubmitted || pickleBotStore.isSending"
                                 @select="(id) => selectTitle(msg, id)"
                                 @regenerate="(rec) => regenerateTitles(msg, rec)" />
 
           <!-- Course Draft Message -->
-          <PickleCourseDraftMessage v-if="msg.type === 'course_draft'" :content="msg.content" />
+          <PickleCourseDraftMessage v-if="msg.type === 'course_draft' && msg.role === 'assistant'" :content="msg.content" />
+
+          <!-- Fallback: unrecognized message type from the backend — never fail silently -->
+          <div v-if="!KNOWN_MESSAGE_TYPES.includes(msg.type)"
+               class="pickle-msg pickle-msg--assistant assistant self-start rounded-2xl rounded-bl-sm py-3 px-4 max-w-[85%] animate-fade-in-up">
+            <p class="pickle-error-text text-[11px] font-medium mb-1">Tipo de mensaje no reconocido: "{{ msg.type }}"</p>
+            <pre class="text-[10px] whitespace-pre-wrap break-all opacity-70">{{ JSON.stringify(msg.content, null, 2) }}</pre>
+          </div>
         </template>
 
         <!-- Typing Indicator -->
-        <div v-show="pickleBotStore.isSending" class="pickle-msg pickle-msg--assistant typing-indicator assistant self-start rounded-2xl rounded-bl-sm py-3 px-4 max-w-[85%] flex items-center gap-3 animate-fade-in-up">
-          <div class="flex gap-1.5">
+        <div v-show="pickleBotStore.isSending" class="pickle-msg pickle-msg--assistant typing-indicator assistant self-start rounded-2xl rounded-bl-sm py-3 px-4 max-w-[85%] flex items-center gap-3 animate-fade-in-up"
+             role="status" aria-live="polite">
+          <div v-if="pendingAction === 'titles'" class="typing-icon typing-icon--search shrink-0 w-6 h-6 rounded-full flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          </div>
+          <div v-else-if="pendingAction === 'draft'" class="typing-icon typing-icon--draft shrink-0 w-6 h-6 rounded-full flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 4.9L5 9.8l4.1 3-1.5 5.2L12 15l4.4 3-1.5-5.2 4.1-3-5.1-1.9L12 3Z"/></svg>
+          </div>
+          <div v-else class="flex gap-1.5">
             <div class="pickle-dot w-1.5 h-1.5 rounded-full animate-bounce" style="animation-delay: -0.32s"></div>
             <div class="pickle-dot w-1.5 h-1.5 rounded-full animate-bounce" style="animation-delay: -0.16s"></div>
             <div class="pickle-dot w-1.5 h-1.5 rounded-full animate-bounce"></div>
@@ -104,25 +126,34 @@
 
       <!-- Input Area -->
       <div class="chat-input p-4 md:p-5">
-        <p v-if="!userId" class="pickle-error-text text-xs mb-2">
+        <p v-if="!userId" class="pickle-error-text text-xs mb-2" role="alert">
           No se pudo identificar tu usuario. Vuelve a iniciar sesión para usar Pickle Bot.
         </p>
+        <div v-else-if="pickleBotStore.error" class="pickle-error-banner flex items-start gap-2 text-xs mb-2 px-3 py-2 rounded-lg" role="alert">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 mt-0.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span class="flex-1 min-w-0 break-words">{{ pickleBotStore.error }}</span>
+          <button type="button" class="pickle-error-dismiss shrink-0" @click="pickleBotStore.error = null" aria-label="Cerrar aviso">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </button>
+        </div>
         <form @submit.prevent="sendMessage" class="flex items-center gap-3 relative">
           <!-- Model Selector -->
           <div class="model-selector relative shrink-0" @click.stop>
             <button type="button" @click="toggleModelMenu"
                     class="pickle-model-btn flex items-center gap-2 h-12 md:h-14 text-xs px-3.5 rounded-full outline-none transition-all cursor-pointer"
-                    :class="{ 'pickle-model-btn--open': isModelMenuOpen }">
+                    :class="{ 'pickle-model-btn--open': isModelMenuOpen }"
+                    aria-haspopup="listbox" :aria-expanded="isModelMenuOpen" aria-label="Elegir modelo de IA">
               <span class="w-2 h-2 rounded-full shrink-0" :style="{ backgroundColor: selectedModelInfo.color }"></span>
               <span class="truncate max-w-[90px] sm:max-w-[130px]">{{ selectedModelInfo.label }}</span>
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="pickle-text-muted transition-transform duration-150 shrink-0" :class="{ 'rotate-180': isModelMenuOpen }"><path d="m6 9 6 6 6-6"/></svg>
             </button>
 
             <Transition name="model-menu-fade">
-              <div v-if="isModelMenuOpen" class="pickle-model-menu model-menu rounded-xl p-1.5 shadow-2xl z-30 overflow-hidden">
+              <div v-if="isModelMenuOpen" class="pickle-model-menu model-menu rounded-xl p-1.5 shadow-2xl z-30 overflow-hidden" role="listbox">
                 <button v-for="m in models" :key="m.value" type="button" @click="chooseModel(m.value)"
                         class="pickle-model-menu-item w-full flex items-start gap-2.5 text-left px-3 py-2.5 rounded-lg transition-colors"
-                        :class="{ 'pickle-model-menu-item--active': m.value === selectedModel }">
+                        :class="{ 'pickle-model-menu-item--active': m.value === selectedModel }"
+                        role="option" :aria-selected="m.value === selectedModel">
                   <span class="w-2.5 h-2.5 rounded-full shrink-0 mt-1" :style="{ backgroundColor: m.color }"></span>
                   <div class="flex-1 min-w-0">
                     <div class="pickle-model-menu-item-title text-xs font-medium">{{ m.label }}</div>
@@ -134,7 +165,36 @@
             </Transition>
           </div>
 
-          <input type="text"
+          <!-- Embedding Provider Selector (RAG) -->
+          <div class="model-selector relative shrink-0" @click.stop title="Proveedor de embeddings (RAG)">
+            <button type="button" @click="toggleEmbeddingMenu"
+                    class="pickle-model-btn flex items-center gap-2 h-12 md:h-14 text-xs px-3.5 rounded-full outline-none transition-all cursor-pointer"
+                    :class="{ 'pickle-model-btn--open': isEmbeddingMenuOpen }"
+                    aria-haspopup="listbox" :aria-expanded="isEmbeddingMenuOpen" aria-label="Elegir proveedor de embeddings (RAG)">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0" :style="{ color: selectedEmbeddingModelInfo.color }"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+              <span class="truncate max-w-[90px] sm:max-w-[130px]">{{ selectedEmbeddingModelInfo.label }}</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="pickle-text-muted transition-transform duration-150 shrink-0" :class="{ 'rotate-180': isEmbeddingMenuOpen }"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+
+            <Transition name="model-menu-fade">
+              <div v-if="isEmbeddingMenuOpen" class="pickle-model-menu model-menu rounded-xl p-1.5 shadow-2xl z-30 overflow-hidden" role="listbox">
+                <button v-for="m in embeddingModels" :key="m.value" type="button" @click="chooseEmbeddingModel(m.value)"
+                        class="pickle-model-menu-item w-full flex items-start gap-2.5 text-left px-3 py-2.5 rounded-lg transition-colors"
+                        :class="{ 'pickle-model-menu-item--active': m.value === selectedEmbeddingModel }"
+                        role="option" :aria-selected="m.value === selectedEmbeddingModel">
+                  <span class="w-2.5 h-2.5 rounded-full shrink-0 mt-1" :style="{ backgroundColor: m.color }"></span>
+                  <div class="flex-1 min-w-0">
+                    <div class="pickle-model-menu-item-title text-xs font-medium">{{ m.label }}</div>
+                    <div class="pickle-text-muted text-xs mt-0.5">{{ m.description }}</div>
+                  </div>
+                  <svg v-if="m.value === selectedEmbeddingModel" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="pickle-check-icon shrink-0 mt-0.5"><path d="M20 6 9 17l-5-5"/></svg>
+                </button>
+              </div>
+            </Transition>
+          </div>
+
+          <label for="pickle-chat-input" class="sr-only">Mensaje para Pickle Bot</label>
+          <input id="pickle-chat-input" type="text"
                  v-model="inputText"
                  placeholder="Escribe tu mensaje aquí..."
                  :disabled="!userId || pickleBotStore.isSending || pickleBotStore.isAwaitingFormAnswers || pickleBotStore.isAwaitingTitleSelection"
@@ -142,7 +202,8 @@
                  autocomplete="off">
           <button type="submit"
                   :disabled="!inputText.trim() || !userId || pickleBotStore.isSending || pickleBotStore.isAwaitingFormAnswers || pickleBotStore.isAwaitingTitleSelection"
-                  class="pickle-send-btn w-12 h-12 md:w-14 md:h-14 shrink-0 rounded-full flex items-center justify-center transition-all duration-200 shadow-lg disabled:opacity-40 disabled:cursor-not-allowed">
+                  class="pickle-send-btn w-12 h-12 md:w-14 md:h-14 shrink-0 rounded-full flex items-center justify-center transition-all duration-200 shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"
+                  aria-label="Enviar mensaje">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="ml-1"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
           </button>
         </form>
@@ -150,15 +211,17 @@
     </div>
 
     <!-- Delete Modal -->
-    <div v-if="showDeleteModal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 animate-fade-in">
-      <div class="glass-panel w-full max-w-sm rounded-2xl p-6 text-center shadow-2xl animate-scale-in">
+    <div v-if="showDeleteModal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 animate-fade-in"
+         @click.self="showDeleteModal = false" @keydown.esc="showDeleteModal = false">
+      <div class="glass-panel w-full max-w-sm rounded-2xl p-6 text-center shadow-2xl animate-scale-in"
+           role="alertdialog" aria-modal="true" aria-labelledby="pickle-delete-title" aria-describedby="pickle-delete-desc">
         <div class="pickle-danger-icon w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="14" y1="11" y2="17"/></svg>
         </div>
-        <h3 class="pickle-title text-base font-semibold mb-2">¿Eliminar este chat?</h3>
-        <p class="pickle-text-muted text-xs mb-6">Esta acción es permanente y no se puede deshacer.</p>
+        <h3 id="pickle-delete-title" class="pickle-title text-base font-semibold mb-2">¿Eliminar este chat?</h3>
+        <p id="pickle-delete-desc" class="pickle-text-muted text-xs mb-6">Esta acción es permanente y no se puede deshacer.</p>
         <div class="flex gap-3 justify-center">
-          <button @click="showDeleteModal = false" class="pickle-btn-cancel px-5 py-2.5 rounded-xl font-medium transition-colors text-xs flex-1">
+          <button ref="cancelDeleteBtn" @click="showDeleteModal = false" class="pickle-btn-cancel px-5 py-2.5 rounded-xl font-medium transition-colors text-xs flex-1">
             Cancelar
           </button>
           <button @click="deleteChat" class="pickle-btn-danger px-5 py-2.5 rounded-xl font-medium transition-colors text-xs flex-1">
@@ -185,6 +248,8 @@ const authStore = useAuthStore();
 const pickleBotStore = usePickleBotStore();
 const userId = computed(() => authStore.userId);
 
+const KNOWN_MESSAGE_TYPES = ['text', 'form_answers', 'title_selection', 'form', 'titles', 'course_draft'];
+
 // Local UI state
 const inputText = ref('');
 const selectedModel = ref(pickleBotStore.provider);
@@ -192,6 +257,7 @@ const messagesContainer = ref(null);
 
 // Model Selector
 const models = [
+  { value: 'deepseek', label: 'DeepSeek Chat', description: 'Proveedor por defecto de Pickle', color: '#4f6bed' },
   { value: 'nvidia', label: 'NVIDIA Llama 3', description: 'Modelo open-source, rápido y económico', color: '#76b900' },
   { value: 'gemini', label: 'Gemini 2.0 Flash', description: 'Rápido y equilibrado', color: '#4285f4' },
   { value: 'openai', label: 'GPT-4o Mini', description: 'Modelo compacto de OpenAI', color: '#10a37f' },
@@ -199,9 +265,30 @@ const models = [
 const isModelMenuOpen = ref(false);
 const selectedModelInfo = computed(() => models.find(m => m.value === selectedModel.value) || models[0]);
 
+// Embedding Provider Selector (RAG) — switch independiente del LLM, DeepSeek
+// no ofrece embeddings así que queda fuera de esta lista.
+const selectedEmbeddingModel = ref(pickleBotStore.embeddingProvider);
+const embeddingModels = [
+  { value: 'nvidia', label: 'NVIDIA e5-v5', description: 'Proveedor por defecto de embeddings', color: '#76b900' },
+  { value: 'gemini', label: 'Gemini Embeddings', description: 'Embeddings de Google', color: '#4285f4' },
+  { value: 'openai', label: 'OpenAI Embeddings', description: 'Embeddings de OpenAI', color: '#10a37f' },
+];
+const isEmbeddingMenuOpen = ref(false);
+const selectedEmbeddingModelInfo = computed(() => embeddingModels.find(m => m.value === selectedEmbeddingModel.value) || embeddingModels[0]);
+
 // Modal state
 const showDeleteModal = ref(false);
 const chatToDelete = ref(null);
+const cancelDeleteBtn = ref(null);
+
+// Foco por defecto en "Cancelar" al abrir el modal: es una acción destructiva,
+// así que el foco no debe caer accidentalmente sobre "Eliminar".
+watch(showDeleteModal, async (open) => {
+  if (open) {
+    await nextTick();
+    cancelDeleteBtn.value?.focus();
+  }
+});
 
 // Loading messages
 const loadingMessagesList = [
@@ -212,6 +299,29 @@ const loadingMessagesList = [
   "Diseñando la respuesta...",
   "Casi listo..."
 ];
+// Se muestran mientras se generan/regeneran títulos, que implica scraping en
+// vivo y puede tardar bastante más que una respuesta de chat normal.
+const titleSearchMessagesList = [
+  "Buscando cursos similares en internet...",
+  "Explorando qué se vende mejor ahora mismo...",
+  "Comparando precios del mercado...",
+  "Analizando títulos exitosos de la competencia...",
+  "Afinando los mejores títulos para tu curso...",
+  "Casi listo..."
+];
+// Se muestran mientras se genera el boceto completo del curso a partir del
+// título elegido.
+const draftGenerationMessagesList = [
+  "Creando el boceto de tu curso...",
+  "Redactando la descripción...",
+  "Definiendo los objetivos de aprendizaje...",
+  "Armando el contenido del curso...",
+  "Puliendo los últimos detalles...",
+  "Casi listo..."
+];
+// Qué está esperando el usuario en este envío: define qué lista de mensajes
+// y qué ícono muestra el indicador de carga.
+const pendingAction = ref('default');
 const loadingText = ref('Procesando...');
 let loadingInterval = null;
 
@@ -236,19 +346,28 @@ const scrollToBottom = async () => {
   }
 };
 
+const LOADING_MESSAGES_BY_ACTION = {
+  default: loadingMessagesList,
+  titles: titleSearchMessagesList,
+  draft: draftGenerationMessagesList,
+};
+
 // Drive the rotating loading text off the store's isSending flag
 watch(() => pickleBotStore.isSending, (sending) => {
   if (sending) {
-    loadingText.value = 'Procesando...';
+    const messages = LOADING_MESSAGES_BY_ACTION[pendingAction.value] || loadingMessagesList;
     let index = 0;
+    loadingText.value = messages[index];
+    index++;
     loadingInterval = setInterval(() => {
-      loadingText.value = loadingMessagesList[index % loadingMessagesList.length];
+      loadingText.value = messages[index % messages.length];
       index++;
     }, 2500);
     scrollToBottom();
   } else if (loadingInterval) {
     clearInterval(loadingInterval);
     loadingInterval = null;
+    pendingAction.value = 'default';
     scrollToBottom();
   }
 });
@@ -285,7 +404,7 @@ const submitForm = async (msg) => {
   });
 
   msg.formSubmitted = true;
-
+  pendingAction.value = 'titles';
   await pickleBotStore.sendFormAnswers(answers);
   scrollToBottom();
 };
@@ -293,13 +412,15 @@ const submitForm = async (msg) => {
 // Title Selection Methods
 const selectTitle = async (msg, titleId) => {
   msg.titlesSubmitted = true;
+  pendingAction.value = 'draft';
   await pickleBotStore.sendTitleSelection(titleId);
   scrollToBottom();
 };
 
-const regenerateTitles = async (msg, recommendation) => {
+const regenerateTitles = async (msg, instructions) => {
   msg.titlesSubmitted = true;
-  await pickleBotStore.sendTitleSelection('regenerate', recommendation || undefined);
+  pendingAction.value = 'titles';
+  await pickleBotStore.regenerateTitles(instructions || undefined);
   scrollToBottom();
 };
 
@@ -316,6 +437,7 @@ const sendMessage = async () => {
   const text = inputText.value.trim();
   inputText.value = '';
 
+  pendingAction.value = 'default';
   await pickleBotStore.sendTextMessage(userId.value, text);
   scrollToBottom();
 };
@@ -339,6 +461,7 @@ const deleteChat = async () => {
 // Provider Switch Logic
 const toggleModelMenu = (e) => {
   e.stopPropagation();
+  isEmbeddingMenuOpen.value = false;
   isModelMenuOpen.value = !isModelMenuOpen.value;
 };
 
@@ -353,15 +476,35 @@ const chooseModel = async (value) => {
   await pickleBotStore.switchProvider(value);
 };
 
+// Embedding Provider Switch Logic
+const toggleEmbeddingMenu = (e) => {
+  e.stopPropagation();
+  isModelMenuOpen.value = false;
+  isEmbeddingMenuOpen.value = !isEmbeddingMenuOpen.value;
+};
+
+const closeEmbeddingMenu = () => {
+  isEmbeddingMenuOpen.value = false;
+};
+
+const chooseEmbeddingModel = async (value) => {
+  isEmbeddingMenuOpen.value = false;
+  if (value === selectedEmbeddingModel.value) return;
+  selectedEmbeddingModel.value = value;
+  await pickleBotStore.switchEmbeddingProvider(value);
+};
+
 onMounted(() => {
   if (userId.value) {
     pickleBotStore.fetchChats(userId.value);
   }
   window.addEventListener('click', closeModelMenu);
+  window.addEventListener('click', closeEmbeddingMenu);
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener('click', closeModelMenu);
+  window.removeEventListener('click', closeEmbeddingMenu);
 });
 </script>
 
@@ -516,8 +659,69 @@ body.dark-theme .pickle-glow {
   background: var(--primary-color);
 }
 
+.typing-icon--search {
+  background: color-mix(in srgb, var(--primary-color) 14%, transparent);
+  color: var(--primary-color);
+  animation: pickle-search-pulse 1.6s ease-in-out infinite;
+}
+
+.typing-icon--draft {
+  background: color-mix(in srgb, var(--primary-color) 14%, transparent);
+  color: var(--primary-color);
+  animation: pickle-draft-spin 1.8s linear infinite;
+}
+
+@keyframes pickle-search-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.85; }
+  50% { transform: scale(1.12); opacity: 1; }
+}
+
+@keyframes pickle-draft-spin {
+  0% { transform: rotate(0deg) scale(1); opacity: 0.85; }
+  50% { transform: rotate(180deg) scale(1.1); opacity: 1; }
+  100% { transform: rotate(360deg) scale(1); opacity: 0.85; }
+}
+
 .pickle-error-text {
   color: var(--danger-color);
+}
+
+.pickle-error-banner {
+  background: color-mix(in srgb, var(--danger-color) 12%, transparent);
+  color: var(--danger-color);
+  border: 1px solid color-mix(in srgb, var(--danger-color) 25%, transparent);
+}
+.pickle-error-dismiss {
+  color: var(--danger-color);
+  opacity: 0.7;
+  transition: opacity 0.15s ease;
+}
+.pickle-error-dismiss:hover {
+  opacity: 1;
+}
+
+/* Foco visible consistente para navegación por teclado en todo el módulo */
+.pickle-chat-item:focus-visible,
+.pickle-delete-btn:focus-visible,
+.pickle-primary-btn:focus-visible,
+.pickle-send-btn:focus-visible,
+.pickle-error-dismiss:focus-visible,
+.pickle-btn-cancel:focus-visible,
+.pickle-btn-danger:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }
 
 .pickle-input {
