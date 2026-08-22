@@ -14,74 +14,157 @@
     </header>
 
     <div class="content-grid" :class="{ 'has-observations': hasObservations }">
-      <div class="card">
-        <div class="card-head">
-          <h3>Archivos del libro</h3>
+      <div class="sections-column">
 
-          <label for="bookFile" class="btn-primary upload-trigger" :class="{ disabled: isUploading || limitReached }">
-            <UploadCloud size="18" />
-            {{ isUploading ? 'Subiendo...' : 'Subir archivo' }}
-            <input
-              type="file"
-              id="bookFile"
-              class="hidden-input"
-              :accept="acceptAttr"
-              :disabled="isUploading || limitReached"
-              @change="handleFileUpload"
-            />
-          </label>
-        </div>
-
-        <p class="upload-info">
-          <strong>Formatos permitidos:</strong> {{ allowedFormats.map(f => f.toUpperCase()).join(', ') }}<br />
-          <strong>Límite:</strong> máximo {{ maxFiles }} archivos, {{ maxSizeMB }} MB en total
-        </p>
-
-        <div v-if="uploadProgress > 0" class="progress-bar-container">
-          <div class="progress-bar" :style="{ width: uploadProgress + '%' }"></div>
-          <span class="progress-text">{{ uploadProgress }}% Completado</span>
-        </div>
-
-        <!-- Uso de almacenamiento -->
-        <div class="storage-info">
-          <div class="storage-header">
-            <span>Almacenamiento utilizado</span>
-            <span class="storage-text">{{ usedMB.toFixed(2) }} MB / {{ maxSizeMB }} MB</span>
-          </div>
-          <div class="storage-track">
-            <div class="storage-fill" :style="{ width: Math.min(usagePercentage, 100) + '%' }"></div>
-          </div>
-        </div>
-
-        <div v-if="isLoading" class="empty-state">Cargando archivos...</div>
-
-        <div v-else-if="files.length === 0" class="empty-state">
-          <FileText size="32" class="empty-icon" />
-          <p>Este libro todavía no tiene archivos.</p>
-          <span>Sube el PDF o EPUB para que tus lectores puedan acceder a él.</span>
-        </div>
-
-        <div v-else class="files-list">
-          <div v-for="file in files" :key="file.id" class="file-item">
-            <div class="file-icon" :class="'type-' + file.file_type">
-              {{ file.file_type.toUpperCase() }}
+        <!-- ═══ SECCIÓN 1: Muestra gratuita ═══ -->
+        <section class="card section-preview">
+          <div class="card-head">
+            <div class="section-title">
+              <h3><Eye size="18" /> Vista previa gratuita</h3>
+              <span class="tag-optional">Opcional</span>
             </div>
 
-            <div class="file-details">
-              <h4 :title="file.file_name">{{ file.file_name }}</h4>
-              <span>{{ (file.size / (1024 * 1024)).toFixed(2) }} MB &bull; {{ file.file_type.toUpperCase() }}</span>
-            </div>
+            <label
+              v-if="!previewFile"
+              for="previewFileInput"
+              class="btn-outline upload-trigger"
+              :class="{ disabled: isUploadingPreview }"
+            >
+              <UploadCloud size="18" />
+              {{ isUploadingPreview ? 'Subiendo...' : 'Subir muestra' }}
+              <input
+                type="file"
+                id="previewFileInput"
+                class="hidden-input"
+                accept=".pdf"
+                :disabled="isUploadingPreview"
+                @change="(e) => handleFileUpload(e, true)"
+              />
+            </label>
+          </div>
 
-            <div class="file-actions">
-              <button type="button" class="btn-icon" title="Descargar" @click="downloadFile(file)">
-                <Download size="18" />
-              </button>
-              <button type="button" class="btn-icon danger" title="Eliminar" @click="confirmDelete(file)">
-                <Trash2 size="18" />
-              </button>
+          <p class="section-help">
+            Sube un PDF con una parte del libro (por ejemplo, el primer capítulo). Cualquier persona podrá
+            leerlo desde el marketplace <strong>antes de comprar</strong>, para saber qué va a recibir.
+            Solo se admite PDF y solo puede haber una muestra por libro.
+          </p>
+
+          <div v-if="previewUploadProgress > 0" class="progress-bar-container">
+            <div class="progress-bar" :style="{ width: previewUploadProgress + '%' }"></div>
+            <span class="progress-text">{{ previewUploadProgress }}% Completado</span>
+          </div>
+
+          <div v-if="isLoading" class="empty-state">Cargando...</div>
+
+          <div v-else-if="!previewFile" class="empty-state empty-preview">
+            <Eye size="28" class="empty-icon" />
+            <p>Este libro aún no ofrece muestra gratuita.</p>
+            <span>Sin muestra, el comprador solo verá la portada y la descripción.</span>
+          </div>
+
+          <div v-else class="files-list">
+            <div class="file-item is-preview">
+              <div class="file-icon type-pdf">PDF</div>
+
+              <div class="file-details">
+                <h4 :title="previewFile.file_name">{{ previewFile.file_name }}</h4>
+                <span class="file-meta">
+                  {{ (previewFile.size / (1024 * 1024)).toFixed(2) }} MB
+                  <span class="preview-badge">Visible para todos</span>
+                </span>
+              </div>
+
+              <div class="file-actions">
+                <button type="button" class="btn-icon" title="Descargar" @click="downloadFile(previewFile)">
+                  <Download size="18" />
+                </button>
+                <button type="button" class="btn-icon danger" title="Quitar la muestra" @click="confirmDelete(previewFile)">
+                  <Trash2 size="18" />
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </section>
+
+        <!-- ═══ SECCIÓN 2: Contenido a la venta ═══ -->
+        <section class="card">
+          <div class="card-head">
+            <div class="section-title">
+              <h3><Lock size="18" /> Contenido del libro</h3>
+              <span class="tag-paid">Solo para compradores</span>
+            </div>
+
+            <label for="bookFile" class="btn-primary upload-trigger" :class="{ disabled: isUploading || limitReached }">
+              <UploadCloud size="18" />
+              {{ isUploading ? 'Subiendo...' : 'Subir archivo' }}
+              <input
+                type="file"
+                id="bookFile"
+                class="hidden-input"
+                :accept="acceptAttr"
+                :disabled="isUploading || limitReached"
+                @change="(e) => handleFileUpload(e, false)"
+              />
+            </label>
+          </div>
+
+          <p class="section-help">
+            Estos son los archivos que recibe quien compra el libro. Nadie puede descargarlos sin haberlo
+            adquirido.
+          </p>
+
+          <p class="upload-info">
+            <strong>Formatos permitidos:</strong> {{ allowedFormats.map(f => f.toUpperCase()).join(', ') }}<br />
+            <strong>Límite:</strong> máximo {{ maxFiles }} archivos, {{ maxSizeMB }} MB en total (incluida la muestra)
+          </p>
+
+          <div v-if="uploadProgress > 0" class="progress-bar-container">
+            <div class="progress-bar" :style="{ width: uploadProgress + '%' }"></div>
+            <span class="progress-text">{{ uploadProgress }}% Completado</span>
+          </div>
+
+          <div class="storage-info">
+            <div class="storage-header">
+              <span>Almacenamiento utilizado</span>
+              <span class="storage-text">{{ usedMB.toFixed(2) }} MB / {{ maxSizeMB }} MB</span>
+            </div>
+            <div class="storage-track">
+              <div class="storage-fill" :style="{ width: Math.min(usagePercentage, 100) + '%' }"></div>
+            </div>
+          </div>
+
+          <div v-if="isLoading" class="empty-state">Cargando archivos...</div>
+
+          <div v-else-if="saleFiles.length === 0" class="empty-state">
+            <FileText size="28" class="empty-icon" />
+            <p>Este libro todavía no tiene contenido.</p>
+            <span>Sube el PDF o EPUB completo para que tus lectores puedan acceder a él.</span>
+          </div>
+
+          <div v-else class="files-list">
+            <div v-for="file in saleFiles" :key="file.id" class="file-item">
+              <div class="file-icon" :class="'type-' + file.file_type">
+                {{ file.file_type.toUpperCase() }}
+              </div>
+
+              <div class="file-details">
+                <h4 :title="file.file_name">{{ file.file_name }}</h4>
+                <span class="file-meta">
+                  {{ (file.size / (1024 * 1024)).toFixed(2) }} MB &bull; {{ file.file_type.toUpperCase() }}
+                </span>
+              </div>
+
+              <div class="file-actions">
+                <button type="button" class="btn-icon" title="Descargar" @click="downloadFile(file)">
+                  <Download size="18" />
+                </button>
+                <button type="button" class="btn-icon danger" title="Eliminar" @click="confirmDelete(file)">
+                  <Trash2 size="18" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
 
       <!-- Observaciones del analista (solo si el libro está observado) -->
@@ -127,7 +210,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { ElMessage } from 'element-plus';
-import { UploadCloud, Download, Trash2, FileText } from 'lucide-vue-next';
+import { UploadCloud, Download, Trash2, FileText, Eye, Lock } from 'lucide-vue-next';
 import ModalComponent from '@/components/common/ModalComponent.vue';
 import { infoproductService } from '../services/infoproductService';
 
@@ -144,6 +227,8 @@ const courseStatus = ref(null);
 const isLoading = ref(true);
 const isUploading = ref(false);
 const uploadProgress = ref(0);
+const isUploadingPreview = ref(false);
+const previewUploadProgress = ref(0);
 const isDeleteModalOpen = ref(false);
 const isDeleting = ref(false);
 const fileSelected = ref(null);
@@ -154,6 +239,9 @@ const maxSizeMB = computed(() => Math.round(maxSizeBytes.value / (1024 * 1024)))
 const usedMB = computed(() => files.value.reduce((total, f) => total + (f.size || 0), 0) / (1024 * 1024));
 const usagePercentage = computed(() => (usedMB.value / maxSizeMB.value) * 100);
 const limitReached = computed(() => files.value.length >= maxFiles.value);
+// La muestra gratuita se gestiona aparte del contenido que se vende.
+const previewFile = computed(() => files.value.find((f) => f.is_preview) || null);
+const saleFiles = computed(() => files.value.filter((f) => !f.is_preview));
 // El estado 3 significa que el libro fue observado por un analista.
 const hasObservations = computed(() => Number(courseStatus.value) === 3);
 
@@ -198,13 +286,18 @@ onMounted(async () => {
   isLoading.value = false;
 });
 
-const handleFileUpload = async (event) => {
+const handleFileUpload = async (event, asPreview = false) => {
   const file = event.target.files[0];
   event.target.value = '';
 
   if (!file) return;
 
   const extension = file.name.split('.').pop().toLowerCase();
+
+  if (asPreview && extension !== 'pdf') {
+    ElMessage.warning('La muestra gratuita debe ser un archivo PDF');
+    return;
+  }
 
   if (!allowedFormats.includes(extension)) {
     ElMessage.warning(`El formato ${extension.toUpperCase()} no está permitido`);
@@ -216,22 +309,30 @@ const handleFileUpload = async (event) => {
     return;
   }
 
-  isUploading.value = true;
-  uploadProgress.value = 0;
+  const cargando = asPreview ? isUploadingPreview : isUploading;
+  const progreso = asPreview ? previewUploadProgress : uploadProgress;
+
+  cargando.value = true;
+  progreso.value = 0;
 
   try {
-    await infoproductService.uploadBookFile(courseId, file, (progressEvent) => {
-      uploadProgress.value = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-    });
+    await infoproductService.uploadBookFile(
+      courseId,
+      file,
+      (progressEvent) => {
+        progreso.value = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+      },
+      asPreview
+    );
 
-    ElMessage.success('Archivo subido correctamente');
+    ElMessage.success(asPreview ? 'Muestra gratuita publicada' : 'Archivo subido correctamente');
     await loadFiles();
   } catch (error) {
     const msg = error.response?.data?.message || 'Hubo un error al subir el archivo';
     ElMessage.error(msg);
   } finally {
-    isUploading.value = false;
-    uploadProgress.value = 0;
+    cargando.value = false;
+    progreso.value = 0;
   }
 };
 
@@ -334,19 +435,83 @@ const formatDate = (date) => {
   border: 1px solid var(--border-color);
 }
 
+.sections-column {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+
 .card-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 16px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .card h3 {
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 16px;
   font-weight: 700;
   color: var(--primary-color);
+}
+
+/* La sección de muestra se distingue con un borde verde a la izquierda */
+.section-preview {
+  border-left: 4px solid var(--primary-color);
+}
+
+.tag-optional,
+.tag-paid {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 12px;
+}
+
+.tag-optional {
+  background: rgba(24, 214, 0, 0.12);
+  color: var(--primary-color);
+}
+
+.tag-paid {
+  background: var(--indicator-orange, #ffedd5);
+  color: var(--indicator-orange-text, #ea580c);
+}
+
+.section-help {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+  max-width: 70ch;
+}
+
+.section-help strong {
+  color: var(--text-main);
+}
+
+.file-item.is-preview {
+  border-color: var(--primary-color);
+  background: rgba(24, 214, 0, 0.04);
+}
+
+.empty-preview {
+  border: 1px dashed var(--border-color);
+  border-radius: 12px;
 }
 
 .upload-info {
@@ -368,6 +533,24 @@ const formatDate = (date) => {
   font-size: 13px;
   border: none;
   cursor: pointer;
+}
+
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--primary-color);
+  font-weight: 700;
+  font-size: 13px;
+  border: 2px solid var(--primary-color);
+  cursor: pointer;
+}
+
+.btn-outline:hover {
+  background: rgba(24, 214, 0, 0.08);
 }
 
 .upload-trigger.disabled {
@@ -495,7 +678,10 @@ const formatDate = (date) => {
   text-overflow: ellipsis;
 }
 
-.file-details span {
+.file-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font-size: 12px;
   color: var(--text-muted);
 }
@@ -528,6 +714,25 @@ const formatDate = (date) => {
 .btn-icon.danger:hover {
   border-color: var(--danger-color);
   color: var(--danger-color);
+}
+
+.btn-icon.active {
+  border-color: var(--primary-color);
+  background: rgba(24, 214, 0, 0.1);
+  color: var(--primary-color);
+}
+
+.preview-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(24, 214, 0, 0.12);
+  color: var(--primary-color);
+  vertical-align: middle;
 }
 
 /* Vacío */

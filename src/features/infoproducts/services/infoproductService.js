@@ -47,9 +47,13 @@ export const infoproductService = {
         return apiClient.get(`/course/${courseId}/book-files`, { skipCache: true });
     },
 
-    uploadBookFile(courseId, file, onUploadProgress) {
+    uploadBookFile(courseId, file, onUploadProgress, isPreview = false) {
         const formData = new FormData();
         formData.append('file', file);
+
+        if (isPreview) {
+            formData.append('is_preview', '1');
+        }
 
         return apiClient.post(`/course/${courseId}/book-files`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
@@ -59,5 +63,9 @@ export const infoproductService = {
 
     deleteBookFile(bookFileId) {
         return apiClient.delete(`/course/book-files/${bookFileId}`);
+    },
+
+    toggleBookPreview(bookFileId) {
+        return apiClient.patch(`/course/book-files/${bookFileId}/preview`);
     },
 };
