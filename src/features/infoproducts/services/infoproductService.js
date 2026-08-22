@@ -68,4 +68,8 @@ export const infoproductService = {
     toggleBookPreview(bookFileId) {
         return apiClient.patch(`/course/book-files/${bookFileId}/preview`);
     },
+
+    setReadingMode(courseId, readingMode) {
+        return apiClient.patch(`/course/${courseId}/reading-mode`, { reading_mode: readingMode });
+    },
 };
