@@ -96,14 +96,14 @@ const routes = [
     ]
   },
   {
-    path: '/pickle-bot',
+    path: '/creator-ai',
     component: () => import('@/layouts/DashboardLayout.vue'),
     meta: { requiresAuth: true, layout: 'DashboardLayout' },
     children: [
       {
         path: '',
-        name: 'pickle-bot',
-        component: () => import('@/features/picklebot/views/PickleBotView.vue')
+        name: 'creator-ai',
+        component: () => import('@/features/creator-ai/views/CreatorAiView.vue')
       }
     ]
   },

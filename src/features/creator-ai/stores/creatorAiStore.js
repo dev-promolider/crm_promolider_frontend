@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import * as pickleBotService from '../services/pickleBotService';
+import * as creatorAiService from '../services/creatorAiService';
 
 const deriveTitle = (text) => {
   const trimmed = text.trim();
@@ -12,7 +12,7 @@ const deriveTitle = (text) => {
 // en `content.text` y rompía `marked.parse()` (espera un string).
 const extractErrorMessage = (e, fallback) => {
   // eslint-disable-next-line no-console
-  console.error('[PickleBot] Error de la API:', {
+  console.error('[CreatorAi] Error de la API:', {
     url: e.config?.url,
     method: e.config?.method,
     status: e.response?.status,
@@ -49,7 +49,7 @@ const hydrateMessage = (message, chatStatus) => {
   return message;
 };
 
-export const usePickleBotStore = defineStore('pickleBot', {
+export const useCreatorAiStore = defineStore('creatorAi', {
   state: () => ({
     chats: [],
     currentChat: null,
@@ -70,7 +70,7 @@ export const usePickleBotStore = defineStore('pickleBot', {
       if (!userId) return;
       this.loadingChats = true;
       try {
-        this.chats = await pickleBotService.listChats(userId);
+        this.chats = await creatorAiService.listChats(userId);
       } catch (e) {
         this.error = extractErrorMessage(e, 'Error al cargar el historial de chats.');
       } finally {
@@ -81,7 +81,7 @@ export const usePickleBotStore = defineStore('pickleBot', {
     async openChat(chatId) {
       this.error = null;
       try {
-        const data = await pickleBotService.getChat(chatId);
+        const data = await creatorAiService.getChat(chatId);
         this.currentChat = { id: data.id, title: data.title, status: data.status };
         this.messages = data.messages.map((m) => hydrateMessage(m, data.status));
 
@@ -135,7 +135,7 @@ export const usePickleBotStore = defineStore('pickleBot', {
 
       try {
         if (!this.currentChat) {
-          const created = await pickleBotService.createChat({ userId, title: 'Nuevo Chat' });
+          const created = await creatorAiService.createChat({ userId, title: 'Nuevo Chat' });
           this.currentChat = { id: created.id, title: created.title, status: created.status };
           isNewChat = true;
         }
@@ -150,7 +150,7 @@ export const usePickleBotStore = defineStore('pickleBot', {
 
       if (isNewChat) {
         try {
-          const updated = await pickleBotService.updateChatTitle(this.currentChat.id, deriveTitle(text));
+          const updated = await creatorAiService.updateChatTitle(this.currentChat.id, deriveTitle(text));
           this.currentChat.title = updated.title;
         } catch (e) {
           // No es crítico: el chat queda con el título placeholder si el rename falla.
@@ -203,7 +203,7 @@ export const usePickleBotStore = defineStore('pickleBot', {
     async sendPayload(payload) {
       this.isSending = true;
       try {
-        const data = await pickleBotService.sendMessage(this.currentChat.id, payload);
+        const data = await creatorAiService.sendMessage(this.currentChat.id, payload);
         this.currentChat.status = data.status;
         this.messages.push(hydrateMessage(data, data.status));
       } catch (e) {
@@ -221,7 +221,7 @@ export const usePickleBotStore = defineStore('pickleBot', {
 
     async renameChat(chatId, title) {
       try {
-        const updated = await pickleBotService.updateChatTitle(chatId, title);
+        const updated = await creatorAiService.updateChatTitle(chatId, title);
         const idx = this.chats.findIndex((c) => c.id === chatId);
         if (idx !== -1) this.chats[idx] = updated;
         if (this.currentChat?.id === chatId) this.currentChat.title = updated.title;
@@ -232,7 +232,7 @@ export const usePickleBotStore = defineStore('pickleBot', {
 
     async removeChat(chatId) {
       try {
-        await pickleBotService.deleteChat(chatId);
+        await creatorAiService.deleteChat(chatId);
         this.chats = this.chats.filter((c) => c.id !== chatId);
         if (this.currentChat?.id === chatId) this.startNewChat();
       } catch (e) {
@@ -242,7 +242,7 @@ export const usePickleBotStore = defineStore('pickleBot', {
 
     async switchProvider(provider) {
       try {
-        const data = await pickleBotService.switchProvider(provider);
+        const data = await creatorAiService.switchProvider(provider);
         this.provider = data.provider;
       } catch (e) {
         this.error = extractErrorMessage(e, 'Error al cambiar el proveedor.');
@@ -251,7 +251,7 @@ export const usePickleBotStore = defineStore('pickleBot', {
 
     async switchEmbeddingProvider(provider) {
       try {
-        const data = await pickleBotService.switchEmbeddingProvider(provider);
+        const data = await creatorAiService.switchEmbeddingProvider(provider);
         this.embeddingProvider = data.provider;
       } catch (e) {
         this.error = extractErrorMessage(e, 'Error al cambiar el proveedor de embeddings.');

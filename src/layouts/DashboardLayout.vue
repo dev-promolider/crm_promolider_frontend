@@ -679,8 +679,8 @@ const aulaVirtualItems = [
     slug: 'courses.subs'
   },
   {
-    to: '/pickle-bot',
-    label: 'Pickle Bot',
+    to: '/creator-ai',
+    label: 'Creator AI™',
     icon: Bot,
     slug: 'chatgpt.index'
   }

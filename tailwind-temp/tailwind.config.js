@@ -1,10 +1,10 @@
 module.exports = {
   content: [
     "../src/features/registration/views/PreregistroLandingView.vue",
-    "../src/features/picklebot/views/PickleBotView.vue",
-    "../src/features/picklebot/components/PickleFormMessage.vue",
-    "../src/features/picklebot/components/PickleTitlesMessage.vue",
-    "../src/features/picklebot/components/PickleCourseDraftMessage.vue"
+    "../src/features/creator-ai/views/CreatorAiView.vue",
+    "../src/features/creator-ai/components/CreatorAiFormMessage.vue",
+    "../src/features/creator-ai/components/CreatorAiTitlesMessage.vue",
+    "../src/features/creator-ai/components/CreatorAiCourseDraftMessage.vue"
   ],
   theme: {
     extend: {
