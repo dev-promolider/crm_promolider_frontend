@@ -21,16 +21,24 @@
 
       <div class="form-card">
         <header class="card-head">
-          <h2>Crear tu cuenta Promolíder</h2>
-          <p class="subtitle">Completa tus datos y elige cómo quieres empezar. Es un solo paso.</p>
+          <h2>{{ tituloFormulario }}</h2>
+          <p class="subtitle">{{ subtituloFormulario }}</p>
         </header>
+
+        <div v-if="perfilDelEnlace" class="perfil-banner" :class="{ gratis: !isDistributor }">
+          <component :is="PERFILES[perfilRol].icon" :size="20" />
+          <div>
+            <strong>{{ PERFILES[perfilRol].label }}</strong>
+            <span>{{ isDistributor ? 'Elige tu membresía y completa el pago para activar tu cuenta.' : 'Tu registro es gratuito: no se te cobra nada por publicar.' }}</span>
+          </div>
+        </div>
 
         <form @submit.prevent="submitForm" novalidate>
 
           <!-- Datos de acceso -->
           <section class="form-section">
             <div class="section-head">
-              <span class="section-number">1</span>
+              <span class="section-number">{{ num('acceso') }}</span>
               <div>
                 <h3>Datos de acceso</h3>
                 <p>Con esto entrarás a la plataforma.</p>
@@ -91,7 +99,7 @@
           <!-- Datos personales -->
           <section class="form-section">
             <div class="section-head">
-              <span class="section-number">2</span>
+              <span class="section-number">{{ num('datos') }}</span>
               <div>
                 <h3>Tus datos personales</h3>
                 <p>Los necesitamos para verificar tu identidad y emitir tus pagos.</p>
@@ -183,10 +191,10 @@
             </div>
           </section>
 
-          <!-- Perfil -->
-          <section class="form-section">
+          <!-- Perfil: solo si el enlace no lo trae decidido -->
+          <section class="form-section" v-if="!perfilDelEnlace">
             <div class="section-head">
-              <span class="section-number">3</span>
+              <span class="section-number">{{ num('perfil') }}</span>
               <div>
                 <h3>¿Cómo quieres empezar?</h3>
                 <p>Puedes elegir los dos. Un productor también puede ser distribuidor, y al revés.</p>
@@ -226,7 +234,7 @@
           <!-- Membresía: solo para el perfil de distribuidor -->
           <section class="form-section" v-if="showPlans">
             <div class="section-head">
-              <span class="section-number">4</span>
+              <span class="section-number">{{ num('planes') }}</span>
               <div>
                 <h3>Elige tu membresía</h3>
                 <p>La membresía aplica a tu perfil de distribuidor y define tus comisiones.</p>
@@ -248,7 +256,7 @@
           <!-- Pago: solo si hay algo que cobrar -->
           <section class="form-section" v-if="totalCost > 0">
             <div class="section-head">
-              <span class="section-number">5</span>
+              <span class="section-number">{{ num('pago') }}</span>
               <div>
                 <h3>Método de pago</h3>
                 <p>Elige cómo quieres pagar tu membresía {{ selectedAccountName }}.</p>
@@ -416,6 +424,44 @@ const availableProfiles = computed(() => {
 const isProducer = computed(() => profiles.value.includes('Producer'));
 const isDistributor = computed(() => profiles.value.includes('Distributor'));
 
+/**
+ * El panel de Registro decide a quién invita antes de generar el enlace y lo pasa como
+ * `?perfil=`. Cuando viene, el formulario no pregunta el perfil: el productor se registra
+ * gratis y al distribuidor se le cobra la membresía. Sin el parámetro (enlaces antiguos)
+ * se mantiene el comportamiento anterior y el perfil se elige aquí dentro.
+ */
+const PERFIL_POR_PARAMETRO = { productor: 'Producer', distribuidor: 'Distributor' };
+
+const perfilDelEnlace = computed(() => {
+  const valor = String(route.query.perfil || '').toLowerCase();
+  return PERFIL_POR_PARAMETRO[valor] ? valor : null;
+});
+
+const perfilRol = computed(() => PERFIL_POR_PARAMETRO[perfilDelEnlace.value] || '');
+
+const tituloFormulario = computed(() => {
+  if (perfilRol.value === 'Producer') return 'Crea tu cuenta de productor';
+  if (perfilRol.value === 'Distributor') return 'Crea tu cuenta de distribuidor';
+  return 'Crear tu cuenta Promolíder';
+});
+
+const subtituloFormulario = computed(() => {
+  if (perfilRol.value === 'Producer') return 'Completa tus datos y empieza a publicar. Es un solo paso y no cuesta nada.';
+  if (perfilRol.value === 'Distributor') return 'Completa tus datos y elige tu membresía. Es un solo paso.';
+  return 'Completa tus datos y elige cómo quieres empezar. Es un solo paso.';
+});
+
+// Numeración de las secciones visibles, que cambian según el perfil.
+const seccionesVisibles = computed(() => {
+  const secciones = ['acceso', 'datos'];
+  if (!perfilDelEnlace.value) secciones.push('perfil');
+  if (showPlans.value) secciones.push('planes');
+  if (totalCost.value > 0) secciones.push('pago');
+  return secciones;
+});
+
+const num = (seccion) => seccionesVisibles.value.indexOf(seccion) + 1;
+
 const profilesSummary = computed(() => {
   if (!profiles.value.length) return 'Sin elegir';
   return profiles.value.map(value => PERFILES[value]?.label || value).join(' y ');
@@ -531,6 +577,14 @@ onMounted(async () => {
 
       const data = await getFormData();
       formDataLists.value = data?.success ? data.data : data;
+
+      if (perfilRol.value) {
+        profiles.value = [perfilRol.value];
+        // Al productor no se le pregunta el plan: entra con el gratuito.
+        if (perfilRol.value === 'Producer' && freePlan.value) {
+          form.id_account_type = freePlan.value.id;
+        }
+      }
     } else {
       error.value = 'El enlace no es válido o ya expiró.';
     }
@@ -841,6 +895,43 @@ const submitForm = async () => {
   margin: 0;
   font-size: 15px;
   line-height: 1.5;
+}
+
+/* Aviso del perfil que trae el enlace */
+.perfil-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 20px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #bfdbfe;
+}
+.perfil-banner.gratis {
+  background: rgba(24, 214, 0, 0.1);
+  border-color: rgba(24, 214, 0, 0.35);
+  color: #bbf7d0;
+}
+.perfil-banner svg {
+  flex-shrink: 0;
+  color: #60a5fa;
+}
+.perfil-banner.gratis svg { color: #4ade80; }
+.perfil-banner div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.perfil-banner strong {
+  font-size: 15px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+.perfil-banner span {
+  font-size: 13.5px;
+  line-height: 1.4;
 }
 
 /* Secciones */
