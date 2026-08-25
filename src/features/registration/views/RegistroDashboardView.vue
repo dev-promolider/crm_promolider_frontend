@@ -1,5 +1,6 @@
 <script setup>
-import { ref, onMounted, computed, onUnmounted } from 'vue';
+import { ref, onMounted, computed, onUnmounted, watch } from 'vue';
+import { ChevronLeft, ChevronRight, Search } from 'lucide-vue-next';
 import { useRegistroDashboardStore } from '../stores/registroDashboardStore';
 
 const store = useRegistroDashboardStore();
@@ -167,10 +168,50 @@ const backendEnviaRoles = computed(() =>
   store.directs.some(row => Array.isArray(row.roles))
 );
 
-const directosFiltrados = computed(() => {
+const directosDelPerfil = computed(() => {
   if (!perfilActual.value || !backendEnviaRoles.value) return store.directs;
   return store.directs.filter(row => (row.roles || []).includes(perfilActual.value.rol));
 });
+
+const busqueda = ref('');
+const pagina = ref(1);
+const POR_PAGINA = 10;
+
+const directosFiltrados = computed(() => {
+  const texto = busqueda.value.trim().toLowerCase();
+  if (!texto) return directosDelPerfil.value;
+
+  return directosDelPerfil.value.filter(row => {
+    const campos = [row.nombres || row.nombre, row.apellidos, row.correo, row.whatsapp];
+    return campos.some(campo => String(campo || '').toLowerCase().includes(texto));
+  });
+});
+
+const totalPaginas = computed(() =>
+  Math.max(1, Math.ceil(directosFiltrados.value.length / POR_PAGINA))
+);
+
+const directosPaginados = computed(() => {
+  const desde = (pagina.value - 1) * POR_PAGINA;
+  return directosFiltrados.value.slice(desde, desde + POR_PAGINA);
+});
+
+const rangoMostrado = computed(() => {
+  if (!directosFiltrados.value.length) return '0';
+  const desde = (pagina.value - 1) * POR_PAGINA + 1;
+  const hasta = Math.min(pagina.value * POR_PAGINA, directosFiltrados.value.length);
+  return `${desde}–${hasta}`;
+});
+
+// Al cambiar de perfil o de búsqueda, la página actual puede quedar fuera de rango.
+watch([busqueda, perfil], () => { pagina.value = 1; });
+watch(totalPaginas, (total) => {
+  if (pagina.value > total) pagina.value = total;
+});
+
+const irA = (destino) => {
+  pagina.value = Math.min(Math.max(1, destino), totalPaginas.value);
+};
 
 const esProductor = computed(() => perfil.value === 'productor');
 
@@ -329,13 +370,22 @@ const getInitials = (nombres, apellidos) => {
 
       <!-- Listado -->
       <div class="card">
-        <div class="card-header">
+        <div class="card-header tabla-header">
           <div>
             <h3 class="card-title">Mis {{ perfilActual.titulo.toLowerCase() }}es directos</h3>
             <span class="card-meta">
               {{ directosFiltrados.length }}
               {{ directosFiltrados.length === 1 ? 'persona registrada' : 'personas registradas' }} con tu enlace
             </span>
+          </div>
+
+          <div class="buscador">
+            <Search :size="17" />
+            <input
+              type="search" v-model="busqueda" class="buscador-input"
+              placeholder="Buscar por nombre, apellido, correo o teléfono"
+              aria-label="Buscar en el listado"
+            />
           </div>
         </div>
 
@@ -346,8 +396,14 @@ const getInitials = (nombres, apellidos) => {
 
         <div v-else-if="directosFiltrados.length === 0" class="empty-state">
           <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="empty-icon"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-          <h4>Todavía no tienes {{ perfilActual.titulo.toLowerCase() }}es directos.</h4>
-          <p>Genera un enlace y compártelo para empezar.</p>
+          <template v-if="busqueda.trim()">
+            <h4>Ningún resultado para «{{ busqueda }}».</h4>
+            <p>Prueba con otro nombre, apellido, correo o teléfono.</p>
+          </template>
+          <template v-else>
+            <h4>Todavía no tienes {{ perfilActual.titulo.toLowerCase() }}es directos.</h4>
+            <p>Genera un enlace y compártelo para empezar.</p>
+          </template>
         </div>
 
         <div v-else class="custom-table-wrapper">
@@ -358,6 +414,7 @@ const getInitials = (nombres, apellidos) => {
               <col v-if="!esProductor" class="col-posicion" />
               <col class="col-telefono" />
               <col class="col-correo" />
+              <col v-if="!esProductor" class="col-invitados" />
               <col v-if="esProductor" class="col-cursos" />
               <col v-if="esProductor" class="col-vendido" />
               <col class="col-fecha" />
@@ -369,13 +426,14 @@ const getInitials = (nombres, apellidos) => {
                 <th v-if="!esProductor" class="center">Posición</th>
                 <th>Teléfono</th>
                 <th>Correo</th>
+                <th v-if="!esProductor" class="center">Invitados</th>
                 <th v-if="esProductor" class="center">Cursos</th>
                 <th v-if="esProductor">Más vendido</th>
                 <th class="center">Registro</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="row in directosFiltrados" :key="row.id">
+              <tr v-for="row in directosPaginados" :key="row.id">
                 <td>
                   <div class="user-cell">
                     <div class="avatar-initials">{{ getInitials(row.nombres ?? row.nombre, row.apellidos) }}</div>
@@ -396,6 +454,9 @@ const getInitials = (nombres, apellidos) => {
                   <span v-if="row.correo" class="contact-link mail" :title="row.correo">{{ row.correo }}</span>
                   <span v-else class="vacio">—</span>
                 </td>
+                <td v-if="!esProductor" class="center">
+                  <span class="conteo" :class="{ cero: !row.invitados }">{{ row.invitados ?? 0 }}</span>
+                </td>
                 <td v-if="esProductor" class="center">
                   <span class="conteo" :class="{ cero: !row.cursos_publicados }">{{ row.cursos_publicados ?? 0 }}</span>
                 </td>
@@ -413,6 +474,28 @@ const getInitials = (nombres, apellidos) => {
               </tr>
             </tbody>
           </table>
+        </div>
+
+        <div v-if="directosFiltrados.length" class="paginacion">
+          <span class="paginacion-info">
+            Mostrando {{ rangoMostrado }} de {{ directosFiltrados.length }}
+          </span>
+
+          <div v-if="totalPaginas > 1" class="paginacion-controles">
+            <button
+              type="button" class="pagina-btn" :disabled="pagina === 1"
+              @click="irA(pagina - 1)" aria-label="Página anterior"
+            >
+              <ChevronLeft :size="16" />
+            </button>
+            <span class="pagina-actual">{{ pagina }} de {{ totalPaginas }}</span>
+            <button
+              type="button" class="pagina-btn" :disabled="pagina === totalPaginas"
+              @click="irA(pagina + 1)" aria-label="Página siguiente"
+            >
+              <ChevronRight :size="16" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -727,12 +810,106 @@ body.dark-theme .custom-input { background-color: rgba(255, 255, 255, 0.03); }
 
 .col-persona  { width: 18%; }
 .col-apellidos { width: 14%; }
-.col-posicion { width: 11%; }
+.col-posicion { width: 10%; }
 .col-telefono { width: 13%; }
 .col-correo   { width: 21%; }
+.col-invitados { width: 9%; }
 .col-cursos   { width: 8%; }
 .col-vendido  { width: 18%; }
 .col-fecha    { width: 11%; }
+
+/* Buscador */
+.tabla-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+.buscador {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 14px;
+  min-width: 320px;
+  flex: 1;
+  max-width: 420px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background-color: rgba(0, 0, 0, 0.03);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+body.dark-theme .buscador { background-color: rgba(255, 255, 255, 0.03); }
+.buscador:focus-within {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(24, 214, 0, 0.15);
+}
+.buscador svg {
+  color: var(--text-light);
+  flex-shrink: 0;
+}
+.buscador-input {
+  flex: 1;
+  min-width: 0;
+  padding: 11px 0;
+  border: none;
+  background: transparent;
+  outline: none;
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: 14px;
+}
+.buscador-input::placeholder { color: var(--text-light); }
+
+/* Paginación */
+.paginacion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-top: 18px;
+  margin-top: 4px;
+  border-top: 1px solid var(--border-color);
+}
+.paginacion-info {
+  font-size: 13.5px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.paginacion-controles {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pagina-btn {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--border-color);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+.pagina-btn:hover:not(:disabled) {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+.pagina-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.pagina-actual {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-bold);
+  font-variant-numeric: tabular-nums;
+  min-width: 68px;
+  text-align: center;
+}
 
 .custom-table th {
   text-align: left;

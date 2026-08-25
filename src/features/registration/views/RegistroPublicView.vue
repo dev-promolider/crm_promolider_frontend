@@ -243,7 +243,7 @@
 
             <div class="plans-grid" role="radiogroup" aria-label="Membresía">
               <MembershipPlanCard
-                v-for="plan in visiblePlans" :key="plan.id"
+                v-for="plan in planesParaElegir" :key="plan.id"
                 :plan="plan"
                 :selected="form.id_account_type === plan.id"
                 :badge="planBadge(plan)"
@@ -439,6 +439,16 @@ const perfilDelEnlace = computed(() => {
 
 const perfilRol = computed(() => PERFIL_POR_PARAMETRO[perfilDelEnlace.value] || '');
 
+/**
+ * Pierna que el patrocinador eligió en «Ajuste de pierna» al generar el enlace. Viene con
+ * los datos del enlace validado, no por la URL, para que no se pueda cambiar a mano.
+ * Aquí iba 'izquierda' fija, así que todo el que pagaba con tarjeta acababa en esa pierna
+ * aunque el patrocinador hubiera elegido la derecha.
+ */
+const ladoDelPatrocinador = computed(() =>
+  Number(sponsor.value?.position) === 1 ? 'derecha' : 'izquierda'
+);
+
 const tituloFormulario = computed(() => {
   if (perfilRol.value === 'Producer') return 'Crea tu cuenta de productor';
   if (perfilRol.value === 'Distributor') return 'Crea tu cuenta de distribuidor';
@@ -488,6 +498,16 @@ const visiblePlans = computed(() => {
 });
 
 const freePlan = computed(() => visiblePlans.value.find(plan => parseFloat(plan.price) === 0));
+
+/**
+ * Los planes que se le ofrecen al invitado. El distribuidor no ve el gratuito: su perfil
+ * existe para vender la membresía, así que empieza en el primer nivel de pago. El plan
+ * gratuito se sigue usando internamente para dar de alta al productor.
+ */
+const planesParaElegir = computed(() => {
+  if (!isDistributor.value) return visiblePlans.value;
+  return visiblePlans.value.filter(plan => parseFloat(plan.price) > 0);
+});
 
 const selectedAccount = computed(() =>
   visiblePlans.value.find(plan => plan.id === form.id_account_type) || null
@@ -724,7 +744,7 @@ const submitForm = async () => {
         tipo_cuenta: realAccountName.value,
         metodo_pago: formDataLists.value.payment_methods.find(p => p.id === form.id_payment_method)?.name || 'openpay',
         referidor: sponsor.value.username,
-        lado: 'izquierda'
+        lado: ladoDelPatrocinador.value
       });
 
       if (response.payment_url) {
