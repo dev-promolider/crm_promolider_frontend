@@ -1,0 +1,103 @@
+/* ==================================
+   RED DE SEGURIDAD RESPONSIVE
+
+   El CRM se maquetó para escritorio: la mayoría de vistas no tiene ninguna media
+   query propia. Estas reglas evitan los tres fallos que rompen una pantalla
+   pequeña —tablas que desbordan, rejillas de varias columnas e imágenes fijas—
+   sin entrar a rediseñar cada vista.
+
+   Las reglas de dentro de las media queries llevan !important a propósito: los
+   estilos que sobreescriben son `scoped` de cada componente, se cargan después
+   que este archivo y ganarían por orden de cascada.
+================================== */
+
+/* ----------------------------------
+   Tablas
+   `.table-responsive` se usa en 24 sitios del CRM pero no estaba definida en
+   ninguna hoja de estilos, así que esas tablas desbordaban la pantalla.
+---------------------------------- */
+.table-responsive,
+.custom-table-wrapper,
+.table-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+
+/* ----------------------------------
+   Medios
+---------------------------------- */
+img,
+video,
+canvas,
+iframe {
+  max-width: 100%;
+}
+
+img {
+  height: auto;
+}
+
+@media (max-width: 1024px) {
+  /* Rejillas de tarjetas: de tres o más columnas a dos */
+  .stats-grid,
+  .cards-grid,
+  .radar-grid,
+  .template-grid {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Cualquier rejilla del CRM pasa a una sola columna */
+  .form-grid,
+  .stats-grid,
+  .cards-grid,
+  .radar-grid,
+  .template-grid,
+  .mlm-points-grid,
+  .widgets-grid,
+  .filters-grid,
+  .info-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Cabeceras y barras de herramientas que asumían espacio de sobra */
+  .page-header,
+  .card-header,
+  .table-toolbar,
+  .section-header {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  /* Los diálogos ocupaban un ancho fijo mayor que la pantalla */
+  .modal-container,
+  .modal-content,
+  .opc-modal-container {
+    width: calc(100vw - 24px) !important;
+    max-width: calc(100vw - 24px) !important;
+    max-height: 88vh;
+    overflow-y: auto;
+  }
+
+  /* Un botón por línea es más usable que dos apretados */
+  .modal-actions,
+  .form-actions,
+  .card-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  /* Tipografía de titulares, pensada para pantallas anchas */
+  .page-title {
+    font-size: 20px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .card,
+  .dashboard-card {
+    padding: 16px !important;
+  }
+}

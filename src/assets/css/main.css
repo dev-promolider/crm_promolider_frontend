@@ -5,6 +5,8 @@
 @import './dashboard.css';
 @import './login.css';
 @import './views.css';
+/* Va al final: sus media queries corrigen lo que definen las hojas anteriores */
+@import './responsive.css';
 
 /* CSS Reset básico global */
 * {
