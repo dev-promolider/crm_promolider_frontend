@@ -766,15 +766,20 @@ const submitForm = async () => {
 </script>
 
 <style scoped>
+/*
+ * Página pública en tema claro. Los colores van explícitos y no por las variables del CRM:
+ * `variables.css` se redefine entera bajo `body.dark-theme`, y un visitante que tuviera esa
+ * clase guardada vería el formulario en oscuro. Aquí siempre es claro.
+ */
 .registro-public-page {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #0b0f19;
+  background: #eef2f6;
   position: relative;
   overflow: hidden;
-  color: #f8fafc;
+  color: #1e293b;
   font-family: 'Inter', system-ui, sans-serif;
   padding: 40px 20px;
 }
@@ -794,14 +799,14 @@ const submitForm = async () => {
   left: -10%;
   width: 50vw;
   height: 50vw;
-  background: radial-gradient(circle, rgba(24, 214, 0, 0.15) 0%, rgba(24, 214, 0, 0) 70%);
+  background: radial-gradient(circle, rgba(24, 214, 0, 0.18) 0%, rgba(24, 214, 0, 0) 70%);
 }
 .registro-public-page::after {
   bottom: -10%;
   right: -10%;
   width: 50vw;
   height: 50vw;
-  background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0) 70%);
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.14) 0%, rgba(59, 130, 246, 0) 70%);
 }
 
 .registration-container {
@@ -820,64 +825,63 @@ const submitForm = async () => {
   gap: 16px;
   text-align: center;
   z-index: 1;
-  color: #cbd5e1;
+  color: #475569;
 }
 .error-state h2 {
   margin: 0;
   font-size: 24px;
-  color: #ffffff;
+  color: #0f172a;
 }
 .error-icon {
-  color: #ef4444;
+  color: #dc2626;
 }
 .back-link {
   margin-top: 8px;
   padding: 12px 26px;
   border-radius: 12px;
-  background: rgba(24, 214, 0, 0.15);
-  border: 1px solid rgba(24, 214, 0, 0.4);
-  color: #4ade80;
+  background: #ffffff;
+  border: 1px solid #18d600;
+  color: #0c7a00;
   text-decoration: none;
   font-weight: 600;
   transition: background 0.2s ease;
 }
 .back-link:hover {
-  background: rgba(24, 214, 0, 0.25);
+  background: #f0fdf4;
 }
 
 /* Cabecera del patrocinador */
 .sponsor-banner {
-  background: linear-gradient(90deg, rgba(24, 214, 0, 0.15) 0%, rgba(24, 214, 0, 0.05) 100%);
-  border: 1px solid rgba(24, 214, 0, 0.3);
+  background: #ffffff;
+  border: 1px solid #bbf7d0;
+  border-left: 4px solid #18d600;
   padding: 16px 24px;
   border-radius: 16px;
   margin-bottom: 20px;
   display: flex;
   align-items: center;
   gap: 12px;
-  color: #e2e8f0;
+  color: #334155;
   font-size: 15px;
-  box-shadow: 0 4px 20px rgba(24, 214, 0, 0.1);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
 }
 .sponsor-banner svg {
-  color: #4ade80;
+  color: #12a800;
   flex-shrink: 0;
 }
 .sponsor-banner strong {
-  color: #22c55e;
+  color: #0c7a00;
   font-size: 17px;
   font-weight: 700;
 }
 
-/* Tarjeta de cristal */
+/* Tarjeta principal */
 .form-card {
-  background: rgba(17, 24, 39, 0.7);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+  background: #ffffff;
   padding: 44px;
   border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.08);
 }
 
 .card-head {
@@ -885,13 +889,13 @@ const submitForm = async () => {
 }
 .card-head h2 {
   margin: 0 0 8px 0;
-  color: #ffffff;
+  color: #0f172a;
   font-size: 30px;
   font-weight: 800;
   letter-spacing: -0.5px;
 }
 .subtitle {
-  color: #94a3b8;
+  color: #64748b;
   margin: 0;
   font-size: 15px;
   line-height: 1.5;
@@ -905,20 +909,22 @@ const submitForm = async () => {
   margin-top: 20px;
   padding: 14px 18px;
   border-radius: 14px;
-  background: rgba(59, 130, 246, 0.1);
-  border: 1px solid rgba(59, 130, 246, 0.3);
-  color: #bfdbfe;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
 }
 .perfil-banner.gratis {
-  background: rgba(24, 214, 0, 0.1);
-  border-color: rgba(24, 214, 0, 0.35);
-  color: #bbf7d0;
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #166534;
 }
 .perfil-banner svg {
   flex-shrink: 0;
-  color: #60a5fa;
+  color: #2563eb;
 }
-.perfil-banner.gratis svg { color: #4ade80; }
+.perfil-banner.gratis svg {
+  color: #12a800;
+}
 .perfil-banner div {
   display: flex;
   flex-direction: column;
@@ -927,7 +933,7 @@ const submitForm = async () => {
 .perfil-banner strong {
   font-size: 15px;
   font-weight: 700;
-  color: #f8fafc;
+  color: #0f172a;
 }
 .perfil-banner span {
   font-size: 13.5px;
@@ -937,7 +943,7 @@ const submitForm = async () => {
 /* Secciones */
 .form-section {
   padding: 30px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 1px solid #eef2f6;
 }
 .form-section:last-of-type {
   border-bottom: none;
@@ -955,9 +961,8 @@ const submitForm = async () => {
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: rgba(24, 214, 0, 0.15);
-  border: 1px solid rgba(24, 214, 0, 0.4);
-  color: #4ade80;
+  background: #18d600;
+  color: #ffffff;
   font-size: 14px;
   font-weight: 700;
   flex-shrink: 0;
@@ -966,12 +971,12 @@ const submitForm = async () => {
   margin: 0 0 3px 0;
   font-size: 18px;
   font-weight: 700;
-  color: #f1f5f9;
+  color: #0f172a;
 }
 .section-head p {
   margin: 0;
   font-size: 14px;
-  color: #94a3b8;
+  color: #64748b;
 }
 
 .section-note {
@@ -981,14 +986,14 @@ const submitForm = async () => {
   margin: 18px 0 0 0;
   padding: 12px 16px;
   border-radius: 12px;
-  background: rgba(59, 130, 246, 0.1);
-  border: 1px solid rgba(59, 130, 246, 0.25);
-  color: #bfdbfe;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
   font-size: 13.5px;
 }
 .section-note svg {
   flex-shrink: 0;
-  color: #60a5fa;
+  color: #2563eb;
 }
 
 /* Campos */
@@ -1008,13 +1013,13 @@ const submitForm = async () => {
 .form-group label {
   font-size: 13.5px;
   font-weight: 600;
-  color: #cbd5e1;
+  color: #334155;
 }
 .req {
-  color: #4ade80;
+  color: #12a800;
 }
 .optional {
-  color: #64748b;
+  color: #94a3b8;
   font-weight: 400;
 }
 
@@ -1022,30 +1027,32 @@ const submitForm = async () => {
   width: 100%;
   padding: 13px 16px;
   border-radius: 12px;
-  background: rgba(15, 23, 42, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #f8fafc;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
   font-size: 14.5px;
   font-family: inherit;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 .custom-input::placeholder {
-  color: #64748b;
+  color: #94a3b8;
 }
 .custom-input:focus {
   outline: none;
+  background: #ffffff;
   border-color: #18d600;
-  box-shadow: 0 0 0 3px rgba(24, 214, 0, 0.15);
+  box-shadow: 0 0 0 3px rgba(24, 214, 0, 0.18);
 }
 .custom-input.invalid {
-  border-color: #ef4444;
+  border-color: #dc2626;
+  background: #fef2f2;
 }
 .custom-input:disabled {
   opacity: 0.6;
 }
 select.custom-input option {
-  background: #0f172a;
-  color: #f8fafc;
+  background: #ffffff;
+  color: #0f172a;
 }
 textarea.custom-input {
   resize: vertical;
@@ -1071,22 +1078,22 @@ textarea.custom-input {
   border: none;
   border-radius: 9px;
   background: transparent;
-  color: #94a3b8;
+  color: #64748b;
   cursor: pointer;
   transition: color 0.2s ease, background 0.2s ease;
 }
 .input-action:hover {
-  color: #f8fafc;
-  background: rgba(255, 255, 255, 0.07);
+  color: #0f172a;
+  background: #e2e8f0;
 }
 
 .hint {
   font-size: 12.5px;
-  color: #64748b;
+  color: #94a3b8;
 }
 .error-text {
   font-size: 12.5px;
-  color: #f87171;
+  color: #dc2626;
   font-weight: 500;
 }
 
@@ -1103,23 +1110,24 @@ textarea.custom-input {
   gap: 14px;
   padding: 20px;
   border-radius: 18px;
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   cursor: pointer;
   transition: transform 0.25s ease, border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
 }
 .profile-card:hover {
   transform: translateY(-3px);
-  border-color: rgba(24, 214, 0, 0.45);
+  border-color: #18d600;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
 }
 .profile-card:focus-visible {
   outline: 2px solid #18d600;
   outline-offset: 3px;
 }
 .profile-card.selected {
-  background: linear-gradient(150deg, rgba(24, 214, 0, 0.18) 0%, rgba(6, 78, 59, 0.45) 100%);
+  background: #f0fdf4;
   border-color: #18d600;
-  box-shadow: 0 16px 32px -14px rgba(24, 214, 0, 0.45);
+  box-shadow: 0 12px 26px -12px rgba(24, 214, 0, 0.55);
 }
 .profile-icon {
   display: grid;
@@ -1127,8 +1135,8 @@ textarea.custom-input {
   width: 44px;
   height: 44px;
   border-radius: 13px;
-  background: rgba(24, 214, 0, 0.15);
-  color: #4ade80;
+  background: #dcfce7;
+  color: #0c7a00;
   flex-shrink: 0;
 }
 .profile-body {
@@ -1141,21 +1149,21 @@ textarea.custom-input {
   margin: 0;
   font-size: 16px;
   font-weight: 700;
-  color: #f8fafc;
+  color: #0f172a;
 }
 .profile-body p {
   margin: 0;
   font-size: 13px;
   line-height: 1.45;
-  color: #94a3b8;
+  color: #64748b;
 }
 .profile-tag {
   align-self: flex-start;
   margin-top: 4px;
   padding: 3px 10px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  color: #cbd5e1;
+  background: #f1f5f9;
+  color: #475569;
   font-size: 11.5px;
   font-weight: 600;
 }
@@ -1166,10 +1174,10 @@ textarea.custom-input {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.25);
+  border: 2px solid #cbd5e1;
   display: grid;
   place-items: center;
-  color: #052e16;
+  color: #ffffff;
   transition: background 0.2s ease, border-color 0.2s ease;
 }
 .profile-card.selected .profile-check {
@@ -1194,8 +1202,8 @@ textarea.custom-input {
   margin-top: 30px;
   padding: 24px;
   border-radius: 18px;
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
 }
 .summary {
   display: flex;
@@ -1208,19 +1216,19 @@ textarea.custom-input {
   justify-content: space-between;
   gap: 28px;
   font-size: 14px;
-  color: #94a3b8;
+  color: #64748b;
 }
 .summary-row strong {
-  color: #e2e8f0;
+  color: #0f172a;
   font-weight: 600;
 }
 .summary-row.total {
   padding-top: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid #e2e8f0;
   font-size: 15px;
 }
 .summary-row.total strong {
-  color: #4ade80;
+  color: #0c7a00;
   font-size: 19px;
   font-weight: 800;
 }
@@ -1234,18 +1242,19 @@ textarea.custom-input {
   padding: 15px 30px;
   border: none;
   border-radius: 14px;
-  background: linear-gradient(135deg, #18d600 0%, #119e00 100%);
-  color: #052e16;
+  background: #18d600;
+  color: #ffffff;
   font-size: 15.5px;
   font-weight: 800;
   font-family: inherit;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
-  box-shadow: 0 14px 28px -12px rgba(24, 214, 0, 0.7);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  box-shadow: 0 12px 24px -12px rgba(24, 214, 0, 0.9);
 }
 .btn-submit:hover:not(:disabled) {
+  background: #119e00;
   transform: translateY(-2px);
-  box-shadow: 0 18px 34px -12px rgba(24, 214, 0, 0.8);
+  box-shadow: 0 16px 30px -12px rgba(24, 214, 0, 0.9);
 }
 .btn-submit:disabled {
   opacity: 0.6;
@@ -1256,7 +1265,7 @@ textarea.custom-input {
 .loader-spinner {
   width: 20px;
   height: 20px;
-  border: 2.5px solid rgba(255, 255, 255, 0.25);
+  border: 2.5px solid rgba(255, 255, 255, 0.5);
   border-top-color: #ffffff;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
@@ -1265,6 +1274,7 @@ textarea.custom-input {
   width: 42px;
   height: 42px;
   border-width: 3px;
+  border-color: rgba(24, 214, 0, 0.2);
   border-top-color: #18d600;
 }
 @keyframes spin {

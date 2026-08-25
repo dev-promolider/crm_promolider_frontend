@@ -82,6 +82,7 @@ const formatMoney = (value) => Number(value).toFixed(2);
 </script>
 
 <style scoped>
+/* Tema claro fijo, igual que la página que la contiene. */
 .plan-card {
   position: relative;
   display: flex;
@@ -89,23 +90,24 @@ const formatMoney = (value) => Number(value).toFixed(2);
   gap: 16px;
   padding: 22px 20px;
   border-radius: 18px;
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   cursor: pointer;
   transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
 }
 .plan-card:hover {
   transform: translateY(-4px);
-  border-color: rgba(24, 214, 0, 0.45);
+  border-color: #18d600;
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.1);
 }
 .plan-card:focus-visible {
   outline: 2px solid #18d600;
   outline-offset: 3px;
 }
 .plan-card.selected {
-  background: linear-gradient(150deg, rgba(24, 214, 0, 0.22) 0%, rgba(6, 78, 59, 0.5) 100%);
+  background: #f0fdf4;
   border-color: #18d600;
-  box-shadow: 0 18px 36px -14px rgba(24, 214, 0, 0.5);
+  box-shadow: 0 16px 32px -14px rgba(24, 214, 0, 0.6);
 }
 
 .plan-badge {
@@ -115,7 +117,7 @@ const formatMoney = (value) => Number(value).toFixed(2);
   padding: 4px 12px;
   border-radius: 999px;
   background: #18d600;
-  color: #052e16;
+  color: #ffffff;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.4px;
@@ -133,15 +135,15 @@ const formatMoney = (value) => Number(value).toFixed(2);
   width: 38px;
   height: 38px;
   border-radius: 12px;
-  background: rgba(24, 214, 0, 0.15);
-  color: #4ade80;
+  background: #dcfce7;
+  color: #0c7a00;
   flex-shrink: 0;
 }
 .plan-name {
   margin: 0;
   font-size: 17px;
   font-weight: 700;
-  color: #f8fafc;
+  color: #0f172a;
   line-height: 1.2;
 }
 
@@ -149,7 +151,7 @@ const formatMoney = (value) => Number(value).toFixed(2);
   display: flex;
   align-items: baseline;
   gap: 3px;
-  color: #ffffff;
+  color: #0f172a;
 }
 .plan-currency {
   font-size: 17px;
@@ -160,6 +162,7 @@ const formatMoney = (value) => Number(value).toFixed(2);
   font-size: 30px;
   font-weight: 800;
   letter-spacing: -1px;
+  font-variant-numeric: tabular-nums;
 }
 .plan-period {
   font-size: 13px;
@@ -168,7 +171,7 @@ const formatMoney = (value) => Number(value).toFixed(2);
 .plan-free {
   font-size: 28px;
   font-weight: 800;
-  color: #4ade80;
+  color: #0c7a00;
   letter-spacing: -0.5px;
 }
 
@@ -176,12 +179,12 @@ const formatMoney = (value) => Number(value).toFixed(2);
   list-style: none;
   margin: 0;
   padding: 14px 0 0 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid #e2e8f0;
   display: flex;
   flex-direction: column;
   gap: 8px;
   font-size: 13px;
-  color: #94a3b8;
+  color: #64748b;
 }
 .plan-detail li {
   display: flex;
@@ -189,11 +192,12 @@ const formatMoney = (value) => Number(value).toFixed(2);
   gap: 10px;
 }
 .plan-detail strong {
-  color: #e2e8f0;
+  color: #334155;
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 .plan-detail li.total strong {
-  color: #4ade80;
+  color: #0c7a00;
   font-weight: 700;
 }
 
@@ -204,10 +208,10 @@ const formatMoney = (value) => Number(value).toFixed(2);
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.25);
+  border: 2px solid #cbd5e1;
   display: grid;
   place-items: center;
-  color: #052e16;
+  color: #ffffff;
   transition: background 0.2s ease, border-color 0.2s ease;
 }
 .plan-card.selected .plan-check {
