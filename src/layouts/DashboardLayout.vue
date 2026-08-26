@@ -21,7 +21,10 @@
     </div>
 
     <!-- SIDEBAR -->
-    <aside class="sidebar" :class="{ 'collapsed': isSidebarCollapsed }" @mouseenter="handleSidebarMouseEnter" @mouseleave="handleSidebarMouseLeave">
+    <!-- Fondo que cierra el menú al tocar fuera, solo visible en pantallas pequeñas -->
+    <div v-if="isMobileSidebarOpen" class="sidebar-overlay" @click="isMobileSidebarOpen = false"></div>
+
+    <aside class="sidebar" :class="{ 'collapsed': isSidebarCollapsed, 'mobile-open': isMobileSidebarOpen }" @mouseenter="handleSidebarMouseEnter" @mouseleave="handleSidebarMouseLeave">
       <div class="sidebar-header" @click="isSidebarCollapsed = !isSidebarCollapsed">
         <div class="sidebar-logo">
           <img :src="isSidebarCollapsed ? '/images/logo/promolider_logo_collapse.png' : '/images/PromoliderCRMW.webp'" alt="Promolider" class="sidebar-logo-img" />
@@ -291,6 +294,14 @@
       <!-- NAVBAR -->
       <header class="topbar">
         <div class="topbar-left">
+          <!-- Abre el menú lateral en pantallas pequeñas, donde el sidebar está oculto -->
+          <button
+            type="button" class="menu-toggle" @click="isMobileSidebarOpen = true"
+            aria-label="Abrir menú"
+          >
+            <Menu :size="22" />
+          </button>
+
           <!-- Search input -->
           <div class="search-box" ref="searchContainer">
             <Search :size="18" />
@@ -760,6 +771,10 @@ const getAvatarUrl = (photoPath) => {
 };
 
 const isSidebarCollapsed = ref(true);
+
+// En pantallas pequeñas el sidebar se saca del flujo y se abre por encima del contenido.
+const isMobileSidebarOpen = ref(false);
+watch(() => route.fullPath, () => { isMobileSidebarOpen.value = false; });
 const isDropdownOpen = ref(false);
 const marketingExpanded = ref(route.path.startsWith('/marketing'));
 const solicitudesExpanded = ref(route.path.includes('/solicitudes'));
