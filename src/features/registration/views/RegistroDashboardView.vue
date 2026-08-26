@@ -442,9 +442,10 @@ const getInitials = (nombres, apellidos) => {
                 </td>
                 <td class="celda-texto">{{ row.apellidos || '—' }}</td>
                 <td v-if="!esProductor" class="center">
-                  <span class="badge" :class="row.lado === 'derecha' ? 'badge-blue' : 'badge-green'">
+                  <span v-if="row.lado" class="badge" :class="row.lado === 'derecha' ? 'badge-blue' : 'badge-green'">
                     {{ row.lado === 'derecha' ? 'Derecha' : 'Izquierda' }}
                   </span>
+                  <span v-else class="vacio" title="Todavía no tiene puesto en el árbol">—</span>
                 </td>
                 <td>
                   <span v-if="row.whatsapp" class="contact-link whatsapp">{{ row.whatsapp }}</span>
