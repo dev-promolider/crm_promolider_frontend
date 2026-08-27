@@ -1,27 +1,46 @@
 <template>
   <div class="course-detail-view">
-    <!-- Header: Detalles del Curso -->
-    <div class="card mb-4" v-if="course">
-      <div class="card-body">
-        <div class="course-header">
-          <div class="course-image-wrapper">
-            <img
-              v-if="course.url_portada || course.portada"
-              :src="getS3Url(course.url_portada || course.portada)"
-              class="course-image"
-              :alt="course.title"
-              @error="$event.target.src = '/img_mantenimiento.png'; $event.target.onerror = null;"
-            />
-            <div v-else class="course-image-placeholder">
-              <Monitor :size="48" style="color:#ccc" />
-            </div>
+    <!-- Botón Volver -->
+    <div class="mb-4">
+      <button class="btn-back-marketplace d-inline-flex align-items-center" @click="router.push('/marketing/marketplace')">
+        <ArrowLeft :size="18" class="mr-2" /> Regresar al Marketplace
+      </button>
+    </div>
+
+    <!-- Header Premium: Detalles del Curso -->
+    <div class="premium-hero-header mb-4" v-if="course">
+      <div class="hero-backdrop"></div>
+      <div class="hero-content">
+        <div class="hero-image-wrapper">
+          <img
+            v-if="course.url_portada || course.portada"
+            :src="getS3Url(course.url_portada || course.portada)"
+            class="hero-image"
+            :alt="course.title"
+            @error="$event.target.style.display='none'; $event.target.nextElementSibling.style.display='flex';"
+          />
+          <div class="hero-image-placeholder" :style="(course.url_portada || course.portada) ? 'display:none;' : 'display:flex;'">
+            <div class="placeholder-gradient"></div>
+            <Monitor :size="64" class="placeholder-icon" />
           </div>
-          <div class="course-info">
-            <h2 class="course-title">{{ course.title }}</h2>
-            <p class="course-description">{{ course.description || 'Sin descripción' }}</p>
-            <div class="course-meta mt-2">
-              <span class="badge">Curso</span>
-              <span v-if="course.price" class="text-muted ml-2">Precio: {{ course.currency }} {{ course.price }}</span>
+        </div>
+        <div class="hero-info">
+          <div class="hero-badges mb-2">
+            <span class="premium-badge"><Monitor :size="12" class="mr-1" style="position:relative; top:-1px;"/> CURSO DE FORMACIÓN</span>
+          </div>
+          <h1 class="hero-title">{{ course.title }}</h1>
+          <p class="hero-description">{{ course.description || 'Desbloquea tus habilidades paso a paso con este curso. Acceso inmediato a recursos, masterclasses y herramientas de alta calidad.' }}</p>
+          <div class="hero-meta mt-4">
+            <div class="price-tag" v-if="course.price">
+              <span class="currency">USD</span>
+              <span class="amount">${{ course.price }}</span>
+            </div>
+            <div class="price-tag free-tag" v-else>
+              <span class="amount">GRATIS</span>
+            </div>
+            <div class="stats-fake">
+              <span class="stat-item">⭐ 4.9 (Valoración)</span>
+              <span class="stat-item">👥 Contenido Premium</span>
             </div>
           </div>
         </div>
@@ -134,14 +153,79 @@
               <Image :size="40" class="empty-icon" />
               <p>No hay materiales promocionales disponibles aún. Se subirán desde "Mis Herramientas" en el Aula Virtual.</p>
             </div>
-            <div v-else class="row">
-              <div v-for="item in store.courseResources.promotional_materials" :key="item.id" class="col-md-4 mb-4">
-                <!-- Se implementará después cuando haya backend para esto -->
+            
+            <div v-else class="promotional-sections">
+              
+              <!-- Seccion de Descripciones -->
+              <div v-if="descripciones.length > 0" class="promo-section mb-5">
+                <h4 class="promo-section-title"><FileText :size="20" class="mr-2" style="position:relative; top:-2px;"/> Textos Persuasivos (Copy)</h4>
+                <div class="promotional-grid text-grid mt-3">
+                  <div v-for="item in descripciones" :key="item.id" class="card p-4 copy-card h-100 d-flex flex-column">
+                    <h6 class="font-weight-bold mb-3">{{ item.title || 'Texto Promocional' }}</h6>
+                    <div class="copy-text mb-4 flex-grow-1">
+                      {{ item.content }}
+                    </div>
+                    <button class="btn-promo-action" @click="copyToClipboard(item.content)">
+                      <Copy :size="14" class="mr-1"/> Copiar texto
+                    </button>
+                  </div>
+                </div>
               </div>
+
+              <!-- Seccion de Imagenes -->
+              <div v-if="imagenes.length > 0" class="promo-section mb-5">
+                <h4 class="promo-section-title"><Image :size="20" class="mr-2" style="position:relative; top:-2px;"/> Flyers y Banners</h4>
+                <div class="promotional-grid media-grid mt-3">
+                  <div v-for="item in imagenes" :key="item.id" class="card media-card p-2 h-100 d-flex flex-column">
+                    <div class="media-wrapper flex-grow-1 mb-2" style="cursor: pointer;" @click="previewMedia = item">
+                      <img :src="getS3Url(item.file_path)" class="media-img" />
+                    </div>
+                    <div class="promo-action-buttons w-100 mt-auto">
+                      <button class="btn-promo-action btn-promo-secondary flex-grow-1" @click="previewMedia = item">
+                        <Eye :size="14" class="mr-1"/> Ver
+                      </button>
+                      <a :href="getS3Url(item.file_path)" target="_blank" class="btn-promo-action btn-promo-primary flex-grow-1 text-center">
+                        <Download :size="14" class="mr-1"/> Descargar
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Seccion de Videos -->
+              <div v-if="videos.length > 0" class="promo-section mb-4">
+                <h4 class="promo-section-title"><Film :size="20" class="mr-2" style="position:relative; top:-2px;"/> Videos Promocionales</h4>
+                <div class="promotional-grid video-grid mt-3">
+                  <div v-for="item in videos" :key="item.id" class="card video-card p-3 h-100 d-flex flex-column">
+                    <h6 class="font-weight-bold mb-2">{{ item.title || 'Video' }}</h6>
+                    <div class="video-wrapper flex-grow-1 mb-3" style="cursor: pointer;" @click="previewMedia = item">
+                      <!-- El video no tiene controls por defecto si lo usan para preview clickeable, pero lo mantenemos por usabilidad. Usamos div overlay invisible para clickear -->
+                      <div class="video-click-overlay" style="position:absolute; inset:0; z-index:1;" @click="previewMedia = item"></div>
+                      <video :src="getS3Url(item.file_path)" class="video-player" controls preload="metadata"></video>
+                    </div>
+                    <div class="promo-action-buttons w-100">
+                      <button class="btn-promo-action btn-promo-secondary flex-grow-1" @click="previewMedia = item">
+                        <Eye :size="14" class="mr-1"/> Ver
+                      </button>
+                      <a :href="getS3Url(item.file_path)" target="_blank" class="btn-promo-action btn-promo-primary flex-grow-1 text-center">
+                        <Download :size="14" class="mr-1"/> Descargar
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Modal de Previsualización Full Screen -->
+    <div v-if="previewMedia" class="media-preview-overlay" @click="previewMedia = null">
+      <button class="close-preview" @click.stop="previewMedia = null"><X :size="24" /></button>
+      <img v-if="previewMedia.type === 'image' || previewMedia.type === 'banner'" :src="getS3Url(previewMedia.file_path)" class="preview-img" @click.stop />
+      <video v-if="previewMedia.type === 'video'" :src="getS3Url(previewMedia.file_path)" class="preview-video" controls autoplay @click.stop></video>
     </div>
   </div>
 </template>
@@ -152,7 +236,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useMarketplaceStore } from '../stores/marketplaceStore'
 import { useAuthStore } from '@/features/auth/stores/authStore'
 import {
-  Monitor, PlayCircle, BookOpen, Film, Image, Loader2, Layout
+  Monitor, PlayCircle, BookOpen, Film, Image, Loader2, Layout, Download, FileText, Copy, Eye, X, ArrowLeft
 } from 'lucide-vue-next'
 
 const S3_BASE = 'https://promolider-storage-user.s3-accelerate.amazonaws.com'
@@ -173,16 +257,30 @@ const store = useMarketplaceStore()
 const authStore = useAuthStore()
 
 const loading = ref(false)
-const activeTab = ref('masterclass')
+const activeTab = ref('promotional')
+const previewMedia = ref(null)
 
 const course = computed(() => store.currentCourse)
 
 const tabs = [
+  { key: 'promotional', label: 'Material Promocional', icon: Image },
   { key: 'masterclass', label: 'Masterclasses', icon: PlayCircle },
   { key: 'ebook', label: 'E-books', icon: BookOpen },
   { key: 'minicourse', label: 'Mini Cursos', icon: Film },
-  { key: 'promotional', label: 'Material Promocional', icon: Image },
 ]
+
+// Promotional Materials Splitting
+const descripciones = computed(() => store.courseResources.promotional_materials.filter(m => m.type === 'description'))
+const imagenes = computed(() => store.courseResources.promotional_materials.filter(m => m.type === 'image' || m.type === 'banner' || m.type === 'flyer'))
+const videos = computed(() => store.courseResources.promotional_materials.filter(m => m.type === 'video'))
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    alert('Texto copiado al portapapeles con éxito')
+  }).catch(err => {
+    console.error('Error al copiar: ', err)
+  })
+}
 
 function getResourceCount(type) {
   switch (type) {
@@ -238,52 +336,193 @@ onMounted(() => {
   to { opacity: 1; transform: translateY(0); }
 }
 
-.course-header {
-  display: flex;
-  gap: 24px;
-}
-.course-image-wrapper {
-  width: 250px;
-  height: 150px;
+/* Botón Regresar */
+.btn-back-marketplace {
+  display: inline-flex;
+  align-items: center;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
   border-radius: 8px;
-  overflow: hidden;
-  background: var(--bg-main);
-  flex-shrink: 0;
+  padding: 10px 20px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
 }
-.course-image {
+.btn-back-marketplace:hover {
+  background: var(--bg-main);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  color: var(--primary-color);
+}
+
+/* Premium Hero Header */
+.premium-hero-header {
+  position: relative;
+  border-radius: 20px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+}
+.hero-backdrop {
+  position: absolute;
+  top: -50%; left: -50%; right: -50%; bottom: -50%;
+  background: radial-gradient(circle at top right, rgba(0, 208, 228, 0.15) 0%, transparent 40%),
+              radial-gradient(circle at bottom left, rgba(32, 226, 5, 0.15) 0%, transparent 40%);
+  z-index: 0;
+  pointer-events: none;
+}
+.hero-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  padding: 40px;
+  gap: 40px;
+  align-items: center;
+}
+.hero-image-wrapper {
+  flex-shrink: 0;
+  width: 300px;
+  height: 200px;
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.25);
+  border: 1px solid rgba(255,255,255,0.05);
+  background: #111;
+}
+.hero-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.6s ease;
 }
-.course-image-placeholder {
+.hero-image-wrapper:hover .hero-image {
+  transform: scale(1.08);
+}
+.hero-image-placeholder {
   width: 100%;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
 }
-.course-info {
+.placeholder-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #18181b, #27272a);
+}
+.placeholder-gradient::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(32, 226, 5, 0.15), rgba(0, 208, 228, 0.15));
+  backdrop-filter: blur(20px);
+}
+.placeholder-icon {
+  position: relative;
+  z-index: 2;
+  color: rgba(255,255,255,0.7);
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));
+}
+.hero-info {
   flex: 1;
 }
-.course-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-bold);
-  margin-bottom: 8px;
+.premium-badge {
+  display: inline-flex;
+  align-items: center;
+  background: linear-gradient(90deg, var(--primary-color), #00d0e4);
+  color: #fff;
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  box-shadow: 0 4px 15px rgba(32, 226, 5, 0.3);
 }
-.course-description {
+.hero-title {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--text-color);
+  margin-bottom: 15px;
+  line-height: 1.25;
+  text-wrap: balance;
+}
+.hero-description {
   color: var(--text-muted);
-  line-height: 1.5;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  max-width: 95%;
+  margin-bottom: 0;
+}
+.hero-meta {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  flex-wrap: wrap;
+}
+.price-tag {
+  display: flex;
+  align-items: baseline;
+  background: rgba(255,255,255,0.03);
+  padding: 10px 24px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+.price-tag .currency {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-right: 6px;
+  font-weight: 600;
+}
+.price-tag .amount {
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: var(--text-color);
+  line-height: 1;
+}
+.free-tag .amount {
+  color: var(--primary-color);
+}
+.stats-fake {
+  display: flex;
+  gap: 24px;
+}
+.stat-item {
   font-size: 0.95rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
 }
 
+@media (max-width: 992px) {
+  .hero-title { font-size: 1.8rem; }
+  .hero-image-wrapper { width: 240px; height: 160px; }
+  .hero-content { padding: 30px; gap: 30px; }
+}
 @media (max-width: 768px) {
-  .course-header {
+  .hero-content {
     flex-direction: column;
+    text-align: center;
+    padding: 30px 20px;
+    gap: 20px;
   }
-  .course-image-wrapper {
+  .hero-image-wrapper {
     width: 100%;
-    height: 200px;
+    max-width: 320px;
+    height: 180px;
+  }
+  .hero-description {
+    max-width: 100%;
+  }
+  .hero-meta {
+    justify-content: center;
+    gap: 20px;
   }
 }
 
@@ -321,4 +560,140 @@ onMounted(() => {
 .c-card-body { padding: 1.25rem; display: flex; flex-direction: column; flex: 1; gap: 6px; }
 .c-card-title { font-size: 1rem; font-weight: 700; margin: 0; line-height: 1.3; }
 .c-card-text { font-size: 0.85rem; color: var(--text-muted); margin: 0; }
+.c-card-img-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, rgba(32, 226, 5, 0.1) 0%, rgba(0, 208, 228, 0.1) 100%); border-bottom: 1px solid rgba(255,255,255,0.05); }
+
+/* Material Promocional Scroll Horizontal */
+.promotional-grid { 
+  display: grid; 
+  gap: 20px; 
+  grid-auto-flow: column; 
+  overflow-x: auto;
+  padding-bottom: 15px; /* Espacio para la barra de scroll */
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+/* Ocultar scrollbar en algunos navegadores para que se vea más limpio pero mantener funcionalidad */
+.promotional-grid::-webkit-scrollbar { height: 6px; }
+.promotional-grid::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 10px; }
+.promotional-grid::-webkit-scrollbar-track { background: transparent; }
+
+.text-grid { grid-auto-columns: minmax(320px, 350px); }
+.media-grid { grid-auto-columns: minmax(180px, 220px); }
+.video-grid { grid-auto-columns: minmax(280px, 320px); }
+.promotional-grid > * { scroll-snap-align: start; }
+
+.promo-section-title { font-size: 1.15rem; font-weight: 700; color: var(--text-color); border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px; }
+
+/* Tarjetas */
+.copy-card { background: var(--card-bg); border: 1px solid var(--border-color); transition: transform 0.2s, box-shadow 0.2s; }
+.copy-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+.copy-text { 
+  font-size: 0.9rem; 
+  color: var(--text-color); 
+  white-space: pre-wrap; 
+  line-height: 1.5; 
+  background: var(--bg-main); 
+  padding: 15px; 
+  border-radius: 8px; 
+  border: 1px solid var(--border-color); 
+  height: 200px;
+  overflow-y: auto;
+}
+.copy-text::-webkit-scrollbar { width: 6px; }
+.copy-text::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.3); border-radius: 10px; }
+.copy-text::-webkit-scrollbar-track { background: transparent; }
+
+.media-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; transition: transform 0.2s; }
+.media-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+.media-wrapper { width: 100%; border-radius: 8px; overflow: hidden; background: var(--bg-main); display: flex; align-items: center; justify-content: center; aspect-ratio: 1 / 1; }
+.media-img { width: 100%; height: 100%; object-fit: contain; transition: transform 0.3s; }
+.media-wrapper:hover .media-img { transform: scale(1.05); }
+
+.video-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; transition: transform 0.2s; }
+.video-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+.video-wrapper { position: relative; width: 100%; border-radius: 8px; overflow: hidden; background: #000; display: flex; align-items: center; justify-content: center; aspect-ratio: 16 / 9; }
+.video-player { width: 100%; height: 100%; object-fit: contain; position: relative; z-index: 0; }
+.video-click-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 10; cursor: pointer; background: transparent; }
+
+/* Botones Personalizados */
+.btn-promo-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-main);
+  color: var(--text-color);
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+.btn-promo-action:hover {
+  background: var(--border-color);
+}
+.btn-promo-primary {
+  background: var(--primary-color);
+  color: #fff;
+  border-color: var(--primary-color);
+}
+.btn-promo-primary:hover {
+  filter: brightness(1.1);
+  color: #fff;
+}
+.btn-promo-secondary {
+  background: rgba(128,128,128,0.1);
+}
+.btn-promo-secondary:hover {
+  background: rgba(128,128,128,0.2);
+}
+.promo-action-buttons {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 8px;
+}
+.promo-action-buttons > * {
+  flex: 1;
+}
+
+/* Media Preview Modal */
+.media-preview-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.95);
+  z-index: 1050; /* Por encima del header y sidebar */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.2s ease-out;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.preview-img, .preview-video {
+  max-width: 100%;
+  max-height: 90vh;
+  border-radius: 8px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  object-fit: contain;
+}
+.close-preview {
+  position: absolute;
+  top: 25px; right: 25px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #fff;
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 1060;
+}
+.close-preview:hover { 
+  background: rgba(255,255,255,0.2);
+  transform: scale(1.05);
+}
 </style>

@@ -112,10 +112,16 @@ export async function getToolById(type, toolId) {
 export async function updateTool(type, toolId, data) {
   const slug = normalizeType(type)
   const isFormData = data instanceof FormData
-  const response = await apiClient.put(`/marketing/${slug}/${toolId}`, data, {
-    headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : {},
-  })
-  return response.data
+  if (isFormData) {
+    // PHP no puede leer multipart/form-data con PUT. Enviamos POST (en el frontend/store ya se inyecta _method=PUT)
+    const response = await apiClient.post(`/marketing/${slug}/${toolId}`, data, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return response.data
+  } else {
+    const response = await apiClient.put(`/marketing/${slug}/${toolId}`, data)
+    return response.data
+  }
 }
 export async function checkToolRegistration(type, toolId) {
   const slug = normalizeType(type)

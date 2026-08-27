@@ -7,6 +7,7 @@ export const useMarketingStore = defineStore('marketing', {
     categories: [],
     loading: false,
     error: null,
+    activeCourseId: null,
   }),
 
   getters: {
@@ -27,10 +28,11 @@ export const useMarketingStore = defineStore('marketing', {
     },
 
     async loadTools(courseId = null) {
+      if (courseId) this.activeCourseId = courseId
       this.loading = true
       this.error = null
       try {
-        const response = await marketingService.getTools(courseId)
+        const response = await marketingService.getTools(this.activeCourseId)
         this.tools = this.extractData(response)
       } catch (error) {
         console.error('Error al cargar herramientas:', error)
@@ -64,7 +66,7 @@ export const useMarketingStore = defineStore('marketing', {
       }
     },
 
-    async getToolById(toolId, toolType) {
+    async fetchToolById(toolId, toolType) {
       try {
         const response = await marketingService.getToolById(toolType, toolId)
         return response.data || response

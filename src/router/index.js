@@ -423,6 +423,11 @@ const routes = [
         name: 'marketing-dinamica',
         component: () => import('@/features/marketing/views/DinamicaView.vue')
       },
+      {
+        path: 'material-publicitario/crear',
+        name: 'marketing-material-publicitario-crear',
+        component: () => import('@/features/marketing/views/CreateMarketingMaterialView.vue')
+      },
 
       {
         path: 'categorias-preguntas',

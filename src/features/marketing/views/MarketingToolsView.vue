@@ -6,21 +6,21 @@
         <div v-if="!selectedCourseId" class="course-selection-view">
           <div class="card-header mb-4">
             <div>
-              <h4 class="card-title">Selecciona un curso</h4>
-              <span class="card-meta">Elige el curso para el cual deseas gestionar o crear herramientas de marketing.</span>
+              <h4 class="card-title">Selecciona un curso o libro</h4>
+              <span class="card-meta">Elige el curso o libro para el cual deseas gestionar o crear herramientas de marketing.</span>
             </div>
           </div>
-          <div v-if="loadingCourses" class="loading-state"><Loader2 class="spinner" :size="36" /><p>Cargando tus cursos...</p></div>
+          <div v-if="loadingCourses" class="loading-state"><Loader2 class="spinner" :size="36" /><p>Cargando tus cursos y libros...</p></div>
           <div v-else-if="courses.length === 0" class="no-courses">
-            <p>Aún no tienes cursos creados.</p>
-            <router-link to="/infoproducts/crear-curso" class="btn-primary-custom">Crear mi primer curso</router-link>
+            <p>Aún no tienes cursos o libros creados.</p>
+            <router-link to="/courses/create" class="btn-primary-custom">Crear mi primer curso</router-link>
           </div>
           <div v-else class="courses-grid">
             <div class="course-card" v-for="course in courses" :key="course.id" @click="selectCourse(course)">
               <img :src="getCourseImage(course)" alt="Curso" class="course-card-img" @error="$event.target.src = '/img_mantenimiento.png'; $event.target.onerror = null;" />
               <div class="course-card-body">
                 <h5 class="course-title">{{ course.title || course.titulo }}</h5>
-                <p class="course-desc">Gestionar herramientas de marketing para este curso.</p>
+                <p class="course-desc">Gestionar herramientas de marketing para este curso o libro.</p>
               </div>
             </div>
           </div>
@@ -30,22 +30,25 @@
         <div v-else>
           <div class="card-header">
             <div>
-              <button class="btn-back" @click="clearCourseSelection">&larr; Volver a cursos</button>
+              <button class="btn-back" @click="clearCourseSelection">&larr; Volver a cursos/libros</button>
               <h4 class="card-title">Herramientas: {{ selectedCourse?.title || selectedCourse?.titulo }}</h4>
-              <span class="card-meta">Crea y gestiona tus herramientas promocionales para este curso</span>
+              <span class="card-meta">Crea y gestiona tus herramientas promocionales para este curso o libro</span>
             </div>
             <div class="create-buttons">
               <button class="stats-tab-btn" @click="createTool('Masterclass')">
                 <Plus :size="14" /> Masterclass
               </button>
-              <button class="stats-tab-btn" @click="createTool('Mini Curso')">
+              <button class="stats-tab-btn" @click="createTool('Mini-Curso')">
                 <Plus :size="14" /> Mini-Curso
               </button>
               <button class="stats-tab-btn" @click="createTool('E-book')">
                 <Plus :size="14" /> E-book
               </button>
-              <button class="stats-tab-btn" @click="createTool('Dinamica')">
+              <!--<button class="stats-tab-btn" @click="createTool('Dinámica')">
                 <Zap :size="14" /> Dinámica
+              </button>-->
+              <button class="stats-tab-btn" style="color: var(--primary-color); border-color: var(--primary-color); background: rgba(24, 214, 0, 0.08);" @click="createTool('Material Publicitario')">
+                <Megaphone :size="14" /> Material Publicitario
               </button>
             </div>
           </div>
@@ -55,78 +58,68 @@
 
         <!-- DataTable -->
         <div v-else>
-          <div class="table-toolbar">
-            <div class="show-entries">
-              <span>Mostrar</span>
-              <select class="table-page-select" v-model.number="perPage">
-                <option :value="10">10</option>
-                <option :value="25">25</option>
-                <option :value="50">50</option>
-                <option :value="100">100</option>
-              </select>
-              <span>registros</span>
+          <!-- Toolbar Superior -->
+          <div class="dashboard-toolbar">
+            <div class="search-wrapper modern-search">
+              <Search :size="18" class="search-icon" />
+              <input type="text" v-model="searchQuery" placeholder="Buscar por nombre o categoría..." />
             </div>
-            <div class="search-wrapper">
-              <Search :size="16" class="search-icon" />
-              <input type="text" class="table-search" v-model="searchQuery" placeholder="Buscar..." />
+            
+            <div class="view-controls">
+              <span class="results-text">Mostrando {{ filteredTools.length }} herramientas</span>
             </div>
           </div>
 
-          <div class="table-responsive">
-            <table class="table table-hover-animation table-striped table-bordered mb-0">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Tipo</th>
-                  <th>Nombre</th>
-                  <th>Categoría</th>
-                  <th>Fecha de registro</th>
-                  <th>N° Distribuidores</th>
-                  <th>Estado</th>
-                  <th>Acción</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="(item, index) in paginatedTools" :key="item.id">
-                  <td>{{ (currentPage - 1) * perPage + index + 1 }}</td>
-                  <td><span class="badge" :class="getTipoClass(item)" :style="getTipoStyle(item)">{{ getTipoLabel(item) }}</span></td>
-                  <td class="cell-name">{{ item.nombre || item.title }}</td>
-                  <td>{{ item.category_name || item.category?.name || '-' }}</td>
-                  <td>{{ formatDate(item.fecha || item.created_at) }}</td>
-                  <td class="cell-dist">{{ item.distribuidores || item.distributors_count || 0 }}</td>
-                  <td><span class="badge-status" :class="getEstadoClass(item)">{{ getEstadoLabel(item) }}</span></td>                    <td>
-                    <select class="action-select" :value="actionSelect" @change="handleAction(item, $event)">
-                      <option value="">Acciones</option>
-                      <option value="edit">Editar</option>
-                      <option value="modules" v-if="getTipoSlug(item) === 'minicourse' || getTipoSlug(item) === 'mini-course'">Módulos y Clases</option>
-                      <option value="status">Cambiar Estado</option>
-                      <option value="delete">Eliminar</option>
-                      <option value="invite">Invitación</option>
-                    </select>
-                  </td>
-                </tr>
-                <tr v-if="filteredTools.length === 0">
-                  <td colspan="8" class="text-center text-muted">No hay herramientas registradas</td>
-                </tr>
-              </tbody>
-            </table>
+          <!-- Estado Vacío -->
+          <div v-if="filteredTools.length === 0" class="empty-state-modern">
+            <div class="empty-state-icon">🚀</div>
+            <h3>¡Es hora de impulsar tus ventas!</h3>
+            <p>Aún no tienes herramientas promocionales para este curso. Empieza creando tu primera masterclass, mini-curso o material publicitario.</p>
           </div>
 
-          <div class="table-footer">
-            <small>Mostrando {{ filteredTools.length }} registros</small>
-            <nav>
-              <ul class="pagination-custom">
-                <li :class="{ disabled: currentPage <= 1 }">
-                  <a href="#" @click.prevent="currentPage > 1 && currentPage--">&laquo;</a>
-                </li>
-                <li v-for="page in totalPages" :key="page" :class="{ active: page === currentPage }">
-                  <a href="#" @click.prevent="currentPage = page">{{ page }}</a>
-                </li>
-                <li :class="{ disabled: currentPage >= totalPages }">
-                  <a href="#" @click.prevent="currentPage < totalPages && currentPage++">&raquo;</a>
-                </li>
-              </ul>
-            </nav>
+          <!-- Grid de Tarjetas -->
+          <div v-else class="tools-grid-modern">
+            <div v-for="item in filteredTools" :key="item.id" class="tool-card-modern">
+              <div class="tool-card-header">
+                <div class="tool-badge" :class="getTipoClass(item)" :style="getTipoStyle(item)">
+                  {{ getTipoLabel(item) }}
+                </div>
+                <div class="tool-status-badge" :class="getEstadoClass(item)">
+                  {{ getEstadoLabel(item) }}
+                </div>
+              </div>
+              
+              <div class="tool-card-body">
+                <h5 class="tool-title">{{ item.nombre || item.title }}</h5>
+                <div class="tool-meta">
+                  <span class="meta-item"><Tag :size="14" /> {{ item.category_name || item.category?.name || 'Sin Categoría' }}</span>
+                  <span class="meta-item"><Calendar :size="14" /> {{ formatDate(item.fecha || item.created_at) }}</span>
+                </div>
+              </div>
+
+              <div class="tool-card-footer">
+                <div class="tool-stats">
+                  <div class="stat-item" title="Distribuidores">
+                    <Users :size="16" class="stat-icon" /> <span>{{ item.distribuidores || item.distributors_count || 0 }}</span>
+                  </div>
+                </div>
+                
+                <div class="tool-actions">
+                  <button class="action-btn-icon" @click="handleAction(item, 'edit')" title="Editar">
+                    <Edit3 :size="16" />
+                  </button>
+                  <button v-if="getTipoSlug(item) === 'minicourse' || getTipoSlug(item) === 'mini-course'" class="action-btn-icon" @click="handleAction(item, 'modules')" title="Módulos y Clases">
+                    <Layers :size="16" />
+                  </button>
+                  <button class="action-btn-icon" @click="handleAction(item, 'status')" title="Cambiar Estado">
+                    <ToggleLeft :size="16" />
+                  </button>
+                  <button class="action-btn-icon text-danger" @click="handleAction(item, 'delete')" title="Eliminar">
+                    <Trash2 :size="16" />
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         </div>
@@ -193,27 +186,55 @@
             <div class="form-group">
               <label>Meeting Link</label>
               <input type="url" class="form-control" v-model="editForm.meeting_link" placeholder="https://zoom.us/j/..." />
-            </div>
-            <!-- Imágenes actuales -->
-            <div v-if="editImages && editImages.length" class="mb-2">
-              <small class="text-muted">Imágenes actuales:</small>
-              <div class="d-flex flex-wrap gap-2 mt-1">
-                <div v-for="(img, i) in editImages" :key="i" class="img-preview-wrapper">
-                  <img :src="img.image || img.url" class="img-thumbnail-sm" />
+              <!-- Imágenes actuales -->
+              <div v-if="editImages && editImages.length" class="mb-2">
+                <small class="text-muted">Imagen actual:</small>
+                <div class="d-flex flex-wrap gap-2 mt-1">
+                  <div class="img-preview-wrapper">
+                    <img :src="getS3ImageUrl(editImages[0]?.image || editImages[0]?.url).replace(/([^:]\/)\/+/g, '$1')" class="img-thumbnail-sm" referrerpolicy="no-referrer" />
+                  </div>
                 </div>
               </div>
             </div>
             <div class="row">
               <div class="col-md-6">
                 <div class="form-group">
-                  <label>Nuevas imágenes</label>
-                  <input type="file" class="form-control-file" multiple accept="image/jpeg,image/png,image/jpg" @change="e => editFiles.images = e.target.files" />
+                  <label>Nueva imagen (Solo 1)</label>
+                  <label for="mcImage" class="custom-file-upload" :class="{ 'has-file': editFiles.images?.[0] }">
+                    <div class="upload-icon-wrapper">
+                      <ImageIcon v-if="!editFiles.images?.[0]" class="upload-icon" />
+                      <CheckCircle2 v-else class="upload-icon success" />
+                    </div>
+                    <div class="upload-text">
+                      <span v-if="!editFiles.images?.[0]"><strong>Haz clic para subir</strong> imagen</span>
+                      <span v-else class="file-name">{{ editFiles.images[0].name }}</span>
+                    </div>
+                  </label>
+                  <input type="file" id="mcImage" class="d-none" accept="image/jpeg,image/png,image/jpg" @change="e => { editFiles.images = e.target.files; generatePreviews(e.target.files, 'images') }" />
+                  <div v-if="localPreviews.images?.length" class="mt-2">
+                    <small class="text-muted">Vista previa (nueva):</small>
+                    <div class="d-flex flex-wrap gap-2 mt-1">
+                      <div v-for="(url, i) in localPreviews.images" :key="i" class="img-preview-wrapper">
+                        <img :src="url" class="img-thumbnail-sm border-primary" />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
               <div class="col-md-6">
                 <div class="form-group">
                   <label>Nuevos documentos</label>
-                  <input type="file" class="form-control-file" multiple accept=".pdf,.doc,.docx" @change="e => editFiles.documents = e.target.files" />
+                  <label for="mcDoc" class="custom-file-upload" :class="{ 'has-file': editFiles.documents?.length }">
+                    <div class="upload-icon-wrapper">
+                      <FileText v-if="!editFiles.documents?.length" class="upload-icon" />
+                      <CheckCircle2 v-else class="upload-icon success" />
+                    </div>
+                    <div class="upload-text">
+                      <span v-if="!editFiles.documents?.length"><strong>Haz clic para subir</strong> documentos</span>
+                      <span v-else class="file-name">{{ editFiles.documents.length }} archivo(s)</span>
+                    </div>
+                  </label>
+                  <input type="file" id="mcDoc" class="d-none" multiple accept=".pdf,.doc,.docx" @change="e => editFiles.documents = e.target.files" />
                 </div>
               </div>
             </div>
@@ -306,14 +327,35 @@
               <div class="col-md-6">
                 <div class="form-group">
                   <label>Nueva portada</label>
-                  <input type="file" class="form-control-file" accept="image/jpeg,image/png,image/jpg,image/webp" @change="e => editFiles.portada = e.target.files?.[0]" />
-                  <div v-if="editImages?.length" class="mt-1"><small class="text-muted">Portada actual:</small><img :src="editImages[0]?.image || editImages[0]?.url" class="img-thumbnail-sm d-block mt-1" /></div>
+                  <label for="ebCover" class="custom-file-upload" :class="{ 'has-file': editFiles.portada }">
+                    <div class="upload-icon-wrapper">
+                      <ImageIcon v-if="!editFiles.portada" class="upload-icon" />
+                      <CheckCircle2 v-else class="upload-icon success" />
+                    </div>
+                    <div class="upload-text">
+                      <span v-if="!editFiles.portada"><strong>Haz clic para subir</strong> portada</span>
+                      <span v-else class="file-name">{{ editFiles.portada.name }}</span>
+                    </div>
+                  </label>
+                  <input type="file" id="ebCover" class="d-none" accept="image/jpeg,image/png,image/jpg,image/webp" @change="e => { editFiles.portada = e.target.files?.[0]; generatePreviews(e.target.files, 'portada') }" />
+                  <div v-if="localPreviews.portada?.length" class="mt-2"><small class="text-muted text-primary">Vista previa (nueva):</small><img :src="localPreviews.portada[0]" class="img-thumbnail-sm d-block mt-1 border-primary" /></div>
+                  <div v-if="editImages?.length" class="mt-1"><small class="text-muted">Portada actual:</small><img :src="getS3ImageUrl(editImages[0]?.image || editImages[0]?.url)" class="img-thumbnail-sm d-block mt-1" referrerpolicy="no-referrer" /></div>
                 </div>
               </div>
               <div class="col-md-6">
                 <div class="form-group">
-                  <label>Nuevo PDF</label>
-                  <input type="file" class="form-control-file" accept=".pdf" @change="e => editFiles.archivo_pdf = e.target.files?.[0]" />
+                  <label>Nuevo archivo PDF</label>
+                  <label for="ebPdf" class="custom-file-upload" :class="{ 'has-file': editFiles.archivo_pdf }">
+                    <div class="upload-icon-wrapper">
+                      <FileText v-if="!editFiles.archivo_pdf" class="upload-icon" />
+                      <CheckCircle2 v-else class="upload-icon success" />
+                    </div>
+                    <div class="upload-text">
+                      <span v-if="!editFiles.archivo_pdf"><strong>Haz clic para subir</strong> archivo PDF</span>
+                      <span v-else class="file-name">{{ editFiles.archivo_pdf.name }}</span>
+                    </div>
+                  </label>
+                  <input type="file" id="ebPdf" class="d-none" accept=".pdf" @change="e => editFiles.archivo_pdf = e.target.files?.[0]" />
                 </div>
               </div>
             </div>
@@ -379,8 +421,19 @@
             </div>
             <div class="form-group">
               <label>Nueva imagen</label>
-              <input type="file" class="form-control-file" accept="image/jpeg,image/png,image/jpg,image/webp" @change="e => editFiles.imagen = e.target.files?.[0]" />
-              <div v-if="editImages?.length" class="mt-1"><small class="text-muted">Imagen actual:</small><img :src="editImages[0]?.image || editImages[0]?.url" class="img-thumbnail-sm d-block mt-1" /></div>
+              <label for="mcimg" class="custom-file-upload" :class="{ 'has-file': editFiles.imagen }">
+                <div class="upload-icon-wrapper">
+                  <ImageIcon v-if="!editFiles.imagen" class="upload-icon" />
+                  <CheckCircle2 v-else class="upload-icon success" />
+                </div>
+                <div class="upload-text">
+                  <span v-if="!editFiles.imagen"><strong>Haz clic para subir</strong> imagen</span>
+                  <span v-else class="file-name">{{ editFiles.imagen.name }}</span>
+                </div>
+              </label>
+              <input type="file" id="mcimg" class="d-none" accept="image/jpeg,image/png,image/jpg,image/webp" @change="e => { editFiles.imagen = e.target.files?.[0]; generatePreviews(e.target.files, 'imagen') }" />
+              <div v-if="localPreviews.imagen?.length" class="mt-2"><small class="text-muted text-primary">Vista previa (nueva):</small><img :src="localPreviews.imagen[0]" class="img-thumbnail-sm d-block mt-1 border-primary" /></div>
+              <div v-if="editImages?.length" class="mt-1"><small class="text-muted">Imagen actual:</small><img :src="getS3ImageUrl(editImages[0]?.image || editImages[0]?.url)" class="img-thumbnail-sm d-block mt-1" referrerpolicy="no-referrer" /></div>
             </div>
           </form>
         </div>
@@ -527,7 +580,9 @@ import { formatDate } from '@/utils/formatDate'
 import apiClient from '@/services/apiClient'
 import {
   Plus, Zap, Loader2, Search, AlertTriangle, X, Link, Copy, ToggleLeft,
-  CheckCircle2, AlertCircle, Edit3, Info, MessageCircle, Facebook
+  CheckCircle2, AlertCircle, Edit3, Info, MessageCircle, Facebook, Megaphone,
+  Mail, Instagram, Settings, Share2, Book, MonitorPlay, Eye, Monitor, Box, Download,
+  Image as ImageIcon, FileText, UploadCloud, Trash2, Layers, Users, Calendar, Tag
 } from 'lucide-vue-next'
 import { infoproductService } from '@/features/infoproducts/services/infoproductService'
 
@@ -549,9 +604,34 @@ const toast = ref(null)
 const STORAGE_URL = import.meta.env.VITE_APP_STORAGE_URL || (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api/v1', '/storage') : 'http://localhost:8000/storage');
 
 function getCourseImage(course) {
-  if (course.url_portada) return `${STORAGE_URL}/${course.url_portada}`
-  if (course.path_url) return `${STORAGE_URL}/${course.path_url}`
-  return '/img_mantenimiento.png' // Default image
+  const getS3Url = (url) => {
+    if (!url) return null;
+    if (url.startsWith('http')) {
+      return url.replace('s3.sa-east-1', 's3-accelerate');
+    }
+    return `https://promolider-storage-user.s3-accelerate.amazonaws.com/${url}`;
+  };
+
+  if (course.url_portada) return getS3Url(course.url_portada);
+  if (course.path_url) return getS3Url(course.path_url);
+  return '/img_mantenimiento.png'; // Default image
+}
+
+function getS3ImageUrl(url) {
+  console.log('[DEBUG getS3ImageUrl] URL original recibida:', url);
+  if (!url || typeof url !== 'string') {
+    console.log('[DEBUG getS3ImageUrl] URL inválida, devolviendo fallback');
+    return '/img_mantenimiento.png';
+  }
+  let finalUrl = url;
+  if (url.startsWith('http')) {
+    finalUrl = url.replace('s3.sa-east-1', 's3-accelerate');
+  } else {
+    let cleanPath = url.replace(/\/+/g, '/').replace(/^\//, '');
+    finalUrl = `https://promolider-storage-user.s3-accelerate.amazonaws.com/${cleanPath}`;
+  }
+  console.log('[DEBUG getS3ImageUrl] URL final construida:', finalUrl);
+  return finalUrl;
 }
 
 // ─── Tipos y utilidades ───────────────────────────────────────────────
@@ -561,6 +641,7 @@ const TYPE_CONFIG = {
   ebook: { label: 'E-book', color: '#00d0e4', class: 'badge-blue' },
   'mini-course': { label: 'Mini Curso', color: '#ffc107', class: 'badge-orange' },
   minicourse: { label: 'Mini Curso', color: '#ffc107', class: 'badge-orange' },
+  'material-publicitario': { label: 'Material', color: '#ff9800', class: 'badge-orange' },
 }
 
 function getTipoSlug(item) {
@@ -569,6 +650,7 @@ function getTipoSlug(item) {
   if (lower.includes('masterclass') || lower === 'masterclass') return 'masterclass'
   if (lower.includes('ebook') || lower === 'ebook') return 'ebook'
   if (lower.includes('mini') || lower === 'minicourse' || lower === 'mini-course') return 'minicourse'
+  if (lower.includes('material') || lower === 'material-publicitario') return 'material-publicitario'
   return 'masterclass'
 }
 
@@ -661,9 +743,10 @@ function showToast(title, message, type = 'success') {
 function createTool(type) {
   const routes = {
     Masterclass: '/marketing/masterclass/crear',
-    'Mini Curso': '/marketing/mini-course/crear',
+    'Mini-Curso': '/marketing/mini-course/crear',
     'E-book': '/marketing/ebook/crear',
     Dinamica: '/marketing/dinamica/crear',
+    'Material Publicitario': '/marketing/material-publicitario/crear',
   }
   const baseRoute = routes[type]
   if (baseRoute) {
@@ -674,12 +757,11 @@ function createTool(type) {
   }
 }
 
-// ─── Action select ───────────────────────────────────────────────────
+// ─── Action handling ───────────────────────────────────────────────────
 
-function handleAction(item, event) {
-  const action = event.target.value
+function handleAction(item, action) {
   if (!action) return
-  nextTick(() => { actionSelect.value = '' })
+  
   switch (action) {
     case 'edit': editTool(item); break
     case 'modules': viewModules(item); break
@@ -705,6 +787,25 @@ const editLoading = ref(false)
 const editForm = ref({})
 const editImages = ref([])
 const editFiles = ref({})
+const localPreviews = ref({
+  images: [],
+  portada: [],
+  imagen: []
+})
+
+function generatePreviews(files, type) {
+  // Limpiar previas anteriores para liberar memoria
+  if (localPreviews.value[type]) {
+    localPreviews.value[type].forEach(url => URL.revokeObjectURL(url))
+  }
+  
+  if (!files || files.length === 0) {
+    localPreviews.value[type] = []
+    return
+  }
+  
+  localPreviews.value[type] = Array.from(files).map(file => URL.createObjectURL(file))
+}
 
 function closeEditModals() {
   showEditMasterclassModal.value = false
@@ -714,15 +815,28 @@ function closeEditModals() {
   editForm.value = {}
   editImages.value = []
   editFiles.value = {}
+  
+  // Limpiar object URLs
+  Object.keys(localPreviews.value).forEach(key => {
+    localPreviews.value[key].forEach(url => URL.revokeObjectURL(url))
+    localPreviews.value[key] = []
+  })
 }
 
 async function editTool(item) {
   const type = getTipoSlug(item)
+  
+  if (type === 'material-publicitario') {
+    // Redirigir a la vista de creación/edición de materiales
+    router.push(`/marketing/material-publicitario/crear?course_id=${item.id || selectedCourseId.value}`)
+    return
+  }
+
   editTarget.value = item
   editLoading.value = true
 
   try {
-    const resp = await store.getToolById(item.id, type)
+    const resp = await store.fetchToolById(item.id, type)
     const data = resp?.data || resp
 
     if (type === 'masterclass') {
@@ -736,7 +850,9 @@ async function editTool(item) {
         phone_contact: data.phone_contact || '',
         meeting_link: data.meeting_link || '',
       }
+      console.log('[DEBUG editTool] Masterclass cargada, data.images:', data.images);
       editImages.value = data.images || []
+      console.log('[DEBUG editTool] editImages asignado:', editImages.value);
       showEditMasterclassModal.value = true
     } else if (type === 'ebook') {
       editForm.value = {
@@ -976,7 +1092,7 @@ function getFacebookShareUrl() {
 async function fetchCourses() {
   loadingCourses.value = true
   try {
-    const response = await infoproductService.getCreatedInfoproducts({ limit: 100 })
+    const response = await infoproductService.getCreatedInfoproducts({ limit: 100, status: 2 })
     courses.value = response.data?.data || response.data || []
   } catch (error) {
     showToast('Error', 'No se pudieron cargar tus cursos', 'error')
@@ -1023,11 +1139,16 @@ onMounted(async () => {
 .stats-tab-btn:hover { border-color: var(--primary-color); color: var(--primary-color); background: rgba(24,214,0,0.04); }
 
 .btn-back {
-  background: transparent; border: none; color: var(--text-muted);
-  cursor: pointer; font-size: 13px; font-weight: 600; padding: 0;
-  margin-bottom: 8px; transition: color 0.2s;
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color);
+  color: var(--text-main); cursor: pointer; font-size: 13px; font-weight: 600;
+  padding: 6px 14px; border-radius: 8px; margin-bottom: 16px;
+  transition: all 0.2s;
 }
-.btn-back:hover { color: var(--primary-color); }
+.btn-back:hover {
+  background: rgba(24, 214, 0, 0.08); border-color: var(--primary-color);
+  color: var(--primary-color);
+}
 
 .courses-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 20px; }
 .course-card {
@@ -1206,7 +1327,86 @@ onMounted(async () => {
 select.form-control { cursor: pointer; }
 textarea.form-control { resize: vertical; }
 
-.img-thumbnail-sm { max-height: 60px; border: 1px solid var(--border-color); border-radius: 4px; padding: 2px; }
+.img-thumbnail-sm {
+  max-height: 80px;
+  border-radius: 8px;
+  object-fit: contain;
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   CUSTOM FILE UPLOAD (Estilos de Crear Curso)
+───────────────────────────────────────────────────────────────────────── */
+.custom-file-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  border: 2px dashed var(--border-color, #ccc);
+  border-radius: 12px;
+  background-color: var(--bg-main, #fff);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  margin-top: 8px;
+}
+
+.custom-file-upload:hover {
+  border-color: var(--primary-color);
+  background-color: rgba(24, 214, 0, 0.02);
+}
+
+.custom-file-upload.has-file {
+  border-color: var(--primary-color);
+  background-color: rgba(24, 214, 0, 0.05);
+  border-style: solid;
+}
+
+.upload-icon-wrapper {
+  margin-bottom: 12px;
+  background: var(--card-bg, #f8f9fa);
+  padding: 10px;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+}
+
+.upload-icon {
+  width: 24px;
+  height: 24px;
+  color: var(--text-muted);
+}
+
+.upload-icon.success {
+  color: var(--primary-color);
+}
+
+.upload-text {
+  font-size: 13px;
+  color: var(--text-color);
+  line-height: 1.5;
+}
+
+.upload-text strong {
+  color: var(--primary-color);
+  font-weight: 700;
+}
+
+.file-name {
+  font-weight: 600;
+  color: var(--text-color);
+  word-break: break-all;
+}
+
+.d-none {
+  display: none !important;
+}
+
 .gap-2 { gap: 8px; }
 .d-flex { display: flex; }
 .flex-wrap { flex-wrap: wrap; }
@@ -1276,5 +1476,214 @@ textarea.form-control { resize: vertical; }
   .table-search { min-width: 100%; }
   .toast-notification { bottom: 16px; right: 16px; left: 16px; max-width: none; }
   .modal-lg-wide { max-width: 100%; }
+}
+
+/* =========================================================
+   NUEVO GRID DE TARJETAS (Dashboard Moderno)
+========================================================= */
+
+.dashboard-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.modern-search {
+  flex: 1;
+  max-width: 400px;
+  position: relative;
+}
+
+.modern-search .search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+}
+
+.modern-search input {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  padding: 10px 15px 10px 40px;
+  border-radius: 20px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.modern-search input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.1);
+}
+
+.results-text {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.empty-state-modern {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  border: 1px dashed var(--border-color);
+}
+
+.empty-state-icon {
+  font-size: 48px;
+  margin-bottom: 15px;
+  opacity: 0.8;
+}
+
+.empty-state-modern h3 {
+  color: var(--text-color);
+  margin-bottom: 10px;
+}
+
+.empty-state-modern p {
+  color: var(--text-muted);
+  max-width: 400px;
+}
+
+.tools-grid-modern {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.tool-card-modern {
+  background: var(--card-bg, #1e1e2d);
+  border: 1px solid var(--border-color, #2b2b40);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.tool-card-modern:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.tool-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 15px;
+}
+
+.tool-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.tool-status-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.tool-status-badge.badge-green { background: rgba(40, 199, 111, 0.2); color: #28c76f; border: 1px solid rgba(40, 199, 111, 0.3); }
+.tool-status-badge.badge-gray { background: rgba(110, 107, 123, 0.2); color: #b9b9c3; border: 1px solid rgba(110, 107, 123, 0.3); }
+.tool-status-badge.badge-blue { background: rgba(115, 103, 240, 0.2); color: #7367f0; border: 1px solid rgba(115, 103, 240, 0.3); }
+
+.tool-card-body {
+  flex: 1;
+  margin-bottom: 20px;
+}
+
+.tool-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-main, #fff);
+  margin: 0 0 10px 0;
+  line-height: 1.4;
+}
+
+.tool-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.tool-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 15px;
+  border-top: 1px solid var(--border-color);
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+.stat-icon { color: var(--primary-color); }
+
+.tool-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.action-btn-icon {
+  background: rgba(255,255,255,0.05);
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-color);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.action-btn-icon:hover {
+  background: rgba(255,255,255,0.15);
+}
+
+.action-btn-icon.text-danger:hover {
+  background: rgba(234, 84, 85, 0.15);
+  color: #ea5455;
+}
+
+@media (max-width: 768px) {
+  .dashboard-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .modern-search { max-width: 100%; }
 }
 </style>
