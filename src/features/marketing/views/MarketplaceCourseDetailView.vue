@@ -78,20 +78,24 @@
               <PlayCircle :size="40" class="empty-icon" />
               <p>No hay Masterclasses para este curso</p>
             </div>
-            <div v-else class="row">
-              <div v-for="item in store.courseResources.masterclasses" :key="item.id" class="col-md-4 mb-4">
-                <div class="card c-card">
-                  <div class="c-card-img-wrapper">
-                    <img v-if="item.image" :src="getS3Url(item.image)" class="c-card-img" />
-                    <div v-else class="c-card-img-placeholder"><PlayCircle :size="48" style="color:#ccc"/></div>
-                  </div>
-                  <div class="c-card-body">
-                    <h5 class="c-card-title">{{ item.title }}</h5>
-                    <p class="c-card-text">Fecha: {{ item.date }} {{ item.hour }}</p>
-                    <button class="btn btn-primary btn-sm mt-2 w-100" @click="createLandingPage('masterclass', item)">
-                      <Layout :size="14" class="mr-1"/> Crear Landing Page
-                    </button>
-                  </div>
+            <div v-else class="resources-grid">
+              <div v-for="item in store.courseResources.masterclasses" :key="item.id" class="card c-card">
+                <div class="c-card-img-wrapper">
+                  <img v-if="item.image" :src="getS3Url(item.image)" class="c-card-img" />
+                  <div v-else class="c-card-img-placeholder"><PlayCircle :size="48" style="color:#ccc"/></div>
+                </div>
+                <div class="c-card-body">
+                  <h5 class="c-card-title">{{ item.title }}</h5>
+                  <p class="c-card-text">Fecha: {{ item.date }} {{ item.hour }}</p>
+                  <button class="btn-ia-magic mt-2 w-100" @click="createLandingPage('masterclass', item)">
+                    <span class="magic-circle"></span>
+                    <span class="magic-svg-left"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 487 487"><path fill-opacity=".1" fill-rule="nonzero" fill="#FFF" d="M0 .3c67 2.1 134.1 4.3 186.3 37 52.2 32.7 89.6 95.8 112.8 150.6 23.2 54.8 32.3 101.4 61.2 149.9 28.9 48.4 77.7 98.8 126.4 149.2H0V.3z"></path></svg></span>
+                    <span class="magic-svg-right"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 487 487"><path fill-opacity=".1" fill-rule="nonzero" fill="#FFF" d="M487 486.7c-66.1-3.6-132.3-7.3-186.3-37s-95.9-85.3-126.2-137.2c-30.4-51.8-49.3-99.9-76.5-151.4C70.9 109.6 35.6 54.8.3 0H487v486.7z"></path></svg></span>
+                    <span class="magic-overlay"></span>
+                    <span class="magic-text-container">
+                      <span class="text-default"><Layout :size="14" class="mr-1"/> Generar Página Embudo</span>
+                    </span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -103,20 +107,24 @@
               <BookOpen :size="40" class="empty-icon" />
               <p>No hay E-books para este curso</p>
             </div>
-            <div v-else class="row">
-              <div v-for="item in store.courseResources.ebooks" :key="item.id" class="col-md-4 mb-4">
-                <div class="card c-card">
-                  <div class="c-card-img-wrapper">
-                    <img v-if="item.image" :src="getS3Url(item.image)" class="c-card-img" />
-                    <div v-else class="c-card-img-placeholder"><BookOpen :size="48" style="color:#ccc"/></div>
-                  </div>
-                  <div class="c-card-body">
-                    <h5 class="c-card-title">{{ item.title }}</h5>
-                    <p class="c-card-text">Páginas: {{ item.pages || 'N/A' }}</p>
-                    <button class="btn btn-info btn-sm mt-2 w-100 text-white" @click="createLandingPage('ebook', item)">
-                      <Layout :size="14" class="mr-1"/> Crear Landing Page
-                    </button>
-                  </div>
+            <div v-else class="resources-grid">
+              <div v-for="item in store.courseResources.ebooks" :key="item.id" class="card c-card">
+                <div class="c-card-img-wrapper">
+                  <img v-if="item.image" :src="getS3Url(item.image)" class="c-card-img" />
+                  <div v-else class="c-card-img-placeholder"><BookOpen :size="48" style="color:#ccc"/></div>
+                </div>
+                <div class="c-card-body">
+                  <h5 class="c-card-title">{{ item.title }}</h5>
+                  <p class="c-card-text">Páginas: {{ item.pages || 'N/A' }}</p>
+                  <button class="btn-ia-magic mt-2 w-100" @click="createLandingPage('ebook', item)">
+                    <span class="magic-circle"></span>
+                    <span class="magic-svg-left"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 487 487"><path fill-opacity=".1" fill-rule="nonzero" fill="#FFF" d="M0 .3c67 2.1 134.1 4.3 186.3 37 52.2 32.7 89.6 95.8 112.8 150.6 23.2 54.8 32.3 101.4 61.2 149.9 28.9 48.4 77.7 98.8 126.4 149.2H0V.3z"></path></svg></span>
+                    <span class="magic-svg-right"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 487 487"><path fill-opacity=".1" fill-rule="nonzero" fill="#FFF" d="M487 486.7c-66.1-3.6-132.3-7.3-186.3-37s-95.9-85.3-126.2-137.2c-30.4-51.8-49.3-99.9-76.5-151.4C70.9 109.6 35.6 54.8.3 0H487v486.7z"></path></svg></span>
+                    <span class="magic-overlay"></span>
+                    <span class="magic-text-container">
+                      <span class="text-default"><Layout :size="14" class="mr-1"/> Generar Página Embudo</span>
+                    </span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -128,20 +136,24 @@
               <Film :size="40" class="empty-icon" />
               <p>No hay Mini Cursos para este curso</p>
             </div>
-            <div v-else class="row">
-              <div v-for="item in store.courseResources.minicourses" :key="item.id" class="col-md-4 mb-4">
-                <div class="card c-card">
-                  <div class="c-card-img-wrapper">
-                    <img v-if="item.image" :src="getS3Url(item.image)" class="c-card-img" />
-                    <div v-else class="c-card-img-placeholder"><Film :size="48" style="color:#ccc"/></div>
-                  </div>
-                  <div class="c-card-body">
-                    <h5 class="c-card-title">{{ item.title }}</h5>
-                    <p class="c-card-text">Instructor: {{ item.instructor_name || 'Promolider' }}</p>
-                    <button class="btn btn-warning btn-sm mt-2 w-100 text-white" @click="createLandingPage('minicourse', item)">
-                      <Layout :size="14" class="mr-1"/> Crear Landing Page
-                    </button>
-                  </div>
+            <div v-else class="resources-grid">
+              <div v-for="item in store.courseResources.minicourses" :key="item.id" class="card c-card">
+                <div class="c-card-img-wrapper">
+                  <img v-if="item.image" :src="getS3Url(item.image)" class="c-card-img" />
+                  <div v-else class="c-card-img-placeholder"><Film :size="48" style="color:#ccc"/></div>
+                </div>
+                <div class="c-card-body">
+                  <h5 class="c-card-title">{{ item.title }}</h5>
+                  <p class="c-card-text">Instructor: {{ item.instructor_name || 'Promolider' }}</p>
+                  <button class="btn-ia-magic mt-2 w-100" @click="createLandingPage('minicourse', item)">
+                    <span class="magic-circle"></span>
+                    <span class="magic-svg-left"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 487 487"><path fill-opacity=".1" fill-rule="nonzero" fill="#FFF" d="M0 .3c67 2.1 134.1 4.3 186.3 37 52.2 32.7 89.6 95.8 112.8 150.6 23.2 54.8 32.3 101.4 61.2 149.9 28.9 48.4 77.7 98.8 126.4 149.2H0V.3z"></path></svg></span>
+                    <span class="magic-svg-right"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 487 487"><path fill-opacity=".1" fill-rule="nonzero" fill="#FFF" d="M487 486.7c-66.1-3.6-132.3-7.3-186.3-37s-95.9-85.3-126.2-137.2c-30.4-51.8-49.3-99.9-76.5-151.4C70.9 109.6 35.6 54.8.3 0H487v486.7z"></path></svg></span>
+                    <span class="magic-overlay"></span>
+                    <span class="magic-text-container">
+                      <span class="text-default"><Layout :size="14" class="mr-1"/> Generar Página Embudo</span>
+                    </span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -300,9 +312,10 @@ async function loadData() {
   loading.value = false
   
   // Auto-select tab with items
-  if (store.courseResources.masterclasses.length > 0) activeTab.value = 'masterclass'
-  else if (store.courseResources.ebooks.length > 0) activeTab.value = 'ebook'
-  else if (store.courseResources.minicourses.length > 0) activeTab.value = 'minicourse'
+  if (store.courseResources.promotional_materials && store.courseResources.promotional_materials.length > 0) activeTab.value = 'promotional'
+  else if (store.courseResources.masterclasses && store.courseResources.masterclasses.length > 0) activeTab.value = 'masterclass'
+  else if (store.courseResources.ebooks && store.courseResources.ebooks.length > 0) activeTab.value = 'ebook'
+  else if (store.courseResources.minicourses && store.courseResources.minicourses.length > 0) activeTab.value = 'minicourse'
 }
 
 function createLandingPage(type, resource) {
@@ -562,6 +575,13 @@ onMounted(() => {
 .c-card-text { font-size: 0.85rem; color: var(--text-muted); margin: 0; }
 .c-card-img-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, rgba(32, 226, 5, 0.1) 0%, rgba(0, 208, 228, 0.1) 100%); border-bottom: 1px solid rgba(255,255,255,0.05); }
 
+/* Grid de Recursos */
+.resources-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+}
+
 /* Material Promocional Scroll Horizontal */
 .promotional-grid { 
   display: grid; 
@@ -614,6 +634,91 @@ onMounted(() => {
 .video-wrapper { position: relative; width: 100%; border-radius: 8px; overflow: hidden; background: #000; display: flex; align-items: center; justify-content: center; aspect-ratio: 16 / 9; }
 .video-player { width: 100%; height: 100%; object-fit: contain; position: relative; z-index: 0; }
 .video-click-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 10; cursor: pointer; background: transparent; }
+
+/* Magic Button / Premium Button para Landing Pages */
+.btn-ia-magic {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 32px;
+  overflow: hidden;
+  letter-spacing: -0.02em;
+  color: white;
+  background-color: #1f2937;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.1);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+.btn-ia-magic:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+}
+.btn-ia-magic .magic-circle {
+  position: absolute;
+  width: 0;
+  height: 0;
+  transition: all 0.5s ease-out;
+  background: linear-gradient(135deg, var(--primary-color), #00d0e4);
+  border-radius: 50%;
+  opacity: 0.8;
+}
+.btn-ia-magic:hover .magic-circle {
+  width: 400px;
+  height: 400px;
+}
+.btn-ia-magic .magic-svg-left {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 100%;
+  margin-left: -8px;
+}
+.btn-ia-magic .magic-svg-left svg {
+  width: auto;
+  height: 100%;
+  opacity: 1;
+}
+.btn-ia-magic .magic-svg-right {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 48px;
+  height: 100%;
+  margin-right: -12px;
+}
+.btn-ia-magic .magic-svg-right svg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.btn-ia-magic .magic-overlay {
+  position: absolute;
+  top: -4px; right: 0; bottom: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  opacity: 0.3;
+  background: linear-gradient(to bottom, transparent, transparent, rgba(255,255,255,0.4));
+}
+.btn-ia-magic .magic-text-container {
+  position: relative;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+.btn-ia-magic .text-default {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.3s ease;
+  opacity: 1;
+}
 
 /* Botones Personalizados */
 .btn-promo-action {

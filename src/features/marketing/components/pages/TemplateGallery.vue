@@ -187,15 +187,17 @@ const deleteTarget = ref(null)
 onMounted(async () => {
   loading.value = true
   try {
-    await store.fetchTemplates()
+    // Comentado temporalmente para ocultar las plantillas de la base de datos
+    // await store.fetchTemplates()
     
-    // Inject 3 Demo Templates as requested by the user
+    // Inject Demo Templates as requested by the user
     const demoTemplates = [
-      { id: 'demo-dark-pro', name: 'Dark Pro', description: 'Elegante y profesional con fondo oscuro', title: 'Dark Pro', type: 'demo' },
-      { id: 'demo-light-clean', name: 'Light Clean', description: 'Minimalista y claro, ideal para ebooks', title: 'Light Clean', type: 'demo' },
-      { id: 'demo-minimal-impact', name: 'Minimal Impact', description: 'Diseño directo para conversiones', title: 'Minimal Impact', type: 'demo' }
+      { id: 'demo-dark-pro', name: 'Dark Pro', description: 'Elegante y profesional con fondo oscuro', title: 'Dark Pro', type: 'demo', thumbnail: 'https://images.unsplash.com/photo-1618761714954-0b8cd0026356?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80' },
+      // { id: 'demo-light-clean', name: 'Light Clean', description: 'Minimalista y claro, ideal para ebooks', title: 'Light Clean', type: 'demo' },
+      // { id: 'demo-minimal-impact', name: 'Minimal Impact', description: 'Diseño directo para conversiones', title: 'Minimal Impact', type: 'demo' }
     ];
-    templates.value = [...store.templates, ...demoTemplates]
+    // templates.value = [...store.templates, ...demoTemplates]
+    templates.value = [...demoTemplates]
 
     if (props.user?.id) {
       await store.fetchUserPages(props.user.id)

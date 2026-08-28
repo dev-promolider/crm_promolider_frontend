@@ -1,6 +1,6 @@
 <template>
   <div class="marketing-tools-view">
-    <div class="card">
+    <div class="card" v-show="!isEditingTool">
       <div class="card-body">
         <!-- Seleccionar Curso -->
         <div v-if="!selectedCourseId" class="course-selection-view">
@@ -127,327 +127,570 @@
       </div>
     </div>
 
-    <!-- ===================== EDIT MODALS ===================== -->
-
-    <!-- Edit Masterclass Modal -->
-    <div v-if="showEditMasterclassModal" class="modal-overlay" @click.self="closeEditModals">
-      <div class="modal-card modal-lg-wide" @click.stop>
-        <div class="modal-header">
-          <h5 class="modal-title"><Edit3 :size="18" /> Editar Masterclass: <u>{{ editTarget?.nombre || editTarget?.title }}</u></h5>
-          <button class="close-btn" @click="closeEditModals"><X :size="20" /></button>
+    <!-- ===================== EDIT VIEWS (Full Page) ===================== -->
+    <div v-if="showEditMasterclassModal" class="edit-page-container">
+      <div class="card w-100 border-0 shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center bg-dark text-white p-3 border-bottom border-secondary">
+          <div class="d-flex align-items-center gap-3">
+            <button class="btn-back m-0 d-flex align-items-center gap-2" @click="closeEditModals">
+              <ArrowLeft :size="16" /> Volver
+            </button>
+            <h5 class="m-0 fw-bold d-flex align-items-center gap-2"><Edit3 :size="18" class="text-primary"/> Editar Masterclass: <span class="text-gray-300 fw-normal ms-1">{{ editTarget?.nombre || editTarget?.title }}</span></h5>
+          </div>
         </div>
-        <div class="modal-body">
-          <form @submit.prevent="submitEditMasterclass">
-            <div class="row">
-              <div class="col-md-8">
-                <div class="form-group">
-                  <label>Título <span class="text-danger">*</span></label>
-                  <input type="text" class="form-control" v-model="editForm.title" required />
-                </div>
-              </div>
-              <div class="col-md-4">
-                <div class="form-group">
-                  <label>Categoría <span class="text-danger">*</span></label>
-                  <select class="form-control" v-model="editForm.id_categories" required>
-                    <option value="">Seleccionar</option>
-                    <option v-for="cat in store.categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-            <div class="form-group">
-              <label>Descripción</label>
-              <textarea class="form-control" rows="3" v-model="editForm.description"></textarea>
-            </div>
-            <div class="form-group">
-              <label>Objetivos</label>
-              <textarea class="form-control" rows="2" v-model="editForm.objective"></textarea>
-            </div>
-            <div class="row">
-              <div class="col-md-4">
-                <div class="form-group">
-                  <label>Fecha</label>
-                  <input type="date" class="form-control" v-model="editForm.date" />
-                </div>
-              </div>
-              <div class="col-md-4">
-                <div class="form-group">
-                  <label>Email de contacto</label>
-                  <input type="email" class="form-control" v-model="editForm.email_contact" />
-                </div>
-              </div>
-              <div class="col-md-4">
-                <div class="form-group">
-                  <label>Teléfono</label>
-                  <input type="text" class="form-control" v-model="editForm.phone_contact" />
-                </div>
-              </div>
-            </div>
-            <div class="form-group">
-              <label>Meeting Link</label>
-              <input type="url" class="form-control" v-model="editForm.meeting_link" placeholder="https://zoom.us/j/..." />
-              <!-- Imágenes actuales -->
-              <div v-if="editImages && editImages.length" class="mb-2">
-                <small class="text-muted">Imagen actual:</small>
-                <div class="d-flex flex-wrap gap-2 mt-1">
-                  <div class="img-preview-wrapper">
-                    <img :src="getS3ImageUrl(editImages[0]?.image || editImages[0]?.url).replace(/([^:]\/)\/+/g, '$1')" class="img-thumbnail-sm" referrerpolicy="no-referrer" />
+        <div class="card-body p-0 bg-black">
+          <form @submit.prevent="submitEditMasterclass" class="m-0">
+            <div style="display: flex; flex-wrap: wrap; width: 100%;">
+              <!-- IZQUIERDA: Formulario -->
+              <div class="p-4 border-end edit-form-scroll" style="flex: 1 1 55%; min-width: 350px;">
+                
+                <h6 class="text-uppercase text-muted mb-3 form-section-title"><Layers :size="14" class="me-1"/> Información Básica</h6>
+                <div class="row">
+                  <div class="col-md-8">
+                    <div class="form-group">
+                      <label>Título <span class="text-danger">*</span></label>
+                      <input type="text" class="form-control" v-model="editForm.title" required />
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="form-group">
+                      <label>Categoría <span class="text-danger">*</span></label>
+                      <select class="form-control" v-model="editForm.id_categories" required>
+                        <option value="">Seleccionar</option>
+                        <option v-for="cat in store.categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
-            <div class="row">
-              <div class="col-md-6">
                 <div class="form-group">
-                  <label>Nueva imagen (Solo 1)</label>
-                  <label for="mcImage" class="custom-file-upload" :class="{ 'has-file': editFiles.images?.[0] }">
-                    <div class="upload-icon-wrapper">
-                      <ImageIcon v-if="!editFiles.images?.[0]" class="upload-icon" />
-                      <CheckCircle2 v-else class="upload-icon success" />
+                  <label>Descripción</label>
+                  <textarea class="form-control" rows="3" v-model="editForm.description"></textarea>
+                </div>
+                <div class="form-group">
+                  <label>Objetivos</label>
+                  <textarea class="form-control" rows="2" v-model="editForm.objectives"></textarea>
+                </div>
+
+                <hr class="border-secondary opacity-25 my-4">
+
+                <h6 class="text-uppercase text-muted mb-3 form-section-title"><Calendar :size="14" class="me-1"/> Detalles del Evento</h6>
+                <div class="row">
+                  <div class="col-md-4">
+                    <div class="form-group">
+                      <label>Fecha</label>
+                      <input type="date" class="form-control" v-model="editForm.date" />
                     </div>
-                    <div class="upload-text">
-                      <span v-if="!editFiles.images?.[0]"><strong>Haz clic para subir</strong> imagen</span>
-                      <span v-else class="file-name">{{ editFiles.images[0].name }}</span>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="form-group">
+                      <label>Email de contacto</label>
+                      <input type="email" class="form-control" v-model="editForm.email_contact" />
                     </div>
-                  </label>
-                  <input type="file" id="mcImage" class="d-none" accept="image/jpeg,image/png,image/jpg" @change="e => { editFiles.images = e.target.files; generatePreviews(e.target.files, 'images') }" />
-                  <div v-if="localPreviews.images?.length" class="mt-2">
-                    <small class="text-muted">Vista previa (nueva):</small>
-                    <div class="d-flex flex-wrap gap-2 mt-1">
-                      <div v-for="(url, i) in localPreviews.images" :key="i" class="img-preview-wrapper">
-                        <img :src="url" class="img-thumbnail-sm border-primary" />
+                  </div>
+                  <div class="col-md-4">
+                    <div class="form-group">
+                      <label>Teléfono</label>
+                      <input type="text" class="form-control" v-model="editForm.phone_contact" />
+                    </div>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Meeting Link</label>
+                  <input type="url" class="form-control" v-model="editForm.meeting_link" placeholder="https://zoom.us/j/..." />
+                </div>
+
+                <hr class="border-secondary opacity-25 my-4">
+
+                <h6 class="text-uppercase text-muted mb-3 form-section-title"><ImageIcon :size="14" class="me-1"/> Archivos Multimedia</h6>
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      <label>Nueva imagen (Solo 1)</label>
+                      <label for="mcImage" class="custom-file-upload" :class="{ 'has-file': editFiles.images?.[0] }">
+                        <div class="upload-icon-wrapper">
+                          <ImageIcon v-if="!editFiles.images?.[0]" class="upload-icon" />
+                          <CheckCircle2 v-else class="upload-icon success" />
+                        </div>
+                        <div class="upload-text">
+                          <span v-if="!editFiles.images?.[0]"><strong>Haz clic para subir</strong> imagen</span>
+                          <span v-else class="file-name">{{ editFiles.images[0].name }}</span>
+                        </div>
+                      </label>
+                      <input type="file" id="mcImage" class="d-none" accept="image/jpeg,image/png,image/jpg" @change="e => { editFiles.images = e.target.files; generatePreviews(e.target.files, 'images') }" />
+                      
+                      <!-- Imágenes actuales / Vista previa -->
+                      <div class="mt-2" v-if="localPreviews.images?.length || (editImages && editImages.length)">
+                        <small class="text-muted">Vista previa:</small>
+                        <div class="d-flex flex-wrap gap-2 mt-1">
+                          <div v-if="localPreviews.images?.length" v-for="(url, i) in localPreviews.images" :key="'new'+i" class="img-preview-wrapper">
+                            <img :src="url" class="img-thumbnail-sm border-primary" />
+                          </div>
+                          <div v-else-if="editImages && editImages.length" class="img-preview-wrapper">
+                            <img :src="getS3ImageUrl(editImages[0]?.image || editImages[0]?.url).replace(/([^:]\/)\/+/g, '$1')" class="img-thumbnail-sm" referrerpolicy="no-referrer" />
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      <label>Nuevos documentos</label>
+                      <label for="mcDoc" class="custom-file-upload" :class="{ 'has-file': editFiles.documents?.length }">
+                        <div class="upload-icon-wrapper">
+                          <FileText v-if="!editFiles.documents?.length" class="upload-icon" />
+                          <CheckCircle2 v-else class="upload-icon success" />
+                        </div>
+                        <div class="upload-text">
+                          <span v-if="!editFiles.documents?.length"><strong>Haz clic para subir</strong> documentos</span>
+                          <span v-else class="file-name">{{ editFiles.documents.length }} archivo(s)</span>
+                        </div>
+                      </label>
+                      <input type="file" id="mcDoc" class="d-none" multiple accept=".pdf,.doc,.docx" @change="e => editFiles.documents = e.target.files" />
+                    </div>
+                  </div>
+                </div>
+
+                <hr class="border-secondary opacity-25 my-4">
+
+                <h6 class="text-uppercase text-muted mb-3 form-section-title"><MessageSquare :size="14" class="me-1"/> Prueba Social & FAQs</h6>
+                
+                <!-- Testimonios Collapsible -->
+                <details class="custom-accordion mb-3">
+                  <summary class="accordion-header rounded bg-dark p-2 border border-secondary" style="cursor: pointer;">
+                    <span class="fw-semibold">Testimonios <span class="text-danger">*</span> <small class="text-muted fw-normal">(mínimo 2)</small></span>
+                  </summary>
+                  <div class="accordion-body p-3 border border-top-0 border-secondary rounded-bottom" style="background: var(--card-bg, #1a1a1a);">
+                    <div v-for="(t, i) in editForm.testimonials" :key="'t-mc-'+i" class="border rounded p-2 mb-2" style="background: rgba(0,0,0,0.2);">
+                      <small class="text-muted">Testimonio {{ i + 1 }}</small>
+                      <input type="text" class="form-control mb-1 mt-1" :placeholder="'Nombre del autor ' + (i+1)" v-model="t.author_name" />
+                      <textarea class="form-control" rows="2" :placeholder="'¿Qué dijo sobre tu producto?'" v-model="t.content"></textarea>
+                    </div>
+                    <div class="d-flex mt-2">
+                      <button type="button" class="btn-primary-custom" @click="editForm.testimonials.push({ author_name: '', content: '' })"><Plus :size="14" class="me-1"/> Añadir testimonio</button>
+                      <button type="button" class="btn-danger-custom ms-2" v-if="editForm.testimonials?.length > 2" @click="editForm.testimonials.pop()"><X :size="14" class="me-1"/> Quitar último</button>
+                    </div>
+                  </div>
+                </details>
+
+                <!-- FAQ Collapsible -->
+                <details class="custom-accordion mb-2">
+                  <summary class="accordion-header rounded bg-dark p-2 border border-secondary" style="cursor: pointer;">
+                    <span class="fw-semibold">Preguntas Frecuentes (FAQ) <span class="text-danger">*</span> <small class="text-muted fw-normal">(mínimo 3)</small></span>
+                  </summary>
+                  <div class="accordion-body p-3 border border-top-0 border-secondary rounded-bottom" style="background: var(--card-bg, #1a1a1a);">
+                    <div v-for="(f, i) in editForm.faqs" :key="'faq-mc-'+i" class="border rounded p-2 mb-2" style="background: rgba(0,0,0,0.2);">
+                      <small class="text-muted">Pregunta {{ i + 1 }}</small>
+                      <input type="text" class="form-control mb-1 mt-1" :placeholder="'Pregunta ' + (i + 1)" v-model="f.question" />
+                      <textarea class="form-control" rows="2" placeholder="Respuesta" v-model="f.answer"></textarea>
+                    </div>
+                    <div class="d-flex mt-2">
+                      <button type="button" class="btn-primary-custom" @click="editForm.faqs.push({ question: '', answer: '' })"><Plus :size="14" class="me-1"/> Añadir FAQ</button>
+                      <button type="button" class="btn-danger-custom ms-2" v-if="editForm.faqs?.length > 3" @click="editForm.faqs.pop()"><X :size="14" class="me-1"/> Quitar último</button>
+                    </div>
+                  </div>
+                </details>
+
+              </div>
+              
+              <!-- DERECHA: Vista Previa en Vivo -->
+              <div class="p-4" style="flex: 1 1 40%; min-width: 350px; background-color: var(--card-bg, #141414);">
+                <h6 class="text-uppercase text-success mb-4 form-section-title"><Monitor :size="14" class="me-1"/> Vista Previa en Vivo</h6>
+                <div class="preview-card-sticky sticky-top" style="top: 20px;">
+                  <div style="border: 1px solid var(--border-color, #333); border-radius: 8px; overflow: hidden; background: #000; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                    <!-- Browser Header -->
+                    <div style="background: #1a1a1a; padding: 10px 15px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #333;">
+                      <span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f56;"></span>
+                      <span style="width: 12px; height: 12px; border-radius: 50%; background: #ffbd2e;"></span>
+                      <span style="width: 12px; height: 12px; border-radius: 50%; background: #27c93f;"></span>
+                      <div style="flex-grow: 1; text-align: center;">
+                        <div style="display: inline-block; background: #0a0a0a; color: #888; font-size: 11px; padding: 2px 20px; border-radius: 12px; letter-spacing: 0.5px;">preview.promolider.org</div>
+                      </div>
+                    </div>
+                    <!-- Iframe Content -->
+                    <iframe :srcdoc="livePreviewHtml" frameborder="0" style="width: 100%; height: 75vh; min-height: 600px; background: white; display: block;"></iframe>
+                  </div>
                 </div>
               </div>
-              <div class="col-md-6">
-                <div class="form-group">
-                  <label>Nuevos documentos</label>
-                  <label for="mcDoc" class="custom-file-upload" :class="{ 'has-file': editFiles.documents?.length }">
-                    <div class="upload-icon-wrapper">
-                      <FileText v-if="!editFiles.documents?.length" class="upload-icon" />
-                      <CheckCircle2 v-else class="upload-icon success" />
-                    </div>
-                    <div class="upload-text">
-                      <span v-if="!editFiles.documents?.length"><strong>Haz clic para subir</strong> documentos</span>
-                      <span v-else class="file-name">{{ editFiles.documents.length }} archivo(s)</span>
-                    </div>
-                  </label>
-                  <input type="file" id="mcDoc" class="d-none" multiple accept=".pdf,.doc,.docx" @change="e => editFiles.documents = e.target.files" />
-                </div>
-              </div>
+
             </div>
           </form>
         </div>
-        <div class="modal-footer">
-          <button class="btn-cancel" @click="closeEditModals">Cancelar</button>
-          <button class="btn-primary-custom" @click="submitEditMasterclass" :disabled="editLoading">
-            <Loader2 v-if="editLoading" :size="14" class="spinner-inline" /> Actualizar Masterclass
+        <div class="card-footer bg-dark border-top border-secondary p-3 d-flex justify-content-end gap-3">
+          <button type="button" class="btn-cancel" @click="closeEditModals">Cancelar</button>
+          <button type="submit" class="btn-primary-custom" @click="submitEditMasterclass" :disabled="editLoading">
+            <Loader2 v-if="editLoading" :size="16" class="spinner-inline me-2" /> 
+            <Save v-else :size="16" class="me-2" />
+            Actualizar Masterclass
           </button>
         </div>
       </div>
     </div>
 
     <!-- Edit Ebook Modal -->
-    <div v-if="showEditEbookModal" class="modal-overlay" @click.self="closeEditModals">
-      <div class="modal-card modal-lg-wide" @click.stop>
-        <div class="modal-header">
-          <h5 class="modal-title"><Edit3 :size="18" /> Editar E-book: <u>{{ editTarget?.nombre || editTarget?.title }}</u></h5>
-          <button class="close-btn" @click="closeEditModals"><X :size="20" /></button>
+    <div v-if="showEditEbookModal" class="edit-page-container">
+      <div class="card w-100 border-0 shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center bg-dark text-white p-3 border-bottom border-secondary">
+          <div class="d-flex align-items-center gap-3">
+            <button class="btn-back m-0 d-flex align-items-center gap-2" @click="closeEditModals">
+              <ArrowLeft :size="16" /> Volver
+            </button>
+            <h5 class="m-0 fw-bold d-flex align-items-center gap-2"><Edit3 :size="18" class="text-primary"/> Editar E-book: <span class="text-gray-300 fw-normal ms-1">{{ editTarget?.nombre || editTarget?.title }}</span></h5>
+          </div>
         </div>
-        <div class="modal-body">
-          <form @submit.prevent="submitEditEbook">
-            <div class="row">
-              <div class="col-md-6">
-                <div class="form-group">
-                  <label>Título <span class="text-danger">*</span></label>
-                  <input type="text" class="form-control" v-model="editForm.titulo" required />
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="form-group">
-                  <label>Autor <span class="text-danger">*</span></label>
-                  <input type="text" class="form-control" v-model="editForm.autor" required />
-                </div>
-              </div>
-            </div>
-            <div class="row">
-              <div class="col-md-6">
-                <div class="form-group">
-                  <label>Categoría <span class="text-danger">*</span></label>
-                  <select class="form-control" v-model="editForm.categoria" required>
-                    <option value="">Seleccionar</option>
-                    <option v-for="cat in store.categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
-                  </select>
-                </div>
-              </div>
-              <div class="col-md-3">
-                <div class="form-group">
-                  <label>Precio</label>
-                  <input type="number" step="0.01" min="0" class="form-control" v-model="editForm.precio" />
-                </div>
-              </div>
-              <div class="col-md-3">
-                <div class="form-group">
-                  <label>Páginas</label>
-                  <input type="number" min="1" class="form-control" v-model="editForm.paginas" required />
-                </div>
-              </div>
-            </div>
-            <div class="form-group">
-              <label>Descripción</label>
-              <textarea class="form-control" rows="3" v-model="editForm.descripcion" required></textarea>
-            </div>
-            <!-- Capítulos -->
-            <div class="form-group">
-              <label>Capítulos</label>
-              <div class="border rounded p-3 bg-light-subtle">
-                <div v-for="(cap, i) in editForm.capitulos" :key="i" class="mb-2 p-2 border rounded bg-white">
-                  <div class="d-flex justify-content-between align-items-center mb-1">
-                    <strong>Capítulo {{ i + 1 }}</strong>
-                    <button type="button" class="btn-sm-icon text-danger" @click="removeChapter(i)" v-if="editForm.capitulos.length > 1"><X :size="14" /></button>
-                  </div>
-                  <div class="row">
-                    <div class="col-md-8">
-                      <input type="text" class="form-control form-control-sm mb-1" v-model="cap.titulo" placeholder="Título del capítulo" />
-                    </div>
-                    <div class="col-md-4">
-                      <input type="number" min="1" class="form-control form-control-sm mb-1" v-model="cap.paginas" placeholder="Páginas" />
+        <div class="card-body p-0 bg-black">
+          <form @submit.prevent="submitEditEbook" class="m-0">
+            <div style="display: flex; flex-wrap: wrap; width: 100%;">
+              <!-- IZQUIERDA: Formulario -->
+              <div class="p-4 border-end edit-form-scroll" style="flex: 1 1 55%; min-width: 350px;">
+                
+                <h6 class="text-uppercase text-muted mb-3 form-section-title"><Book :size="14" class="me-1"/> Información del E-book</h6>
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      <label>Título <span class="text-danger">*</span></label>
+                      <input type="text" class="form-control" v-model="editForm.titulo" required />
                     </div>
                   </div>
-                  <textarea class="form-control form-control-sm" rows="2" v-model="cap.contenido" placeholder="Contenido..."></textarea>
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      <label>Autor <span class="text-danger">*</span></label>
+                      <input type="text" class="form-control" v-model="editForm.autor" required />
+                    </div>
+                  </div>
                 </div>
-                <button type="button" class="btn btn-sm btn-outline-primary mt-1" @click="addChapter">
-                  <Plus :size="12" /> Agregar Capítulo
-                </button>
-              </div>
-            </div>
-            <div class="row">
-              <div class="col-md-6">
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      <label>Categoría <span class="text-danger">*</span></label>
+                      <select class="form-control" v-model="editForm.categoria" required>
+                        <option value="">Seleccionar</option>
+                        <option v-for="cat in store.categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-group">
+                      <label>Precio</label>
+                      <input type="number" step="0.01" min="0" class="form-control" v-model="editForm.precio" />
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="form-group">
+                      <label>Páginas</label>
+                      <input type="number" min="1" class="form-control" v-model="editForm.paginas" required />
+                    </div>
+                  </div>
+                </div>
                 <div class="form-group">
-                  <label>Nueva portada</label>
-                  <label for="ebCover" class="custom-file-upload" :class="{ 'has-file': editFiles.portada }">
-                    <div class="upload-icon-wrapper">
-                      <ImageIcon v-if="!editFiles.portada" class="upload-icon" />
-                      <CheckCircle2 v-else class="upload-icon success" />
-                    </div>
-                    <div class="upload-text">
-                      <span v-if="!editFiles.portada"><strong>Haz clic para subir</strong> portada</span>
-                      <span v-else class="file-name">{{ editFiles.portada.name }}</span>
-                    </div>
-                  </label>
-                  <input type="file" id="ebCover" class="d-none" accept="image/jpeg,image/png,image/jpg,image/webp" @change="e => { editFiles.portada = e.target.files?.[0]; generatePreviews(e.target.files, 'portada') }" />
-                  <div v-if="localPreviews.portada?.length" class="mt-2"><small class="text-muted text-primary">Vista previa (nueva):</small><img :src="localPreviews.portada[0]" class="img-thumbnail-sm d-block mt-1 border-primary" /></div>
-                  <div v-if="editImages?.length" class="mt-1"><small class="text-muted">Portada actual:</small><img :src="getS3ImageUrl(editImages[0]?.image || editImages[0]?.url)" class="img-thumbnail-sm d-block mt-1" referrerpolicy="no-referrer" /></div>
+                  <label>Descripción</label>
+                  <textarea class="form-control" rows="3" v-model="editForm.descripcion" required></textarea>
                 </div>
-              </div>
-              <div class="col-md-6">
+
+                <hr class="border-secondary opacity-25 my-4">
+
+                <h6 class="text-uppercase text-muted mb-3 form-section-title"><Layers :size="14" class="me-1"/> Estructura (Capítulos)</h6>
                 <div class="form-group">
-                  <label>Nuevo archivo PDF</label>
-                  <label for="ebPdf" class="custom-file-upload" :class="{ 'has-file': editFiles.archivo_pdf }">
-                    <div class="upload-icon-wrapper">
-                      <FileText v-if="!editFiles.archivo_pdf" class="upload-icon" />
-                      <CheckCircle2 v-else class="upload-icon success" />
+                  <div class="border rounded p-3 bg-dark border-secondary">
+                    <div v-for="(cap, i) in editForm.capitulos" :key="i" class="mb-2 p-3 border rounded border-secondary" style="background: rgba(0,0,0,0.2);">
+                      <div class="d-flex justify-content-between align-items-center mb-2">
+                        <strong class="text-white">Capítulo {{ i + 1 }}</strong>
+                        <button type="button" class="btn-sm-icon text-danger" @click="removeChapter(i)" v-if="editForm.capitulos.length > 1"><X :size="14" /></button>
+                      </div>
+                      <div class="row">
+                        <div class="col-md-8">
+                          <input type="text" class="form-control form-control-sm mb-2" v-model="cap.titulo" placeholder="Título del capítulo" />
+                        </div>
+                        <div class="col-md-4">
+                          <input type="number" min="1" class="form-control form-control-sm mb-2" v-model="cap.paginas" placeholder="Páginas" />
+                        </div>
+                      </div>
+                      <textarea class="form-control form-control-sm" rows="2" v-model="cap.contenido" placeholder="Breve resumen o contenido..."></textarea>
                     </div>
-                    <div class="upload-text">
-                      <span v-if="!editFiles.archivo_pdf"><strong>Haz clic para subir</strong> archivo PDF</span>
-                      <span v-else class="file-name">{{ editFiles.archivo_pdf.name }}</span>
+                    <button type="button" class="btn-primary-custom btn-sm mt-1" @click="addChapter">
+                      <Plus :size="14" class="me-1"/> Agregar Capítulo
+                    </button>
+                  </div>
+                </div>
+
+                <hr class="border-secondary opacity-25 my-4">
+
+                <h6 class="text-uppercase text-muted mb-3 form-section-title"><ImageIcon :size="14" class="me-1"/> Archivos del E-book</h6>
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      <label>Nueva portada</label>
+                      <label for="ebCover" class="custom-file-upload" :class="{ 'has-file': editFiles.portada }">
+                        <div class="upload-icon-wrapper">
+                          <ImageIcon v-if="!editFiles.portada" class="upload-icon" />
+                          <CheckCircle2 v-else class="upload-icon success" />
+                        </div>
+                        <div class="upload-text">
+                          <span v-if="!editFiles.portada"><strong>Haz clic para subir</strong> portada</span>
+                          <span v-else class="file-name">{{ editFiles.portada.name }}</span>
+                        </div>
+                      </label>
+                      <input type="file" id="ebCover" class="d-none" accept="image/jpeg,image/png,image/jpg,image/webp" @change="e => { editFiles.portada = e.target.files?.[0]; generatePreviews(e.target.files, 'portada') }" />
+                      <div v-if="localPreviews.portada?.length" class="mt-2"><small class="text-muted text-primary">Vista previa (nueva):</small><img :src="localPreviews.portada[0]" class="img-thumbnail-sm d-block mt-1 border-primary" /></div>
+                      <div v-if="editImages?.length" class="mt-1"><small class="text-muted">Portada actual:</small><img :src="getS3ImageUrl(editImages[0]?.image || editImages[0]?.url).replace(/([^:]\/)\/+/g, '$1')" class="img-thumbnail-sm d-block mt-1" referrerpolicy="no-referrer" /></div>
                     </div>
-                  </label>
-                  <input type="file" id="ebPdf" class="d-none" accept=".pdf" @change="e => editFiles.archivo_pdf = e.target.files?.[0]" />
+                  </div>
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      <label>Nuevo archivo PDF</label>
+                      <label for="ebPdf" class="custom-file-upload" :class="{ 'has-file': editFiles.archivo_pdf }">
+                        <div class="upload-icon-wrapper">
+                          <FileText v-if="!editFiles.archivo_pdf" class="upload-icon" />
+                          <CheckCircle2 v-else class="upload-icon success" />
+                        </div>
+                        <div class="upload-text">
+                          <span v-if="!editFiles.archivo_pdf"><strong>Haz clic para subir</strong> archivo PDF</span>
+                          <span v-else class="file-name">{{ editFiles.archivo_pdf.name }}</span>
+                        </div>
+                      </label>
+                      <input type="file" id="ebPdf" class="d-none" accept=".pdf" @change="e => editFiles.archivo_pdf = e.target.files?.[0]" />
+                    </div>
+                  </div>
+                </div>
+
+                <hr class="border-secondary opacity-25 my-4">
+
+                <h6 class="text-uppercase text-muted mb-3 form-section-title"><MessageSquare :size="14" class="me-1"/> Prueba Social & FAQs</h6>
+                
+                <details class="custom-accordion mb-3">
+                  <summary class="accordion-header rounded bg-dark p-2 border border-secondary" style="cursor: pointer;">
+                    <span class="fw-semibold">Testimonios <span class="text-danger">*</span> <small class="text-muted fw-normal">(mínimo 2)</small></span>
+                  </summary>
+                  <div class="accordion-body p-3 border border-top-0 border-secondary rounded-bottom" style="background: var(--card-bg, #1a1a1a);">
+                    <div v-for="(t, i) in editForm.testimonials" :key="'t-eb-'+i" class="border rounded p-2 mb-2" style="background: rgba(0,0,0,0.2);">
+                      <small class="text-muted">Testimonio {{ i + 1 }}</small>
+                      <input type="text" class="form-control mb-1 mt-1" :placeholder="'Nombre del autor ' + (i+1)" v-model="t.author_name" />
+                      <textarea class="form-control" rows="2" placeholder="¿Qué dijo sobre tu ebook?" v-model="t.content"></textarea>
+                    </div>
+                    <div class="d-flex mt-2">
+                      <button type="button" class="btn-primary-custom" @click="editForm.testimonials.push({ author_name: '', content: '' })"><Plus :size="14" class="me-1"/> Añadir testimonio</button>
+                      <button type="button" class="btn-danger-custom ms-2" v-if="editForm.testimonials?.length > 2" @click="editForm.testimonials.pop()"><X :size="14" class="me-1"/> Quitar último</button>
+                    </div>
+                  </div>
+                </details>
+
+                <details class="custom-accordion mb-2">
+                  <summary class="accordion-header rounded bg-dark p-2 border border-secondary" style="cursor: pointer;">
+                    <span class="fw-semibold">Preguntas Frecuentes (FAQ) <span class="text-danger">*</span> <small class="text-muted fw-normal">(mínimo 3)</small></span>
+                  </summary>
+                  <div class="accordion-body p-3 border border-top-0 border-secondary rounded-bottom" style="background: var(--card-bg, #1a1a1a);">
+                    <div v-for="(f, i) in editForm.faqs" :key="'faq-eb-'+i" class="border rounded p-2 mb-2" style="background: rgba(0,0,0,0.2);">
+                      <small class="text-muted">Pregunta {{ i + 1 }}</small>
+                      <input type="text" class="form-control mb-1 mt-1" :placeholder="'Pregunta ' + (i + 1)" v-model="f.question" />
+                      <textarea class="form-control" rows="2" placeholder="Respuesta" v-model="f.answer"></textarea>
+                    </div>
+                    <div class="d-flex mt-2">
+                      <button type="button" class="btn-primary-custom" @click="editForm.faqs.push({ question: '', answer: '' })"><Plus :size="14" class="me-1"/> Añadir FAQ</button>
+                      <button type="button" class="btn-danger-custom ms-2" v-if="editForm.faqs?.length > 3" @click="editForm.faqs.pop()"><X :size="14" class="me-1"/> Quitar último</button>
+                    </div>
+                  </div>
+                </details>
+
+              </div>
+              
+              <!-- DERECHA: Vista Previa en Vivo -->
+              <div class="p-4" style="flex: 1 1 40%; min-width: 350px; background-color: var(--card-bg, #141414);">
+                <h6 class="text-uppercase text-success mb-4 form-section-title"><Monitor :size="14" class="me-1"/> Vista Previa en Vivo</h6>
+                <div class="preview-card-sticky sticky-top" style="top: 20px;">
+                  <div style="border: 1px solid var(--border-color, #333); border-radius: 8px; overflow: hidden; background: #000; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                    <!-- Browser Header -->
+                    <div style="background: #1a1a1a; padding: 10px 15px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #333;">
+                      <span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f56;"></span>
+                      <span style="width: 12px; height: 12px; border-radius: 50%; background: #ffbd2e;"></span>
+                      <span style="width: 12px; height: 12px; border-radius: 50%; background: #27c93f;"></span>
+                      <div style="flex-grow: 1; text-align: center;">
+                        <div style="display: inline-block; background: #0a0a0a; color: #888; font-size: 11px; padding: 2px 20px; border-radius: 12px; letter-spacing: 0.5px;">preview.promolider.org</div>
+                      </div>
+                    </div>
+                    <!-- Iframe Content -->
+                    <iframe :srcdoc="livePreviewHtml" frameborder="0" style="width: 100%; height: 75vh; min-height: 600px; background: white; display: block;"></iframe>
+                  </div>
                 </div>
               </div>
+
             </div>
           </form>
         </div>
-        <div class="modal-footer">
-          <button class="btn-cancel" @click="closeEditModals">Cancelar</button>
-          <button class="btn-primary-custom" @click="submitEditEbook" :disabled="editLoading">
-            <Loader2 v-if="editLoading" :size="14" class="spinner-inline" /> Actualizar E-book
+        <div class="card-footer bg-dark border-top border-secondary p-3 d-flex justify-content-end gap-3">
+          <button type="button" class="btn-cancel" @click="closeEditModals">Cancelar</button>
+          <button type="submit" class="btn-primary-custom" @click="submitEditEbook" :disabled="editLoading">
+            <Loader2 v-if="editLoading" :size="16" class="spinner-inline me-2" /> 
+            <Save v-else :size="16" class="me-2" />
+            Actualizar E-book
           </button>
         </div>
       </div>
     </div>
 
     <!-- Edit Mini Curso Modal -->
-    <div v-if="showEditMiniModal" class="modal-overlay" @click.self="closeEditModals">
-      <div class="modal-card modal-lg-wide" @click.stop>
-        <div class="modal-header">
-          <h5 class="modal-title"><Edit3 :size="18" /> Editar Mini Curso: <u>{{ editTarget?.nombre || editTarget?.title }}</u></h5>
-          <button class="close-btn" @click="closeEditModals"><X :size="20" /></button>
+    <div v-if="showEditMiniModal" class="edit-page-container">
+      <div class="card w-100 border-0 shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center bg-dark text-white p-3 border-bottom border-secondary">
+          <div class="d-flex align-items-center gap-3">
+            <button class="btn-back m-0 d-flex align-items-center gap-2" @click="closeEditModals">
+              <ArrowLeft :size="16" /> Volver
+            </button>
+            <h5 class="m-0 fw-bold d-flex align-items-center gap-2"><Edit3 :size="18" class="text-primary"/> Editar Mini Curso: <span class="text-gray-300 fw-normal ms-1">{{ editTarget?.nombre || editTarget?.title }}</span></h5>
+          </div>
         </div>
-        <div class="modal-body">
-          <form @submit.prevent="submitEditMiniCurso">
-            <div class="row">
-              <div class="col-md-6">
+        <div class="card-body p-0 bg-black">
+          <form @submit.prevent="submitEditMiniCurso" class="m-0">
+            <div style="display: flex; flex-wrap: wrap; width: 100%;">
+              <!-- IZQUIERDA: Formulario -->
+              <div class="p-4 border-end edit-form-scroll" style="flex: 1 1 55%; min-width: 350px;">
+                
+                <h6 class="text-uppercase text-muted mb-3 form-section-title"><MonitorPlay :size="14" class="me-1"/> Información del Mini Curso</h6>
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      <label>Título <span class="text-danger">*</span></label>
+                      <input type="text" class="form-control" v-model="editForm.titulo" required />
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      <label>Nivel <span class="text-danger">*</span></label>
+                      <select class="form-control" v-model="editForm.nivel" required>
+                        <option value="">Seleccionar</option>
+                        <option value="principiante">Principiante</option>
+                        <option value="intermedio">Intermedio</option>
+                        <option value="avanzado">Avanzado</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      <label>Categoría <span class="text-danger">*</span></label>
+                      <select class="form-control" v-model="editForm.categoria" required>
+                        <option value="">Seleccionar</option>
+                        <option v-for="cat in store.categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      <label>Duración (min) <span class="text-danger">*</span></label>
+                      <input type="number" min="1" class="form-control" v-model="editForm.duracion" required />
+                    </div>
+                  </div>
+                </div>
                 <div class="form-group">
-                  <label>Título <span class="text-danger">*</span></label>
-                  <input type="text" class="form-control" v-model="editForm.titulo" required />
+                  <label>Descripción</label>
+                  <textarea class="form-control" rows="3" v-model="editForm.descripcion" required></textarea>
+                </div>
+
+                <hr class="border-secondary opacity-25 my-4">
+
+                <h6 class="text-uppercase text-muted mb-3 form-section-title"><ImageIcon :size="14" class="me-1"/> Portada / Imagen</h6>
+                <div class="form-group">
+                  <label>Nueva imagen (Opcional)</label>
+                  <label for="mcimg" class="custom-file-upload" :class="{ 'has-file': editFiles.imagen }">
+                    <div class="upload-icon-wrapper">
+                      <ImageIcon v-if="!editFiles.imagen" class="upload-icon" />
+                      <CheckCircle2 v-else class="upload-icon success" />
+                    </div>
+                    <div class="upload-text">
+                      <span v-if="!editFiles.imagen"><strong>Haz clic para subir</strong> imagen</span>
+                      <span v-else class="file-name">{{ editFiles.imagen.name }}</span>
+                    </div>
+                  </label>
+                  <input type="file" id="mcimg" class="d-none" accept="image/jpeg,image/png,image/jpg,image/webp" @change="e => { editFiles.imagen = e.target.files?.[0]; generatePreviews(e.target.files, 'imagen') }" />
+                  
+                  <div class="mt-2" v-if="localPreviews.imagen?.length || (editImages && editImages.length)">
+                    <small class="text-muted">Vista previa:</small>
+                    <div class="d-flex flex-wrap gap-2 mt-1">
+                      <div v-if="localPreviews.imagen?.length" class="img-preview-wrapper">
+                        <img :src="localPreviews.imagen[0]" class="img-thumbnail-sm border-primary" />
+                      </div>
+                      <div v-else-if="editImages?.length" class="img-preview-wrapper">
+                        <img :src="getS3ImageUrl(editImages[0]?.image || editImages[0]?.url).replace(/([^:]\/)\/+/g, '$1')" class="img-thumbnail-sm" referrerpolicy="no-referrer" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <hr class="border-secondary opacity-25 my-4">
+
+                <h6 class="text-uppercase text-muted mb-3 form-section-title"><MessageSquare :size="14" class="me-1"/> Prueba Social & FAQs</h6>
+                
+                <details class="custom-accordion mb-3">
+                  <summary class="accordion-header rounded bg-dark p-2 border border-secondary" style="cursor: pointer;">
+                    <span class="fw-semibold">Testimonios <span class="text-danger">*</span> <small class="text-muted fw-normal">(mínimo 2)</small></span>
+                  </summary>
+                  <div class="accordion-body p-3 border border-top-0 border-secondary rounded-bottom" style="background: var(--card-bg, #1a1a1a);">
+                    <div v-for="(t, i) in editForm.testimonials" :key="'t-mc2-'+i" class="border rounded p-2 mb-2" style="background: rgba(0,0,0,0.2);">
+                      <small class="text-muted">Testimonio {{ i + 1 }}</small>
+                      <input type="text" class="form-control mb-1 mt-1" :placeholder="'Nombre del autor ' + (i+1)" v-model="t.author_name" />
+                      <textarea class="form-control" rows="2" placeholder="¿Qué dijo sobre el mini-curso?" v-model="t.content"></textarea>
+                    </div>
+                    <div class="d-flex mt-2">
+                      <button type="button" class="btn-primary-custom" @click="editForm.testimonials.push({ author_name: '', content: '' })"><Plus :size="14" class="me-1"/> Añadir testimonio</button>
+                      <button type="button" class="btn-danger-custom ms-2" v-if="editForm.testimonials?.length > 2" @click="editForm.testimonials.pop()"><X :size="14" class="me-1"/> Quitar último</button>
+                    </div>
+                  </div>
+                </details>
+
+                <details class="custom-accordion mb-2">
+                  <summary class="accordion-header rounded bg-dark p-2 border border-secondary" style="cursor: pointer;">
+                    <span class="fw-semibold">Preguntas Frecuentes (FAQ) <span class="text-danger">*</span> <small class="text-muted fw-normal">(mínimo 3)</small></span>
+                  </summary>
+                  <div class="accordion-body p-3 border border-top-0 border-secondary rounded-bottom" style="background: var(--card-bg, #1a1a1a);">
+                    <div v-for="(f, i) in editForm.faqs" :key="'faq-mc2-'+i" class="border rounded p-2 mb-2" style="background: rgba(0,0,0,0.2);">
+                      <small class="text-muted">Pregunta {{ i + 1 }}</small>
+                      <input type="text" class="form-control mb-1 mt-1" :placeholder="'Pregunta ' + (i + 1)" v-model="f.question" />
+                      <textarea class="form-control" rows="2" placeholder="Respuesta" v-model="f.answer"></textarea>
+                    </div>
+                    <div class="d-flex mt-2">
+                      <button type="button" class="btn-primary-custom" @click="editForm.faqs.push({ question: '', answer: '' })"><Plus :size="14" class="me-1"/> Añadir FAQ</button>
+                      <button type="button" class="btn-danger-custom ms-2" v-if="editForm.faqs?.length > 3" @click="editForm.faqs.pop()"><X :size="14" class="me-1"/> Quitar último</button>
+                    </div>
+                  </div>
+                </details>
+
+              </div>
+              
+              <!-- DERECHA: Vista Previa en Vivo -->
+              <div class="p-4" style="flex: 1 1 40%; min-width: 350px; background-color: var(--card-bg, #141414);">
+                <h6 class="text-uppercase text-success mb-4 form-section-title"><Monitor :size="14" class="me-1"/> Vista Previa en Vivo</h6>
+                <div class="preview-card-sticky sticky-top" style="top: 20px;">
+                  <div style="border: 1px solid var(--border-color, #333); border-radius: 8px; overflow: hidden; background: #000; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                    <!-- Browser Header -->
+                    <div style="background: #1a1a1a; padding: 10px 15px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #333;">
+                      <span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f56;"></span>
+                      <span style="width: 12px; height: 12px; border-radius: 50%; background: #ffbd2e;"></span>
+                      <span style="width: 12px; height: 12px; border-radius: 50%; background: #27c93f;"></span>
+                      <div style="flex-grow: 1; text-align: center;">
+                        <div style="display: inline-block; background: #0a0a0a; color: #888; font-size: 11px; padding: 2px 20px; border-radius: 12px; letter-spacing: 0.5px;">preview.promolider.org</div>
+                      </div>
+                    </div>
+                    <!-- Iframe Content -->
+                    <iframe :srcdoc="livePreviewHtml" frameborder="0" style="width: 100%; height: 75vh; min-height: 600px; background: white; display: block;"></iframe>
+                  </div>
                 </div>
               </div>
-              <div class="col-md-6">
-                <div class="form-group">
-                  <label>Nivel <span class="text-danger">*</span></label>
-                  <select class="form-control" v-model="editForm.nivel" required>
-                    <option value="">Seleccionar</option>
-                    <option value="principiante">Principiante</option>
-                    <option value="intermedio">Intermedio</option>
-                    <option value="avanzado">Avanzado</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-            <div class="row">
-              <div class="col-md-6">
-                <div class="form-group">
-                  <label>Categoría <span class="text-danger">*</span></label>
-                  <select class="form-control" v-model="editForm.categoria" required>
-                    <option value="">Seleccionar</option>
-                    <option v-for="cat in store.categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
-                  </select>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="form-group">
-                  <label>Duración (min) <span class="text-danger">*</span></label>
-                  <input type="number" min="1" class="form-control" v-model="editForm.duracion" required />
-                </div>
-              </div>
-            </div>
-            <div class="form-group">
-              <label>Descripción</label>
-              <textarea class="form-control" rows="3" v-model="editForm.descripcion" required></textarea>
-            </div>
-            <div class="form-group">
-              <label>Nueva imagen</label>
-              <label for="mcimg" class="custom-file-upload" :class="{ 'has-file': editFiles.imagen }">
-                <div class="upload-icon-wrapper">
-                  <ImageIcon v-if="!editFiles.imagen" class="upload-icon" />
-                  <CheckCircle2 v-else class="upload-icon success" />
-                </div>
-                <div class="upload-text">
-                  <span v-if="!editFiles.imagen"><strong>Haz clic para subir</strong> imagen</span>
-                  <span v-else class="file-name">{{ editFiles.imagen.name }}</span>
-                </div>
-              </label>
-              <input type="file" id="mcimg" class="d-none" accept="image/jpeg,image/png,image/jpg,image/webp" @change="e => { editFiles.imagen = e.target.files?.[0]; generatePreviews(e.target.files, 'imagen') }" />
-              <div v-if="localPreviews.imagen?.length" class="mt-2"><small class="text-muted text-primary">Vista previa (nueva):</small><img :src="localPreviews.imagen[0]" class="img-thumbnail-sm d-block mt-1 border-primary" /></div>
-              <div v-if="editImages?.length" class="mt-1"><small class="text-muted">Imagen actual:</small><img :src="getS3ImageUrl(editImages[0]?.image || editImages[0]?.url)" class="img-thumbnail-sm d-block mt-1" referrerpolicy="no-referrer" /></div>
+
             </div>
           </form>
         </div>
-        <div class="modal-footer">
-          <button class="btn-cancel" @click="closeEditModals">Cancelar</button>
-          <button class="btn-primary-custom" @click="submitEditMiniCurso" :disabled="editLoading">
-            <Loader2 v-if="editLoading" :size="14" class="spinner-inline" /> Actualizar Mini Curso
+        <div class="card-footer bg-dark border-top border-secondary p-3 d-flex justify-content-end gap-3">
+          <button type="button" class="btn-cancel" @click="closeEditModals">Cancelar</button>
+          <button type="submit" class="btn-primary-custom" @click="submitEditMiniCurso" :disabled="editLoading">
+            <Loader2 v-if="editLoading" :size="16" class="spinner-inline me-2" /> 
+            <Save v-else :size="16" class="me-2" />
+            Actualizar Mini Curso
           </button>
         </div>
       </div>
     </div>
 
     <!-- ===================== DELETE MODAL ===================== -->
-    <div v-if="showDeleteModal" class="modal-overlay" @click.self="showDeleteModal = false">
+    <div v-if="showDeleteModal" class="modal-overlay">
       <div class="modal-card" style="max-width:400px">
         <div class="modal-header"><h5 class="modal-title"><AlertTriangle :size="18" /> Eliminar</h5><button class="close-btn" @click="showDeleteModal = false"><X :size="20" /></button></div>
         <div class="modal-body">
@@ -463,7 +706,7 @@
     </div>
 
     <!-- ===================== STATUS MODAL ===================== -->
-    <div v-if="showStatusModal" class="modal-overlay" @click.self="showStatusModal = false">
+    <div v-if="showStatusModal" class="modal-overlay">
       <div class="modal-card" style="max-width:400px">
         <div class="modal-header"><h5 class="modal-title"><ToggleLeft :size="18" /> Cambiar estado</h5><button class="close-btn" @click="showStatusModal = false"><X :size="20" /></button></div>
         <div class="modal-body">
@@ -491,7 +734,7 @@
     </div>
 
     <!-- ===================== INVITATION MODAL ===================== -->
-    <div v-if="showInviteModal" class="modal-overlay" @click.self="closeInviteModal">
+    <div v-if="showInviteModal" class="modal-overlay">
       <div class="modal-card" @click.stop>
         <div class="modal-header"><h5 class="modal-title"><Link :size="18" /> Invitar a {{ inviteTarget?.tipo || inviteTarget?.type }}: <u>{{ inviteTarget?.nombre || inviteTarget?.title }}</u></h5><button class="close-btn" @click="closeInviteModal"><X :size="20" /></button></div>
         <div class="modal-body">
@@ -580,11 +823,12 @@ import { formatDate } from '@/utils/formatDate'
 import apiClient from '@/services/apiClient'
 import {
   Plus, Zap, Loader2, Search, AlertTriangle, X, Link, Copy, ToggleLeft,
-  CheckCircle2, AlertCircle, Edit3, Info, MessageCircle, Facebook, Megaphone,
+  CheckCircle2, AlertCircle, Edit3, Info, MessageCircle, Facebook, Megaphone, ArrowLeft, Save,
   Mail, Instagram, Settings, Share2, Book, MonitorPlay, Eye, Monitor, Box, Download,
   Image as ImageIcon, FileText, UploadCloud, Trash2, Layers, Users, Calendar, Tag
 } from 'lucide-vue-next'
 import { infoproductService } from '@/features/infoproducts/services/infoproductService'
+import { generateCourseTemplate } from '@/features/marketing/utils/templateGenerators'
 
 const router = useRouter()
 const store = useMarketingStore()
@@ -782,6 +1026,41 @@ function viewModules(item) {
 const showEditMasterclassModal = ref(false)
 const showEditEbookModal = ref(false)
 const showEditMiniModal = ref(false)
+const isEditingTool = computed(() => showEditMasterclassModal.value || showEditEbookModal.value || showEditMiniModal.value)
+
+const livePreviewHtml = computed(() => {
+  if (!isEditingTool.value) return '';
+  
+  let mappedCourse = {};
+  
+  if (showEditMasterclassModal.value) {
+    let obs = typeof editForm.value.objetivos === 'string' ? editForm.value.objetivos.split('\n').filter(o => o.trim()) : (editForm.value.objetivos || []);
+    mappedCourse = {
+      title: editForm.value.nombre || editForm.value.title || 'Título de la Masterclass',
+      description: editForm.value.descripcion || editForm.value.description || 'Añade una descripción impactante aquí.',
+      objectives: obs,
+      category_name: editForm.value.categoria || editForm.value.category_name || 'Desarrollo Web',
+      images: [{ image: localPreviews.value.images?.[0] || editTarget.value?.image_url || 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1950&q=80' }]
+    };
+  } else if (showEditEbookModal.value) {
+    mappedCourse = {
+      title: editForm.value.nombre || editForm.value.title || 'Título del E-book',
+      description: editForm.value.descripcion || editForm.value.description || 'Descripción asombrosa de tu E-book.',
+      category_name: editForm.value.categoria || editForm.value.category_name || 'Categoría',
+      images: [{ image: localPreviews.value.portada?.[0] || editTarget.value?.cover_url || 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1950&q=80' }]
+    };
+  } else if (showEditMiniModal.value) {
+    mappedCourse = {
+      title: editForm.value.nombre || editForm.value.title || 'Título del Mini Curso',
+      description: editForm.value.descripcion || editForm.value.description || 'Aprende rápido con este mini curso.',
+      category_name: editForm.value.categoria || editForm.value.category_name || 'Categoría',
+      images: [{ image: localPreviews.value.imagen?.[0] || editTarget.value?.image_url || 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1950&q=80' }]
+    };
+  }
+  
+  return generateCourseTemplate('dark-pro', mappedCourse, 'tu-usuario');
+})
+
 const editTarget = ref(null)
 const editLoading = ref(false)
 const editForm = ref({})
@@ -844,11 +1123,24 @@ async function editTool(item) {
         title: data.title || '',
         id_categories: data.id_categories || data.category_id || '',
         description: data.description || '',
-        objective: data.objectives || data.objective || '',
+        objectives: data.objectives || data.objective || '',
         date: data.date || '',
         email_contact: data.email_contact || '',
         phone_contact: data.phone_contact || '',
         meeting_link: data.meeting_link || '',
+        testimonials: data.testimonials?.length >= 2
+          ? data.testimonials.map(t => ({ author_name: t.author_name, content: t.content }))
+          : [
+              { author_name: data.testimonials?.[0]?.author_name || '', content: data.testimonials?.[0]?.content || '' },
+              { author_name: data.testimonials?.[1]?.author_name || '', content: data.testimonials?.[1]?.content || '' },
+            ],
+        faqs: data.faqs?.length >= 3
+          ? data.faqs.map(f => ({ question: f.question, answer: f.answer }))
+          : [
+              { question: data.faqs?.[0]?.question || '', answer: data.faqs?.[0]?.answer || '' },
+              { question: data.faqs?.[1]?.question || '', answer: data.faqs?.[1]?.answer || '' },
+              { question: data.faqs?.[2]?.question || '', answer: data.faqs?.[2]?.answer || '' },
+            ],
       }
       console.log('[DEBUG editTool] Masterclass cargada, data.images:', data.images);
       editImages.value = data.images || []
@@ -867,6 +1159,19 @@ async function editTool(item) {
           contenido: c.content || '',
           paginas: c.pages || ''
         })) : [{ titulo: '', contenido: '', paginas: '' }],
+        testimonials: data.testimonials?.length >= 2
+          ? data.testimonials.map(t => ({ author_name: t.author_name, content: t.content }))
+          : [
+              { author_name: data.testimonials?.[0]?.author_name || '', content: data.testimonials?.[0]?.content || '' },
+              { author_name: data.testimonials?.[1]?.author_name || '', content: data.testimonials?.[1]?.content || '' },
+            ],
+        faqs: data.faqs?.length >= 3
+          ? data.faqs.map(f => ({ question: f.question, answer: f.answer }))
+          : [
+              { question: data.faqs?.[0]?.question || '', answer: data.faqs?.[0]?.answer || '' },
+              { question: data.faqs?.[1]?.question || '', answer: data.faqs?.[1]?.answer || '' },
+              { question: data.faqs?.[2]?.question || '', answer: data.faqs?.[2]?.answer || '' },
+            ],
       }
       editImages.value = data.images || []
       showEditEbookModal.value = true
@@ -877,6 +1182,19 @@ async function editTool(item) {
         duracion: data.duration || '',
         nivel: data.level || '',
         categoria: data.category_id || '',
+        testimonials: data.testimonials?.length >= 2
+          ? data.testimonials.map(t => ({ author_name: t.author_name, content: t.content }))
+          : [
+              { author_name: data.testimonials?.[0]?.author_name || '', content: data.testimonials?.[0]?.content || '' },
+              { author_name: data.testimonials?.[1]?.author_name || '', content: data.testimonials?.[1]?.content || '' },
+            ],
+        faqs: data.faqs?.length >= 3
+          ? data.faqs.map(f => ({ question: f.question, answer: f.answer }))
+          : [
+              { question: data.faqs?.[0]?.question || '', answer: data.faqs?.[0]?.answer || '' },
+              { question: data.faqs?.[1]?.question || '', answer: data.faqs?.[1]?.answer || '' },
+              { question: data.faqs?.[2]?.question || '', answer: data.faqs?.[2]?.answer || '' },
+            ],
       }
       editImages.value = data.images || []
       showEditMiniModal.value = true
@@ -893,7 +1211,10 @@ async function submitEditMasterclass() {
   try {
     const fd = new FormData()
     fd.append('_method', 'PUT')
-    Object.entries(editForm.value).forEach(([k, v]) => { if (v !== null && v !== undefined) fd.append(k, v) })
+    const { testimonials, faqs, ...rest } = editForm.value
+    Object.entries(rest).forEach(([k, v]) => { if (v !== null && v !== undefined) fd.append(k, v) })
+    fd.append('testimonials', JSON.stringify(testimonials || []))
+    fd.append('faqs', JSON.stringify(faqs || []))
     if (editFiles.value.images?.length) {
       Array.from(editFiles.value.images).forEach(f => fd.append('images[]', f))
     }
@@ -924,6 +1245,8 @@ async function submitEditEbook() {
       fd.append(`chapters[${i}][content]`, cap.contenido)
       fd.append(`chapters[${i}][pages]`, cap.paginas)
     })
+    fd.append('testimonials', JSON.stringify(editForm.value.testimonials || []))
+    fd.append('faqs', JSON.stringify(editForm.value.faqs || []))
     if (editFiles.value.portada) fd.append('cover', editFiles.value.portada)
     if (editFiles.value.archivo_pdf) fd.append('pdf', editFiles.value.archivo_pdf)
     await store.updateTool(editTarget.value.id, 'ebook', fd)
@@ -945,6 +1268,8 @@ async function submitEditMiniCurso() {
     fd.append('level', editForm.value.nivel)
     fd.append('category_id', editForm.value.categoria)
     if (editFiles.value.imagen) fd.append('image', editFiles.value.imagen)
+    fd.append('testimonials', JSON.stringify(editForm.value.testimonials || []))
+    fd.append('faqs', JSON.stringify(editForm.value.faqs || []))
     await store.updateTool(editTarget.value.id, 'mini-course', fd)
     closeEditModals()
     showToast('Actualizado', 'Mini curso actualizado correctamente')
@@ -1125,6 +1450,52 @@ onMounted(async () => {
 .marketing-tools-view { animation: fadeIn 0.4s ease; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
+/* Formularios de edición con Live Preview */
+.edit-form-scroll {
+  min-height: 70vh;
+}
+.edit-form-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.edit-form-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.edit-form-scroll::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+.form-section-title {
+  font-size: 12px;
+  letter-spacing: 1px;
+  font-weight: 700;
+  color: var(--primary-color) !important;
+  display: flex;
+  align-items: center;
+}
+.custom-accordion details {
+  transition: all 0.3s ease;
+}
+.custom-accordion summary {
+  list-style: none;
+  transition: background 0.2s;
+}
+.custom-accordion summary::-webkit-details-marker {
+  display: none;
+}
+.custom-accordion summary::after {
+  content: '▼';
+  float: right;
+  font-size: 0.8em;
+  transition: transform 0.3s;
+}
+.custom-accordion[open] summary::after {
+  transform: rotate(180deg);
+}
+.custom-accordion[open] summary {
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
 .card-header {
   display: flex; justify-content: space-between; align-items: flex-start;
   flex-wrap: wrap; gap: 12px; margin-bottom: 20px;
@@ -1261,7 +1632,7 @@ onMounted(async () => {
   box-shadow: 0 20px 60px rgba(0,0,0,0.2);
   animation: slideUp 0.3s ease-out;
 }
-.modal-lg-wide { max-width: 700px; }
+.modal-lg-wide { max-width: 1000px; }
 @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 .modal-header {
   display: flex; justify-content: space-between; align-items: center;
@@ -1363,7 +1734,7 @@ textarea.form-control { resize: vertical; }
 }
 
 .upload-icon-wrapper {
-  margin-bottom: 12px;
+  margin: 0 auto 12px;
   background: var(--card-bg, #f8f9fa);
   padding: 10px;
   border-radius: 50%;

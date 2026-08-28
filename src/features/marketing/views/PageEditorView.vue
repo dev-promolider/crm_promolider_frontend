@@ -38,6 +38,11 @@
           <span class="toggle-text">Auto-guardar</span>
         </label>
 
+        <button class="btn-header btn-outline" @click="openPreviewInNewTab" title="Ver en pantalla completa">
+          <ExternalLink :size="14" />
+          Vista Previa
+        </button>
+
         <button class="btn-header btn-outline" @click="savePage" :disabled="isSaving">
           <Loader2 v-if="isSaving" class="spinner-sm" :size="14" />
           <Save v-else :size="14" />
@@ -146,6 +151,27 @@
               </div>
             </div>
           </div>
+
+          <div class="card" v-if="repeatableLists.length > 0">
+            <div class="card-header">
+              <h6 class="card-header-title"><Layers :size="14" /> Secciones Dinámicas</h6>
+              <small class="card-desc">Añade o quita elementos repetibles</small>
+            </div>
+            <div class="card-body">
+              <div v-for="listId in repeatableLists" :key="listId" class="dynamic-section-controls" style="margin-bottom: 1rem; padding: 10px; border: 1px solid var(--border-color); border-radius: 6px;">
+                <h6 style="font-size: 13px; font-weight: 600; text-transform: capitalize; margin-bottom: 8px;">Lista: {{ listId }}</h6>
+                <div style="display: flex; gap: 8px;">
+                  <button @click="addRepeatableItem(listId)" class="btn-primary-sm" style="background: #e6f4ea; color: #1e8e3e; border: none; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                    <Plus :size="12" /> Añadir
+                  </button>
+                  <button @click="removeRepeatableItem(listId)" class="btn-secondary-sm" style="background: #fce8e6; color: #d93025; border: none; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                    <Minus :size="12" /> Quitar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -213,7 +239,7 @@ import {
   ArrowLeft, Save, Eye, Globe, Monitor, Tablet, Smartphone,
   Edit3, Tag, FileText, CheckCircle, AlertCircle,
   ExternalLink, Copy, Loader2, Type,
-  Pointer
+  Pointer, Layers, Plus, Minus
 } from 'lucide-vue-next'
 import * as marketplaceService from '@/features/marketing/services/marketplaceService'
 import { generateCourseTemplate } from '@/features/marketing/utils/templateGenerators'
@@ -228,6 +254,7 @@ const authStore = useAuthStore()
 const pageTitle = ref('')
 const baseTemplate = ref(null)
 const editableFields = ref([])
+const repeatableLists = ref([])
 const previewDevice = ref('desktop')
 const showPreview = ref(true)
 const autoSaveEnabled = ref(false)
@@ -244,6 +271,13 @@ const rawStylesCss = ref('')
 let autoSaveTimer = null
 
 // Helpers
+function openPreviewInNewTab() {
+  if (!previewHtml.value) return;
+  const blob = new Blob([previewHtml.value], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
+}
+
 function isTitleField(name) {
   return name.toLowerCase().includes('title') || name.toLowerCase().includes('headline') || name.toLowerCase().includes('titulo')
 }
@@ -333,6 +367,8 @@ function loadEditedFields(source) {
         : (source.editedFields || source.edited_fields)
       if (fields && typeof fields === 'object') {
         editableFields.value = Object.entries(fields).map(([name, value]) => ({ name, value: value || '' }))
+        // Si cargamos de DB, igual necesitamos extraer los repeaters de la estructura HTML original (rawContentHtml)
+        extractRepeatersFromHtml(rawContentHtml.value)
         return
       }
     } catch (e) { /* fallthrough */ }
@@ -341,9 +377,9 @@ function loadEditedFields(source) {
   const html = source.contentHtml || source.content_html || source.content || ''
   if (!html) return
 
-  const tempDiv = document.createElement('div')
-  tempDiv.innerHTML = html
-  const elements = tempDiv.querySelectorAll('[data-editable="true"]')
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(html, 'text/html')
+  const elements = doc.querySelectorAll('[data-editable="true"]')
   const fields = []
   elements.forEach(el => {
     const name = el.getAttribute('data-field')
@@ -355,6 +391,89 @@ function loadEditedFields(source) {
     }
   })
   editableFields.value = fields
+  extractRepeatersFromHtml(html)
+}
+
+function extractRepeatersFromHtml(html) {
+  if (!html) return
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(html, 'text/html')
+  const lists = new Set()
+  doc.querySelectorAll('[data-repeatable-list]').forEach(el => {
+    lists.add(el.getAttribute('data-repeatable-list'))
+  })
+  repeatableLists.value = Array.from(lists)
+}
+
+function addRepeatableItem(listId) {
+  if (!rawContentHtml.value) return
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(rawContentHtml.value, 'text/html')
+  
+  const listContainer = doc.querySelector(`[data-repeatable-list="${listId}"]`)
+  if (!listContainer) return
+  
+  const items = listContainer.querySelectorAll(`[data-repeatable-item="${listId}"]`)
+  if (items.length === 0) return
+  
+  const lastItem = items[items.length - 1]
+  const clone = lastItem.cloneNode(true)
+  
+  const oldIndex = items.length
+  const newIndex = items.length + 1
+  
+  clone.querySelectorAll('[data-field]').forEach(el => {
+    const oldField = el.getAttribute('data-field')
+    // Asume convención nombre_N_algo, ej: faq_1_title
+    const newField = oldField.replace(`_${oldIndex}`, `_${newIndex}`).replace(`${oldIndex}_`, `${newIndex}_`)
+    el.setAttribute('data-field', newField)
+    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') el.value = ''
+    else el.textContent = ''
+  })
+  
+  listContainer.appendChild(clone)
+  
+  // Guardar HTML resultante (cuerpo)
+  let newHtml = doc.body.innerHTML
+  if (rawContentHtml.value.toLowerCase().includes('<html')) {
+    newHtml = doc.documentElement.outerHTML
+    if (rawContentHtml.value.toLowerCase().startsWith('<!doctype')) {
+      newHtml = '<!DOCTYPE html>\n' + newHtml
+    }
+  }
+  
+  rawContentHtml.value = newHtml
+  loadEditedFields({ contentHtml: newHtml })
+  generatePreviewHtml()
+  hasUnsavedChanges.value = true
+}
+
+function removeRepeatableItem(listId) {
+  if (!rawContentHtml.value) return
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(rawContentHtml.value, 'text/html')
+  
+  const listContainer = doc.querySelector(`[data-repeatable-list="${listId}"]`)
+  if (!listContainer) return
+  
+  const items = listContainer.querySelectorAll(`[data-repeatable-item="${listId}"]`)
+  if (items.length <= 1) return // No eliminar el último
+  
+  const lastItem = items[items.length - 1]
+  lastItem.remove()
+  
+  let newHtml = doc.body.innerHTML
+  if (rawContentHtml.value.toLowerCase().includes('<html')) {
+    newHtml = doc.documentElement.outerHTML
+    if (rawContentHtml.value.toLowerCase().startsWith('<!doctype')) {
+      newHtml = '<!DOCTYPE html>\n' + newHtml
+    }
+  }
+  
+  rawContentHtml.value = newHtml
+  loadEditedFields({ contentHtml: newHtml })
+  generatePreviewHtml()
+  hasUnsavedChanges.value = true
 }
 
 function getDefaultStyles() {
@@ -381,18 +500,34 @@ function generatePreviewHtml() {
   let html = rawContentHtml.value
   if (!html) { previewHtml.value = ''; return }
 
-  html = html.replace(/\r\n/g, ' ').replace(/\n\s+/g, ' ').replace(/\s+/g, ' ').replace(/>\s+</g, '><')
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(html, 'text/html')
 
   editableFields.value.forEach(field => {
-    const value = field.value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
-    const regex = new RegExp(`(<[^>]*data-field="${field.name}"[^>]*>)[^<]*(<\\/[^>]*>|>)`, 'gi')
-    html = html.replace(regex, (match, openTag, closeTag) => {
-      if (closeTag === '>') return openTag.replace(/placeholder="[^"]*"/, `placeholder="${value}"`)
-      return openTag + value + closeTag
+    const elements = doc.querySelectorAll(`[data-field="${field.name}"]`)
+    elements.forEach(el => {
+      if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+         if (el.hasAttribute('placeholder')) el.setAttribute('placeholder', field.value)
+         else el.value = field.value
+      } else {
+         el.textContent = field.value
+      }
     })
   })
 
-  previewHtml.value = `<!DOCTYPE html>
+  // Obtener el HTML renderizado
+  let finalHtml = doc.body.innerHTML
+  if (html.toLowerCase().includes('<html')) {
+    finalHtml = doc.documentElement.outerHTML
+    if (html.toLowerCase().startsWith('<!doctype')) {
+       finalHtml = '<!DOCTYPE html>\n' + finalHtml
+    }
+  }
+
+  if (finalHtml.toLowerCase().includes('<html')) {
+    previewHtml.value = finalHtml
+  } else {
+    previewHtml.value = `<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -401,8 +536,9 @@ function generatePreviewHtml() {
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>${rawStylesCss.value || getDefaultStyles()}</style>
 </head>
-<body>${html}</body>
+<body>${finalHtml}</body>
 </html>`
+  }
 }
 
 // Reactivity
@@ -550,7 +686,7 @@ function goBack() {
   display: flex; align-items: center; justify-content: space-between;
   gap: 12px; flex-wrap: wrap;
   padding: 12px 20px;
-  background: white;
+  background: var(--card-bg, white);
   border-bottom: 1px solid var(--border-color, #dee2e6);
   box-shadow: 0 2px 6px rgba(0,0,0,0.04);
 }
@@ -572,7 +708,7 @@ function goBack() {
 .header-title-info { display: inline-flex; align-items: center; gap: 8px; }
 .header-template-name {
   display: inline-flex; align-items: center; gap: 6px;
-  font-size: 15px; font-weight: 600; color: var(--text-bold, #333);
+  font-size: 15px; font-weight: 600; color: var(--text-main, #333);
 }
 
 .badge {
@@ -630,7 +766,7 @@ function goBack() {
 
 .edit-panel {
   width: 50%; overflow-y: auto;
-  background: white; border-right: 1px solid var(--border-color, #dee2e6);
+  background: var(--bg-main, white); border-right: 1px solid var(--border-color, #dee2e6);
   transition: width 0.3s ease;
 }
 .edit-panel.full-width { width: 100%; }
@@ -639,7 +775,7 @@ function goBack() {
 /* ── Cards ── */
 .card {
   border: 1px solid var(--border-color, #dee2e6); border-radius: 8px;
-  margin-bottom: 16px; background: white;
+  margin-bottom: 16px; background: var(--card-bg, white);
 }
 .card-header {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
@@ -650,7 +786,7 @@ function goBack() {
 }
 .card-header-title {
   margin: 0; font-size: 14px; font-weight: 700;
-  color: var(--text-bold, #333);
+  color: var(--text-main, #333);
   display: flex; align-items: center; gap: 6px;
 }
 .card-desc { font-size: 12px; color: var(--text-muted, #999); }
@@ -660,12 +796,12 @@ function goBack() {
 .field-label {
   display: flex; align-items: center; gap: 6px;
   font-weight: 600; margin-bottom: 6px; font-size: 13px;
-  color: var(--text-bold, #333);
+  color: var(--text-main, #333);
 }
 
 .form-control {
   width: 100%; padding: 8px 12px; border: 1px solid var(--border-color, #dee2e6);
-  border-radius: 6px; font-size: 14px; color: var(--text-bold, #333);
+  border-radius: 6px; font-size: 14px; color: var(--text-main, #333); background: var(--card-bg, #fff);
   outline: none; transition: border-color 0.2s; font-family: inherit;
 }
 .form-control:focus { border-color: var(--primary-color, #18d600); box-shadow: 0 0 0 2px rgba(24,214,0,0.12); }
@@ -685,12 +821,12 @@ function goBack() {
 .preview-header {
   display: flex; justify-content: space-between; align-items: center;
   padding: 10px 14px;
-  background: white;
+  background: var(--card-bg, white);
   border-bottom: 1px solid var(--border-color, #dee2e6);
 }
 .preview-header-title {
   margin: 0; font-size: 13px; font-weight: 700;
-  color: var(--text-bold, #333);
+  color: var(--text-main, #333);
   display: flex; align-items: center; gap: 6px;
 }
 
@@ -708,21 +844,26 @@ function goBack() {
 .preview-content-wrapper {
   flex: 1; padding: 12px;
   display: flex; justify-content: center;
-  background: #e9ecef; overflow: auto;
+  align-items: stretch;
+  background: var(--bg-main, #e9ecef); overflow: auto;
 }
 
 .preview-iframe-container {
-  background: white; border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  background: var(--card-bg, white); border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
   transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
-.preview-iframe-container.device-desktop { width: 100%; min-height: 500px; }
-.preview-iframe-container.device-tablet { width: 768px; max-width: 90%; min-height: 700px; }
-.preview-iframe-container.device-mobile { width: 375px; max-width: 90%; min-height: 600px; }
+.preview-iframe-container.device-desktop { width: 100%; height: 100%; }
+.preview-iframe-container.device-tablet { width: 768px; max-width: 90%; height: 100%; margin: 0 auto; }
+.preview-iframe-container.device-mobile { width: 375px; max-width: 90%; height: 100%; margin: 0 auto; }
 
 .preview-iframe {
-  width: 100%; height: 100%; min-height: 500px;
-  border-radius: 8px; border: none;
+  width: 100%; height: 100%;
+  border: none;
+  flex: 1;
 }
 
 /* ── Modal ── */
@@ -732,7 +873,7 @@ function goBack() {
   display: flex; align-items: center; justify-content: center;
 }
 .modal-dialog {
-  background: white; border-radius: 12px;
+  background: var(--card-bg, white); border-radius: 12px;
   max-width: 500px; width: 90%;
   box-shadow: 0 20px 60px rgba(0,0,0,0.15); overflow: hidden;
 }
@@ -752,7 +893,7 @@ function goBack() {
 .modal-body p { font-size: 14px; color: var(--text-muted, #666); margin-bottom: 12px; }
 
 .url-group { display: flex; gap: 8px; margin-bottom: 12px; }
-.url-input { flex: 1; padding: 8px 12px; border: 1px solid var(--border-color, #dee2e6); border-radius: 6px; font-size: 13px; background: #f8f9fa; color: #333; }
+.url-input { flex: 1; padding: 8px 12px; border: 1px solid var(--border-color, #dee2e6); border-radius: 6px; font-size: 13px; background: var(--bg-main, #f8f9fa); color: var(--text-main, #333); }
 .btn-copy-url {
   background: #2563eb; color: white; border: none;
   padding: 8px 14px; border-radius: 6px; cursor: pointer;
