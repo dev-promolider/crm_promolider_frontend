@@ -40,8 +40,12 @@ const PERFILES = {
   }
 };
 
-const PERFIL_GUARDADO = 'registro:perfil';
-
+/**
+ * El perfil elegido vive solo en memoria: al entrar al panel siempre se pregunta a quién se
+ * va a invitar. Antes se guardaba en `localStorage` para no repetir la elección, pero esa
+ * clave era única para todo el navegador y no estaba ligada a nadie, así que al cambiar de
+ * cuenta el panel abría con el perfil de la sesión anterior.
+ */
 const perfil = ref(null);
 const selectedLeg = ref('izquierda');
 const timeRemaining = ref(0);
@@ -56,8 +60,10 @@ const showNotification = (message, type = 'success') => {
 const perfilActual = computed(() => (perfil.value ? PERFILES[perfil.value] : null));
 
 onMounted(async () => {
-  const guardado = localStorage.getItem(PERFIL_GUARDADO);
-  if (guardado && PERFILES[guardado]) perfil.value = guardado;
+  // Limpieza de la elección que versiones anteriores dejaron guardada en el navegador.
+  Object.keys(localStorage)
+    .filter(clave => clave.startsWith('registro:perfil'))
+    .forEach(clave => localStorage.removeItem(clave));
 
   await loadData();
 });
@@ -78,12 +84,10 @@ const loadData = async () => {
 
 const elegirPerfil = (id) => {
   perfil.value = id;
-  localStorage.setItem(PERFIL_GUARDADO, id);
 };
 
 const cambiarPerfil = () => {
   perfil.value = null;
-  localStorage.removeItem(PERFIL_GUARDADO);
 };
 
 /* ── Enlace ───────────────────────────────────────────────── */
