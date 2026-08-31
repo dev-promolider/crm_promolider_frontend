@@ -322,11 +322,11 @@ const uploadFile = async (event, type) => {
     })
 
     await loadMaterials()
-    showToast('¡Éxito!', `${type === 'banner' ? 'Imagen' : 'Video'} subido correctamente.`)
+    showToast('¡Éxito!', `Archivo subido correctamente.`)
     
   } catch (error) {
     console.error("Upload error", error)
-    showToast('Error', `Hubo un problema subiendo el ${type === 'banner' ? 'banner' : 'video'}.`, 'error')
+    showToast('Error', `Hubo un problema subiendo el archivo.`, 'error')
   } finally {
     isSaving.value[type] = false
     if (type === 'banner') {

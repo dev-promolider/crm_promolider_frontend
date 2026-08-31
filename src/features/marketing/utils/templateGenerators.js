@@ -1,9 +1,30 @@
 export function generateCourseTemplate(templateId, course, refUsername) {
-  const { title, description, objectives, images, user, category_name } = course;
+  const { title, description, objectives, images, user, category_name, promotional_materials } = course;
   const authorName = user ? `${user.name} ${user.last_name || ''}`.trim() : 'Autor Destacado';
   const authorBio = user?.biography || 'Experto en su campo con años de experiencia impartiendo conocimientos transformadores.';
   const authorImage = user?.profile_photo_path || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(authorName) + '&background=random';
-  const heroImage = images && images.length > 0 ? images[0].image : 'https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80';
+  
+  // Buscar si hay un banner especifico para landing
+  let heroImage = 'https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80';
+  const landingBanner = promotional_materials?.find(m => m.type === 'landing_banner');
+  
+  if (course.landing_banner) {
+    heroImage = course.landing_banner.startsWith('http') ? course.landing_banner : `https://promolider-storage-user.s3-accelerate.amazonaws.com/${course.landing_banner.replace(/^\//, '')}`;
+  } else if (course.customLandingBanner) {
+    heroImage = course.customLandingBanner; // Custom uploaded base64 from distributor modal
+  } else if (landingBanner && landingBanner.file_path) {
+    heroImage = landingBanner.file_path.startsWith('http') ? landingBanner.file_path : `https://promolider-storage-user.s3-accelerate.amazonaws.com/${landingBanner.file_path.replace(/^\//, '')}`;
+  } else if (images && images.length > 0) {
+    // Si no hay banner específico, cae de regreso a la imagen/flyer por defecto
+    heroImage = images[0].image;
+  } else if (course.image) {
+    // Para minicursos
+    heroImage = course.image.startsWith('http') ? course.image : `https://promolider-storage-user.s3-accelerate.amazonaws.com/${course.image.replace(/^\//, '')}`;
+  } else if (course.portada) {
+    // Para ebooks
+    heroImage = course.portada.startsWith('http') ? course.portada : `https://promolider-storage-user.s3-accelerate.amazonaws.com/${course.portada.replace(/^\//, '')}`;
+  }
+
   const ctaUrl = `/preregistro/${refUsername}?lado=automatico`;
   
   if (templateId === 'demo-light-clean') {
@@ -62,7 +83,7 @@ function generateDarkPro(title, description, objectives, authorName, authorBio, 
     <div class="lg:w-[60%] xl:w-[65%]">
       
       <!-- Imagen / Flyer -->
-      <div class="w-full aspect-video md:aspect-[4/3] rounded-2xl overflow-hidden mb-8 shadow-2xl">
+      <div class="w-full aspect-video rounded-2xl overflow-hidden mb-8 shadow-2xl bg-black">
         <img src="${heroImage}" alt="Flyer del evento" class="w-full h-full object-cover">
       </div>
       
@@ -282,8 +303,8 @@ function generateLightClean(title, description, objectives, authorName, authorBi
         h1 { font-size: 3rem; font-weight: 700; color: var(--heading); margin: 24px 0; line-height: 1.2; }
         .hero-desc { font-size: 1.2rem; max-width: 700px; margin: 0 auto 40px; color: #64748b; }
         
-        .hero-img-container { width: 100%; max-width: 800px; margin: 0 auto 60px; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
-        .hero-img { width: 100%; display: block; }
+        .hero-img-container { width: 100%; max-width: 800px; margin: 0 auto 60px; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.1); aspect-ratio: 16/9; background: #000; }
+        .hero-img { width: 100%; height: 100%; display: block; object-fit: cover; }
         
         .btn { display: inline-block; padding: 16px 36px; background: var(--primary); color: white; text-decoration: none; border-radius: 50px; font-weight: 600; font-size: 1.1rem; transition: all 0.3s; }
         .btn:hover { background: #0284c7; transform: translateY(-2px); box-shadow: 0 10px 20px rgba(14, 165, 233, 0.2); }

@@ -164,17 +164,19 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { usePageBuilderStore } from '@/features/marketing/stores/pageBuilderStore'
 import * as marketplaceService from '@/features/marketing/services/marketplaceService'
 import {
   Layout, FileText, Loader2, Edit3, Plus, Globe, EyeOff,
   Trash2, ExternalLink, Copy
 } from 'lucide-vue-next'
+import { generateCourseTemplate } from '@/features/marketing/utils/templateGenerators'
 
 const props = defineProps({ user: { type: Object, default: null } })
 const store = usePageBuilderStore()
 const router = useRouter()
+const route = useRoute()
 
 const currentTab = ref('base')
 const loading = ref(false)
@@ -232,24 +234,78 @@ const filteredTemplates = computed(() => {
   return filtered
 })
 
-function openEditor(template, isEdit = false) {
+async function openEditor(template, isEdit = false) {
   if (!template) {
-    // Si no hay template específico, ir a galería de base templates
     router.push({ name: 'marketing-pages' })
     return
   }
-  if (isEdit) {
-    router.push({
-      name: 'marketing-pages-editor',
-      query: { edit: template.id, userId: props.user?.id }
-    })
-  } else {
-    // Si no es edit, abrimos con curso null (desde crear desde cero)
-    router.push({
-      name: 'marketing-pages-editor',
-      query: { template: template.id, userId: props.user?.id }
-    })
+  
+  if (route.query.course_id && route.query.course_type && !isEdit) {
+    // Generate immediately without entering editor
+    loading.value = true
+    try {
+      const courseId = route.query.course_id
+      const courseType = route.query.course_type
+      
+      let res
+      if (courseType === 'masterclass') res = await marketplaceService.getMasterclassDetail(courseId)
+      else if (courseType === 'ebook') res = await marketplaceService.getEbookDetail(courseId)
+      else if (courseType === 'minicourse') res = await marketplaceService.getMiniCourseDetail(courseId)
+      
+      const courseData = res?.data || { title: 'Landing Page' }
+      const refUsername = props.user?.username || ''
+      const htmlContent = generateCourseTemplate(template.id, courseData, refUsername)
+      
+      // Create and publish page
+      const pagePayload = {
+        template_id: template.id,
+        title: `Landing - ${courseData.title}`,
+        content_html: htmlContent,
+        status: 'published',
+        meta: { course_id: courseId, course_type: courseType }
+      }
+      const savedPage = await store.savePage(pagePayload)
+      if (!savedPage || !store.currentPageId) throw new Error('Error al crear la página')
+      
+      const publishedResult = await store.publishPage(store.currentPageId)
+      
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
+      const origin = new URL(apiUrl).origin
+      let publishedUrl = ''
+      if (publishedResult?.public_url) publishedUrl = publishedResult.public_url
+      else if (publishedResult?.data?.publicUrl) publishedUrl = publishedResult.data.publicUrl
+      else if (publishedResult?.data?.slug) publishedUrl = `${origin}/api/v1/pages/public/${publishedResult.data.slug}`
+      
+      if (publishedUrl) {
+        const fullUrl = publishedUrl + (publishedUrl.includes('?') ? '&' : '?') + 'ref=' + refUsername
+        await marketplaceService.activateToolUsage(courseType, courseId, fullUrl)
+      }
+      
+      alert('Página embudo generada y enlazada correctamente.')
+      router.push({ name: 'marketing-marketplace-course-detail', params: { id: courseId } })
+    } catch (e) {
+      console.error('Error auto-generating page:', e)
+      alert('Ocurrió un error al generar la página. Inténtalo de nuevo.')
+    } finally {
+      loading.value = false
+    }
+    return
   }
+
+  const query = { userId: props.user?.id }
+  if (route.query.course_id) query.course_id = route.query.course_id
+  if (route.query.course_type) query.course_type = route.query.course_type
+  
+  if (isEdit) {
+    query.edit = template.id
+  } else {
+    query.template = template.id
+  }
+  
+  router.push({
+    name: 'marketing-pages-editor',
+    query
+  })
 }
 
 // -- Affiliates --

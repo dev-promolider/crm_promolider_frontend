@@ -652,6 +652,15 @@ async function publishPage() {
       const updated = await store.fetchPage(pageId.value)
       if (updated?.slug) publishedUrl.value = `${origin}/api/v1/pages/public/${updated.slug}`
     }
+
+    if (route.query.course_id && route.query.course_type) {
+      try {
+        const fullUrl = publishedUrl.value + (publishedUrl.value.includes('?') ? '&' : '?') + 'ref=' + authStore.user?.username
+        await marketplaceService.activateToolUsage(route.query.course_type, route.query.course_id, fullUrl)
+      } catch (err) {
+        console.error('Error activating tool usage:', err)
+      }
+    }
     showUrlModal.value = true
   } catch (e) {
     errorMsg.value = e.response?.data?.message || e.message || 'Error al publicar'

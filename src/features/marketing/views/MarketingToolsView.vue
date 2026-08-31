@@ -102,6 +102,10 @@
                   <div class="stat-item" title="Distribuidores">
                     <Users :size="16" class="stat-icon" /> <span>{{ item.distribuidores || item.distributors_count || 0 }}</span>
                   </div>
+                  <div class="stat-item interactive-stat" title="Usuarios interactuando con herramienta" @click="showToolUsages(item)">
+                    <MousePointerClick :size="16" class="stat-icon text-primary" /> 
+                    <span class="text-primary">{{ item.usages_count || 0 }}</span>
+                  </div>
                 </div>
                 
                 <div class="tool-actions">
@@ -144,7 +148,7 @@
               <!-- IZQUIERDA: Formulario -->
               <div class="p-4 border-end edit-form-scroll" style="flex: 1 1 55%; min-width: 350px;">
                 
-                <h6 class="text-uppercase text-muted mb-3 form-section-title"><Layers :size="14" class="me-1"/> Información Básica</h6>
+                <h4 class="fw-bolder text-success mt-5 mb-4 border-bottom border-success pb-3 d-flex align-items-center form-section-title" style="letter-spacing: 0.5px; font-size: 1.25rem;"><Layers :size="22" class="me-2"/> Información Básica</h4>
                 <div class="row">
                   <div class="col-md-8">
                     <div class="form-group">
@@ -171,9 +175,7 @@
                   <textarea class="form-control" rows="2" v-model="editForm.objectives"></textarea>
                 </div>
 
-                <hr class="border-secondary opacity-25 my-4">
-
-                <h6 class="text-uppercase text-muted mb-3 form-section-title"><Calendar :size="14" class="me-1"/> Detalles del Evento</h6>
+                <h4 class="fw-bolder text-success mt-5 mb-4 border-bottom border-success pb-3 d-flex align-items-center form-section-title" style="letter-spacing: 0.5px; font-size: 1.25rem;"><Calendar :size="22" class="me-2"/> Detalles del Evento</h4>
                 <div class="row">
                   <div class="col-md-4">
                     <div class="form-group">
@@ -199,11 +201,9 @@
                   <input type="url" class="form-control" v-model="editForm.meeting_link" placeholder="https://zoom.us/j/..." />
                 </div>
 
-                <hr class="border-secondary opacity-25 my-4">
-
-                <h6 class="text-uppercase text-muted mb-3 form-section-title"><ImageIcon :size="14" class="me-1"/> Archivos Multimedia</h6>
+                <h4 class="fw-bolder text-success mt-5 mb-4 border-bottom border-success pb-3 d-flex align-items-center form-section-title" style="letter-spacing: 0.5px; font-size: 1.25rem;"><ImageIcon :size="22" class="me-2"/> Archivos Multimedia</h4>
                 <div class="row">
-                  <div class="col-md-6">
+                  <div class="col-md-12">
                     <div class="form-group">
                       <label>Nueva imagen (Solo 1)</label>
                       <label for="mcImage" class="custom-file-upload" :class="{ 'has-file': editFiles.images?.[0] }">
@@ -232,27 +232,36 @@
                       </div>
                     </div>
                   </div>
-                  <div class="col-md-6">
+                  
+                  <div class="col-md-12 mt-3">
                     <div class="form-group">
-                      <label>Nuevos documentos</label>
-                      <label for="mcDoc" class="custom-file-upload" :class="{ 'has-file': editFiles.documents?.length }">
+                      <label>Banner para Landing Page <span class="text-danger">*</span></label>
+                      <label for="mcBanner" class="custom-file-upload" :class="{ 'has-file': editFiles.landing_banner }">
                         <div class="upload-icon-wrapper">
-                          <FileText v-if="!editFiles.documents?.length" class="upload-icon" />
+                          <ImageIcon v-if="!editFiles.landing_banner" class="upload-icon" />
                           <CheckCircle2 v-else class="upload-icon success" />
                         </div>
                         <div class="upload-text">
-                          <span v-if="!editFiles.documents?.length"><strong>Haz clic para subir</strong> documentos</span>
-                          <span v-else class="file-name">{{ editFiles.documents.length }} archivo(s)</span>
+                          <span v-if="!editFiles.landing_banner"><strong>Haz clic para subir</strong> banner panorámico (16:9)</span>
+                          <span v-else class="file-name">{{ editFiles.landing_banner.name }}</span>
                         </div>
                       </label>
-                      <input type="file" id="mcDoc" class="d-none" multiple accept=".pdf,.doc,.docx" @change="e => editFiles.documents = e.target.files" />
+                      <input type="file" id="mcBanner" class="d-none" accept="image/jpeg,image/png,image/jpg" @change="e => { editFiles.landing_banner = e.target.files[0]; generatePreviews([e.target.files[0]], 'landing_banner') }" />
+                      
+                      <div class="mt-2" v-if="localPreviews.landing_banner?.length || editTarget?.landing_banner">
+                        <small class="text-muted">Vista previa:</small>
+                        <div class="d-flex flex-wrap gap-2 mt-1">
+                          <div class="img-preview-wrapper" style="width: 160px; height: 90px;">
+                            <img :src="localPreviews.landing_banner?.[0] || getS3ImageUrl(editTarget.landing_banner)" class="img-thumbnail-sm border-primary" style="object-fit: cover; width: 100%; height: 100%;" referrerpolicy="no-referrer" />
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
+
                 </div>
 
-                <hr class="border-secondary opacity-25 my-4">
-
-                <h6 class="text-uppercase text-muted mb-3 form-section-title"><MessageSquare :size="14" class="me-1"/> Prueba Social & FAQs</h6>
+                <h4 class="fw-bolder text-success mt-5 mb-4 border-bottom border-success pb-3 d-flex align-items-center form-section-title" style="letter-spacing: 0.5px; font-size: 1.25rem;"><MessageSquare :size="22" class="me-2"/> Prueba Social & FAQs</h4>
                 
                 <!-- Testimonios Collapsible -->
                 <details class="custom-accordion mb-3">
@@ -266,8 +275,8 @@
                       <textarea class="form-control" rows="2" :placeholder="'¿Qué dijo sobre tu producto?'" v-model="t.content"></textarea>
                     </div>
                     <div class="d-flex mt-2">
-                      <button type="button" class="btn-primary-custom" @click="editForm.testimonials.push({ author_name: '', content: '' })"><Plus :size="14" class="me-1"/> Añadir testimonio</button>
-                      <button type="button" class="btn-danger-custom ms-2" v-if="editForm.testimonials?.length > 2" @click="editForm.testimonials.pop()"><X :size="14" class="me-1"/> Quitar último</button>
+                      <button type="button" class="btn-primary-custom" @click="editForm.testimonials.push({ author_name: '', content: '' })"><Plus :size="22" class="me-2"/> Añadir testimonio</button>
+                      <button type="button" class="btn-danger-custom ms-2" v-if="editForm.testimonials?.length > 2" @click="editForm.testimonials.pop()"><X :size="22" class="me-2"/> Quitar último</button>
                     </div>
                   </div>
                 </details>
@@ -284,8 +293,8 @@
                       <textarea class="form-control" rows="2" placeholder="Respuesta" v-model="f.answer"></textarea>
                     </div>
                     <div class="d-flex mt-2">
-                      <button type="button" class="btn-primary-custom" @click="editForm.faqs.push({ question: '', answer: '' })"><Plus :size="14" class="me-1"/> Añadir FAQ</button>
-                      <button type="button" class="btn-danger-custom ms-2" v-if="editForm.faqs?.length > 3" @click="editForm.faqs.pop()"><X :size="14" class="me-1"/> Quitar último</button>
+                      <button type="button" class="btn-primary-custom" @click="editForm.faqs.push({ question: '', answer: '' })"><Plus :size="22" class="me-2"/> Añadir FAQ</button>
+                      <button type="button" class="btn-danger-custom ms-2" v-if="editForm.faqs?.length > 3" @click="editForm.faqs.pop()"><X :size="22" class="me-2"/> Quitar último</button>
                     </div>
                   </div>
                 </details>
@@ -294,7 +303,7 @@
               
               <!-- DERECHA: Vista Previa en Vivo -->
               <div class="p-4" style="flex: 1 1 40%; min-width: 350px; background-color: var(--card-bg, #141414);">
-                <h6 class="text-uppercase text-success mb-4 form-section-title"><Monitor :size="14" class="me-1"/> Vista Previa en Vivo</h6>
+                <h4 class="text-uppercase text-success mt-5 mb-4 form-section-title"><Monitor :size="22" class="me-2"/> Vista Previa en Vivo</h4>
                 <div class="preview-card-sticky sticky-top" style="top: 20px;">
                   <div style="border: 1px solid var(--border-color, #333); border-radius: 8px; overflow: hidden; background: #000; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
                     <!-- Browser Header -->
@@ -343,7 +352,7 @@
               <!-- IZQUIERDA: Formulario -->
               <div class="p-4 border-end edit-form-scroll" style="flex: 1 1 55%; min-width: 350px;">
                 
-                <h6 class="text-uppercase text-muted mb-3 form-section-title"><Book :size="14" class="me-1"/> Información del E-book</h6>
+                <h4 class="fw-bolder text-success mt-5 mb-4 border-bottom border-success pb-3 d-flex align-items-center form-section-title" style="letter-spacing: 0.5px; font-size: 1.25rem;"><Book :size="22" class="me-2"/> Información del E-book</h4>
                 <div class="row">
                   <div class="col-md-6">
                     <div class="form-group">
@@ -386,9 +395,7 @@
                   <textarea class="form-control" rows="3" v-model="editForm.descripcion" required></textarea>
                 </div>
 
-                <hr class="border-secondary opacity-25 my-4">
-
-                <h6 class="text-uppercase text-muted mb-3 form-section-title"><Layers :size="14" class="me-1"/> Estructura (Capítulos)</h6>
+                <h4 class="fw-bolder text-success mt-5 mb-4 border-bottom border-success pb-3 d-flex align-items-center form-section-title" style="letter-spacing: 0.5px; font-size: 1.25rem;"><Layers :size="22" class="me-2"/> Estructura (Capítulos)</h4>
                 <div class="form-group">
                   <div class="border rounded p-3 bg-dark border-secondary">
                     <div v-for="(cap, i) in editForm.capitulos" :key="i" class="mb-2 p-3 border rounded border-secondary" style="background: rgba(0,0,0,0.2);">
@@ -407,14 +414,12 @@
                       <textarea class="form-control form-control-sm" rows="2" v-model="cap.contenido" placeholder="Breve resumen o contenido..."></textarea>
                     </div>
                     <button type="button" class="btn-primary-custom btn-sm mt-1" @click="addChapter">
-                      <Plus :size="14" class="me-1"/> Agregar Capítulo
+                      <Plus :size="22" class="me-2"/> Agregar Capítulo
                     </button>
                   </div>
                 </div>
 
-                <hr class="border-secondary opacity-25 my-4">
-
-                <h6 class="text-uppercase text-muted mb-3 form-section-title"><ImageIcon :size="14" class="me-1"/> Archivos del E-book</h6>
+                <h4 class="fw-bolder text-success mt-5 mb-4 border-bottom border-success pb-3 d-flex align-items-center form-section-title" style="letter-spacing: 0.5px; font-size: 1.25rem;"><ImageIcon :size="22" class="me-2"/> Archivos del E-book</h4>
                 <div class="row">
                   <div class="col-md-6">
                     <div class="form-group">
@@ -450,11 +455,36 @@
                       <input type="file" id="ebPdf" class="d-none" accept=".pdf" @change="e => editFiles.archivo_pdf = e.target.files?.[0]" />
                     </div>
                   </div>
+                  
+                  <div class="col-md-12 mt-3">
+                    <div class="form-group">
+                      <label>Banner para Landing Page <span class="text-danger">*</span></label>
+                      <label for="ebBanner" class="custom-file-upload" :class="{ 'has-file': editFiles.landing_banner }">
+                        <div class="upload-icon-wrapper">
+                          <ImageIcon v-if="!editFiles.landing_banner" class="upload-icon" />
+                          <CheckCircle2 v-else class="upload-icon success" />
+                        </div>
+                        <div class="upload-text">
+                          <span v-if="!editFiles.landing_banner"><strong>Haz clic para subir</strong> banner panorámico (16:9)</span>
+                          <span v-else class="file-name">{{ editFiles.landing_banner.name }}</span>
+                        </div>
+                      </label>
+                      <input type="file" id="ebBanner" class="d-none" accept="image/jpeg,image/png,image/jpg" @change="e => { editFiles.landing_banner = e.target.files[0]; generatePreviews([e.target.files[0]], 'landing_banner') }" />
+                      
+                      <div class="mt-2" v-if="localPreviews.landing_banner?.length || editTarget?.landing_banner">
+                        <small class="text-muted">Vista previa:</small>
+                        <div class="d-flex flex-wrap gap-2 mt-1">
+                          <div class="img-preview-wrapper" style="width: 160px; height: 90px;">
+                            <img :src="localPreviews.landing_banner?.[0] || getS3ImageUrl(editTarget.landing_banner)" class="img-thumbnail-sm border-primary" style="object-fit: cover; width: 100%; height: 100%;" referrerpolicy="no-referrer" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                 </div>
 
-                <hr class="border-secondary opacity-25 my-4">
-
-                <h6 class="text-uppercase text-muted mb-3 form-section-title"><MessageSquare :size="14" class="me-1"/> Prueba Social & FAQs</h6>
+                <h4 class="fw-bolder text-success mt-5 mb-4 border-bottom border-success pb-3 d-flex align-items-center form-section-title" style="letter-spacing: 0.5px; font-size: 1.25rem;"><MessageSquare :size="22" class="me-2"/> Prueba Social & FAQs</h4>
                 
                 <details class="custom-accordion mb-3">
                   <summary class="accordion-header rounded bg-dark p-2 border border-secondary" style="cursor: pointer;">
@@ -467,8 +497,8 @@
                       <textarea class="form-control" rows="2" placeholder="¿Qué dijo sobre tu ebook?" v-model="t.content"></textarea>
                     </div>
                     <div class="d-flex mt-2">
-                      <button type="button" class="btn-primary-custom" @click="editForm.testimonials.push({ author_name: '', content: '' })"><Plus :size="14" class="me-1"/> Añadir testimonio</button>
-                      <button type="button" class="btn-danger-custom ms-2" v-if="editForm.testimonials?.length > 2" @click="editForm.testimonials.pop()"><X :size="14" class="me-1"/> Quitar último</button>
+                      <button type="button" class="btn-primary-custom" @click="editForm.testimonials.push({ author_name: '', content: '' })"><Plus :size="22" class="me-2"/> Añadir testimonio</button>
+                      <button type="button" class="btn-danger-custom ms-2" v-if="editForm.testimonials?.length > 2" @click="editForm.testimonials.pop()"><X :size="22" class="me-2"/> Quitar último</button>
                     </div>
                   </div>
                 </details>
@@ -484,8 +514,8 @@
                       <textarea class="form-control" rows="2" placeholder="Respuesta" v-model="f.answer"></textarea>
                     </div>
                     <div class="d-flex mt-2">
-                      <button type="button" class="btn-primary-custom" @click="editForm.faqs.push({ question: '', answer: '' })"><Plus :size="14" class="me-1"/> Añadir FAQ</button>
-                      <button type="button" class="btn-danger-custom ms-2" v-if="editForm.faqs?.length > 3" @click="editForm.faqs.pop()"><X :size="14" class="me-1"/> Quitar último</button>
+                      <button type="button" class="btn-primary-custom" @click="editForm.faqs.push({ question: '', answer: '' })"><Plus :size="22" class="me-2"/> Añadir FAQ</button>
+                      <button type="button" class="btn-danger-custom ms-2" v-if="editForm.faqs?.length > 3" @click="editForm.faqs.pop()"><X :size="22" class="me-2"/> Quitar último</button>
                     </div>
                   </div>
                 </details>
@@ -494,7 +524,7 @@
               
               <!-- DERECHA: Vista Previa en Vivo -->
               <div class="p-4" style="flex: 1 1 40%; min-width: 350px; background-color: var(--card-bg, #141414);">
-                <h6 class="text-uppercase text-success mb-4 form-section-title"><Monitor :size="14" class="me-1"/> Vista Previa en Vivo</h6>
+                <h4 class="text-uppercase text-success mt-5 mb-4 form-section-title"><Monitor :size="22" class="me-2"/> Vista Previa en Vivo</h4>
                 <div class="preview-card-sticky sticky-top" style="top: 20px;">
                   <div style="border: 1px solid var(--border-color, #333); border-radius: 8px; overflow: hidden; background: #000; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
                     <!-- Browser Header -->
@@ -543,7 +573,7 @@
               <!-- IZQUIERDA: Formulario -->
               <div class="p-4 border-end edit-form-scroll" style="flex: 1 1 55%; min-width: 350px;">
                 
-                <h6 class="text-uppercase text-muted mb-3 form-section-title"><MonitorPlay :size="14" class="me-1"/> Información del Mini Curso</h6>
+                <h4 class="fw-bolder text-success mt-5 mb-4 border-bottom border-success pb-3 d-flex align-items-center form-section-title" style="letter-spacing: 0.5px; font-size: 1.25rem;"><MonitorPlay :size="22" class="me-2"/> Información del Mini Curso</h4>
                 <div class="row">
                   <div class="col-md-6">
                     <div class="form-group">
@@ -585,9 +615,7 @@
                   <textarea class="form-control" rows="3" v-model="editForm.descripcion" required></textarea>
                 </div>
 
-                <hr class="border-secondary opacity-25 my-4">
-
-                <h6 class="text-uppercase text-muted mb-3 form-section-title"><ImageIcon :size="14" class="me-1"/> Portada / Imagen</h6>
+                <h4 class="fw-bolder text-success mt-5 mb-4 border-bottom border-success pb-3 d-flex align-items-center form-section-title" style="letter-spacing: 0.5px; font-size: 1.25rem;"><ImageIcon :size="22" class="me-2"/> Portada / Imagen</h4>
                 <div class="form-group">
                   <label>Nueva imagen (Opcional)</label>
                   <label for="mcimg" class="custom-file-upload" :class="{ 'has-file': editFiles.imagen }">
@@ -615,9 +643,31 @@
                   </div>
                 </div>
 
-                <hr class="border-secondary opacity-25 my-4">
+                <div class="form-group mt-3">
+                  <label>Banner para Landing Page <span class="text-danger">*</span></label>
+                  <label for="mc2Banner" class="custom-file-upload" :class="{ 'has-file': editFiles.landing_banner }">
+                    <div class="upload-icon-wrapper">
+                      <ImageIcon v-if="!editFiles.landing_banner" class="upload-icon" />
+                      <CheckCircle2 v-else class="upload-icon success" />
+                    </div>
+                    <div class="upload-text">
+                      <span v-if="!editFiles.landing_banner"><strong>Haz clic para subir</strong> banner panorámico (16:9)</span>
+                      <span v-else class="file-name">{{ editFiles.landing_banner.name }}</span>
+                    </div>
+                  </label>
+                  <input type="file" id="mc2Banner" class="d-none" accept="image/jpeg,image/png,image/jpg" @change="e => { editFiles.landing_banner = e.target.files[0]; generatePreviews([e.target.files[0]], 'landing_banner') }" />
+                  
+                  <div class="mt-2" v-if="localPreviews.landing_banner?.length || editTarget?.landing_banner">
+                    <small class="text-muted">Vista previa:</small>
+                    <div class="d-flex flex-wrap gap-2 mt-1">
+                      <div class="img-preview-wrapper" style="width: 160px; height: 90px;">
+                        <img :src="localPreviews.landing_banner?.[0] || getS3ImageUrl(editTarget.landing_banner)" class="img-thumbnail-sm border-primary" style="object-fit: cover; width: 100%; height: 100%;" referrerpolicy="no-referrer" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-                <h6 class="text-uppercase text-muted mb-3 form-section-title"><MessageSquare :size="14" class="me-1"/> Prueba Social & FAQs</h6>
+                <h4 class="fw-bolder text-success mt-5 mb-4 border-bottom border-success pb-3 d-flex align-items-center form-section-title" style="letter-spacing: 0.5px; font-size: 1.25rem;"><MessageSquare :size="22" class="me-2"/> Prueba Social & FAQs</h4>
                 
                 <details class="custom-accordion mb-3">
                   <summary class="accordion-header rounded bg-dark p-2 border border-secondary" style="cursor: pointer;">
@@ -630,8 +680,8 @@
                       <textarea class="form-control" rows="2" placeholder="¿Qué dijo sobre el mini-curso?" v-model="t.content"></textarea>
                     </div>
                     <div class="d-flex mt-2">
-                      <button type="button" class="btn-primary-custom" @click="editForm.testimonials.push({ author_name: '', content: '' })"><Plus :size="14" class="me-1"/> Añadir testimonio</button>
-                      <button type="button" class="btn-danger-custom ms-2" v-if="editForm.testimonials?.length > 2" @click="editForm.testimonials.pop()"><X :size="14" class="me-1"/> Quitar último</button>
+                      <button type="button" class="btn-primary-custom" @click="editForm.testimonials.push({ author_name: '', content: '' })"><Plus :size="22" class="me-2"/> Añadir testimonio</button>
+                      <button type="button" class="btn-danger-custom ms-2" v-if="editForm.testimonials?.length > 2" @click="editForm.testimonials.pop()"><X :size="22" class="me-2"/> Quitar último</button>
                     </div>
                   </div>
                 </details>
@@ -647,8 +697,8 @@
                       <textarea class="form-control" rows="2" placeholder="Respuesta" v-model="f.answer"></textarea>
                     </div>
                     <div class="d-flex mt-2">
-                      <button type="button" class="btn-primary-custom" @click="editForm.faqs.push({ question: '', answer: '' })"><Plus :size="14" class="me-1"/> Añadir FAQ</button>
-                      <button type="button" class="btn-danger-custom ms-2" v-if="editForm.faqs?.length > 3" @click="editForm.faqs.pop()"><X :size="14" class="me-1"/> Quitar último</button>
+                      <button type="button" class="btn-primary-custom" @click="editForm.faqs.push({ question: '', answer: '' })"><Plus :size="22" class="me-2"/> Añadir FAQ</button>
+                      <button type="button" class="btn-danger-custom ms-2" v-if="editForm.faqs?.length > 3" @click="editForm.faqs.pop()"><X :size="22" class="me-2"/> Quitar último</button>
                     </div>
                   </div>
                 </details>
@@ -657,7 +707,7 @@
               
               <!-- DERECHA: Vista Previa en Vivo -->
               <div class="p-4" style="flex: 1 1 40%; min-width: 350px; background-color: var(--card-bg, #141414);">
-                <h6 class="text-uppercase text-success mb-4 form-section-title"><Monitor :size="14" class="me-1"/> Vista Previa en Vivo</h6>
+                <h4 class="text-uppercase text-success mt-5 mb-4 form-section-title"><Monitor :size="22" class="me-2"/> Vista Previa en Vivo</h4>
                 <div class="preview-card-sticky sticky-top" style="top: 20px;">
                   <div style="border: 1px solid var(--border-color, #333); border-radius: 8px; overflow: hidden; background: #000; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
                     <!-- Browser Header -->
@@ -812,6 +862,11 @@
         <button class="toast-close" @click="toast = null"><X :size="16" /></button>
       </div>
     </Transition>
+    <ToolUsagesModal 
+      v-if="showingUsages" 
+      :item="selectedToolForUsages" 
+      @close="showingUsages = false" 
+    />
   </div>
 </template>
 
@@ -822,13 +877,14 @@ import { useMarketingStore } from '../stores/marketingStore'
 import { formatDate } from '@/utils/formatDate'
 import apiClient from '@/services/apiClient'
 import {
-  Plus, Zap, Loader2, Search, AlertTriangle, X, Link, Copy, ToggleLeft,
+  Plus, Zap, Loader2, Search, AlertTriangle, X, Link, Copy, ToggleLeft, MousePointerClick,
   CheckCircle2, AlertCircle, Edit3, Info, MessageCircle, Facebook, Megaphone, ArrowLeft, Save,
   Mail, Instagram, Settings, Share2, Book, MonitorPlay, Eye, Monitor, Box, Download,
-  Image as ImageIcon, FileText, UploadCloud, Trash2, Layers, Users, Calendar, Tag
+  Image as ImageIcon, FileText, UploadCloud, Trash2, Layers, Users, Calendar, Tag, MessageSquare
 } from 'lucide-vue-next'
 import { infoproductService } from '@/features/infoproducts/services/infoproductService'
 import { generateCourseTemplate } from '@/features/marketing/utils/templateGenerators'
+import ToolUsagesModal from '../components/ToolUsagesModal.vue'
 
 const router = useRouter()
 const store = useMarketingStore()
@@ -844,6 +900,9 @@ const perPage = ref(10)
 const currentPage = ref(1)
 const actionSelect = ref('')
 const toast = ref(null)
+
+const showingUsages = ref(false)
+const selectedToolForUsages = ref(null)
 
 const STORAGE_URL = import.meta.env.VITE_APP_STORAGE_URL || (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api/v1', '/storage') : 'http://localhost:8000/storage');
 
@@ -999,6 +1058,11 @@ function createTool(type) {
     if (exists) router.push(fullRoute)
     else showToast('Próximamente', `Creación de ${type.toLowerCase()} próximamente`, 'error')
   }
+}
+
+function showToolUsages(item) {
+  selectedToolForUsages.value = item
+  showingUsages.value = true
 }
 
 // ─── Action handling ───────────────────────────────────────────────────
@@ -1218,8 +1282,8 @@ async function submitEditMasterclass() {
     if (editFiles.value.images?.length) {
       Array.from(editFiles.value.images).forEach(f => fd.append('images[]', f))
     }
-    if (editFiles.value.documents?.length) {
-      Array.from(editFiles.value.documents).forEach(f => fd.append('documents[]', f))
+    if (editFiles.value.landing_banner) {
+      fd.append('landing_banner', editFiles.value.landing_banner)
     }
     await store.updateTool(editTarget.value.id, 'masterclass', fd)
     closeEditModals()
@@ -1249,6 +1313,7 @@ async function submitEditEbook() {
     fd.append('faqs', JSON.stringify(editForm.value.faqs || []))
     if (editFiles.value.portada) fd.append('cover', editFiles.value.portada)
     if (editFiles.value.archivo_pdf) fd.append('pdf', editFiles.value.archivo_pdf)
+    if (editFiles.value.landing_banner) fd.append('landing_banner', editFiles.value.landing_banner)
     await store.updateTool(editTarget.value.id, 'ebook', fd)
     closeEditModals()
     showToast('Actualizado', 'E-book actualizado correctamente')
@@ -1268,6 +1333,7 @@ async function submitEditMiniCurso() {
     fd.append('level', editForm.value.nivel)
     fd.append('category_id', editForm.value.categoria)
     if (editFiles.value.imagen) fd.append('image', editFiles.value.imagen)
+    if (editFiles.value.landing_banner) fd.append('landing_banner', editFiles.value.landing_banner)
     fd.append('testimonials', JSON.stringify(editForm.value.testimonials || []))
     fd.append('faqs', JSON.stringify(editForm.value.faqs || []))
     await store.updateTool(editTarget.value.id, 'mini-course', fd)

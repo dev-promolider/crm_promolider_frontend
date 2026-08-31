@@ -44,3 +44,8 @@ export async function getMiniCourseDetail(id) {
   const response = await apiClient.get(`/marketing/marketplace/mini-course/${id}`)
   return response.data
 }
+
+export async function activateToolUsage(type, id, url = null) {
+  const response = await apiClient.post('/marketing/marketplace/tools/activate-usage', { type, id, url })
+  return response.data
+}
