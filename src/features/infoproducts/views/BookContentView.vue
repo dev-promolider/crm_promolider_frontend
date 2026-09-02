@@ -113,6 +113,47 @@
             adquirido.
           </p>
 
+          <!-- Modo de entrega: lo elige el productor, como el DRM en Amazon -->
+          <div class="delivery-modes">
+            <span class="delivery-title">¿Cómo quieres entregar este libro?</span>
+
+            <label
+              class="delivery-option"
+              :class="{ selected: readingMode === 'online' }"
+            >
+              <input
+                type="radio"
+                value="online"
+                :checked="readingMode === 'online'"
+                :disabled="isSavingMode"
+                @change="changeReadingMode('online')"
+              />
+              <MonitorPlay size="20" class="delivery-icon" />
+              <span class="delivery-text">
+                <strong>Solo lectura en línea</strong>
+                El comprador entra a la plataforma y lo lee ahí. No puede descargarlo.
+              </span>
+            </label>
+
+            <label
+              class="delivery-option"
+              :class="{ selected: readingMode === 'download' }"
+            >
+              <input
+                type="radio"
+                value="download"
+                :checked="readingMode === 'download'"
+                :disabled="isSavingMode"
+                @change="changeReadingMode('download')"
+              />
+              <Download size="20" class="delivery-icon" />
+              <span class="delivery-text">
+                <strong>Permitir descarga</strong>
+                Además de leerlo en línea, puede guardarlo en su dispositivo.
+              </span>
+            </label>
+          </div>
+
           <p class="upload-info">
             <strong>Formatos permitidos:</strong> {{ allowedFormats.map(f => f.toUpperCase()).join(', ') }}<br />
             <strong>Límite:</strong> máximo {{ maxFiles }} archivos, {{ maxSizeMB }} MB en total (incluida la muestra)
@@ -210,7 +251,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { ElMessage } from 'element-plus';
-import { UploadCloud, Download, Trash2, FileText, Eye, Lock } from 'lucide-vue-next';
+import { UploadCloud, Download, Trash2, FileText, Eye, Lock, MonitorPlay } from 'lucide-vue-next';
 import ModalComponent from '@/components/common/ModalComponent.vue';
 import { infoproductService } from '../services/infoproductService';
 
@@ -229,6 +270,8 @@ const isUploading = ref(false);
 const uploadProgress = ref(0);
 const isUploadingPreview = ref(false);
 const previewUploadProgress = ref(0);
+const readingMode = ref('download');
+const isSavingMode = ref(false);
 const isDeleteModalOpen = ref(false);
 const isDeleting = ref(false);
 const fileSelected = ref(null);
@@ -258,6 +301,7 @@ const loadFiles = async () => {
       if (meta.course) {
         courseTitle.value = meta.course.title || '';
         courseStatus.value = meta.course.status;
+        readingMode.value = meta.course.reading_mode || 'download';
       }
     }
   } catch (error) {
@@ -357,6 +401,25 @@ const deleteFile = async () => {
     ElMessage.error(msg);
   } finally {
     isDeleting.value = false;
+  }
+};
+
+const changeReadingMode = async (mode) => {
+  if (mode === readingMode.value || isSavingMode.value) return;
+
+  const anterior = readingMode.value;
+  readingMode.value = mode;
+  isSavingMode.value = true;
+
+  try {
+    const response = await infoproductService.setReadingMode(courseId, mode);
+    ElMessage.success(response.data?.message || 'Modo de entrega actualizado');
+  } catch (error) {
+    readingMode.value = anterior;
+    const msg = error.response?.data?.message || 'No se pudo cambiar el modo de entrega';
+    ElMessage.error(msg);
+  } finally {
+    isSavingMode.value = false;
   }
 };
 
@@ -502,6 +565,78 @@ const formatDate = (date) => {
 
 .section-help strong {
   color: var(--text-main);
+}
+
+/* Modo de entrega */
+.delivery-modes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.delivery-title {
+  grid-column: 1 / -1;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-bold);
+}
+
+.delivery-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-main);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.delivery-option:hover {
+  border-color: var(--primary-color);
+}
+
+.delivery-option.selected {
+  border-color: var(--primary-color);
+  background: rgba(24, 214, 0, 0.06);
+}
+
+.delivery-option input {
+  margin-top: 3px;
+  accent-color: var(--primary-color);
+  flex-shrink: 0;
+}
+
+.delivery-icon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.delivery-option.selected .delivery-icon {
+  color: var(--primary-color);
+}
+
+.delivery-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.delivery-text strong {
+  font-size: 13px;
+  color: var(--text-bold);
+}
+
+@media (max-width: 768px) {
+  .delivery-modes {
+    grid-template-columns: 1fr;
+  }
 }
 
 .file-item.is-preview {
