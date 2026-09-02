@@ -62,9 +62,10 @@
                 
                 <draggable 
                   v-model="module.classes" 
+                  group="classes"
                   item-key="id" 
                   handle=".drag-handle-class"
-                  @end="onClassReorder(module)"
+                  @change="onClassChange($event, module)"
                   tag="ul"
                   class="class-list"
                 >
@@ -599,6 +600,28 @@ const onClassReorder = async (module) => {
     console.error('Error reordering classes', error);
   }
 };
+
+const onClassChange = async (event, module) => {
+  if (event.added) {
+    const cls = event.added.element;
+    try {
+      const formData = new FormData();
+      formData.append('title', cls.name);
+      formData.append('description', cls.description || '');
+      formData.append('module_id', module.id);
+      
+      await apiClient.post(`/course/module/class/${cls.id}/update`, formData, { hideLoader: true });
+      await onClassReorder(module);
+    } catch (error) {
+      console.error('Error moving class to new module', error);
+      showAlert('Error', 'No se pudo mover la clase de módulo', 'error');
+      loadModulePage();
+    }
+  } else if (event.moved || event.removed) {
+    await onClassReorder(module);
+  }
+};
+
 
 onMounted(() => {
     loadModulePage();

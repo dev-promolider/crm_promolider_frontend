@@ -302,10 +302,10 @@
               </div>
               
               <!-- DERECHA: Vista Previa en Vivo -->
-              <div class="p-4" style="flex: 1 1 40%; min-width: 350px; background-color: var(--card-bg, #141414);">
+              <div class="p-4" style="flex: 1 1 40%; min-width: 350px; background-color: var(--card-bg, #141414); display: flex; flex-direction: column;">
                 <h4 class="text-uppercase text-success mt-5 mb-4 form-section-title"><Monitor :size="22" class="me-2"/> Vista Previa en Vivo</h4>
-                <div class="preview-card-sticky sticky-top" style="top: 20px;">
-                  <div style="border: 1px solid var(--border-color, #333); border-radius: 8px; overflow: hidden; background: #000; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                <div style="flex-grow: 1; display: flex; flex-direction: column;">
+                  <div style="border: 1px solid var(--border-color, #333); border-radius: 8px; overflow: hidden; background: #000; box-shadow: 0 10px 30px rgba(0,0,0,0.5); flex-grow: 1; display: flex; flex-direction: column;">
                     <!-- Browser Header -->
                     <div style="background: #1a1a1a; padding: 10px 15px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #333;">
                       <span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f56;"></span>
@@ -316,7 +316,7 @@
                       </div>
                     </div>
                     <!-- Iframe Content -->
-                    <iframe :srcdoc="livePreviewHtml" frameborder="0" style="width: 100%; height: 75vh; min-height: 600px; background: white; display: block;"></iframe>
+                    <iframe :srcdoc="livePreviewHtml" frameborder="0" style="width: 100%; flex-grow: 1; min-height: 500px; background: white; display: block;"></iframe>
                   </div>
                 </div>
               </div>
@@ -523,10 +523,10 @@
               </div>
               
               <!-- DERECHA: Vista Previa en Vivo -->
-              <div class="p-4" style="flex: 1 1 40%; min-width: 350px; background-color: var(--card-bg, #141414);">
+              <div class="p-4" style="flex: 1 1 40%; min-width: 350px; background-color: var(--card-bg, #141414); display: flex; flex-direction: column;">
                 <h4 class="text-uppercase text-success mt-5 mb-4 form-section-title"><Monitor :size="22" class="me-2"/> Vista Previa en Vivo</h4>
-                <div class="preview-card-sticky sticky-top" style="top: 20px;">
-                  <div style="border: 1px solid var(--border-color, #333); border-radius: 8px; overflow: hidden; background: #000; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                <div style="flex-grow: 1; display: flex; flex-direction: column;">
+                  <div style="border: 1px solid var(--border-color, #333); border-radius: 8px; overflow: hidden; background: #000; box-shadow: 0 10px 30px rgba(0,0,0,0.5); flex-grow: 1; display: flex; flex-direction: column;">
                     <!-- Browser Header -->
                     <div style="background: #1a1a1a; padding: 10px 15px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #333;">
                       <span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f56;"></span>
@@ -537,7 +537,7 @@
                       </div>
                     </div>
                     <!-- Iframe Content -->
-                    <iframe :srcdoc="livePreviewHtml" frameborder="0" style="width: 100%; height: 75vh; min-height: 600px; background: white; display: block;"></iframe>
+                    <iframe :srcdoc="livePreviewHtml" frameborder="0" style="width: 100%; flex-grow: 1; min-height: 500px; background: white; display: block;"></iframe>
                   </div>
                 </div>
               </div>
@@ -706,10 +706,10 @@
               </div>
               
               <!-- DERECHA: Vista Previa en Vivo -->
-              <div class="p-4" style="flex: 1 1 40%; min-width: 350px; background-color: var(--card-bg, #141414);">
+              <div class="p-4" style="flex: 1 1 40%; min-width: 350px; background-color: var(--card-bg, #141414); display: flex; flex-direction: column;">
                 <h4 class="text-uppercase text-success mt-5 mb-4 form-section-title"><Monitor :size="22" class="me-2"/> Vista Previa en Vivo</h4>
-                <div class="preview-card-sticky sticky-top" style="top: 20px;">
-                  <div style="border: 1px solid var(--border-color, #333); border-radius: 8px; overflow: hidden; background: #000; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                <div style="flex-grow: 1; display: flex; flex-direction: column;">
+                  <div style="border: 1px solid var(--border-color, #333); border-radius: 8px; overflow: hidden; background: #000; box-shadow: 0 10px 30px rgba(0,0,0,0.5); flex-grow: 1; display: flex; flex-direction: column;">
                     <!-- Browser Header -->
                     <div style="background: #1a1a1a; padding: 10px 15px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #333;">
                       <span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f56;"></span>
@@ -720,7 +720,7 @@
                       </div>
                     </div>
                     <!-- Iframe Content -->
-                    <iframe :srcdoc="livePreviewHtml" frameborder="0" style="width: 100%; height: 75vh; min-height: 600px; background: white; display: block;"></iframe>
+                    <iframe :srcdoc="livePreviewHtml" frameborder="0" style="width: 100%; flex-grow: 1; min-height: 500px; background: white; display: block;"></iframe>
                   </div>
                 </div>
               </div>
@@ -1097,28 +1097,72 @@ const livePreviewHtml = computed(() => {
   
   let mappedCourse = {};
   
+  const getCategoryName = (categoryId) => {
+    if (!categoryId) return null;
+    const cat = store.categories?.find(c => c.id == categoryId);
+    return cat ? cat.name : null;
+  };
+  
   if (showEditMasterclassModal.value) {
-    let obs = typeof editForm.value.objetivos === 'string' ? editForm.value.objetivos.split('\n').filter(o => o.trim()) : (editForm.value.objetivos || []);
+    let obsRaw = editForm.value.objectives;
+    let obs = typeof obsRaw === 'string' ? obsRaw.split('\n').filter(o => o.trim()) : (obsRaw || []);
+    
+    let currentImg = localPreviews.value.images?.[0] 
+      || (editImages.value?.length ? (editImages.value[0]?.image || editImages.value[0]?.url) : null)
+      || editTarget.value?.image_url 
+      || 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1950&q=80';
+      
+    if (currentImg && !currentImg.startsWith('http') && !currentImg.startsWith('blob:')) {
+      currentImg = getS3ImageUrl(currentImg);
+    }
+      
     mappedCourse = {
-      title: editForm.value.nombre || editForm.value.title || 'Título de la Masterclass',
-      description: editForm.value.descripcion || editForm.value.description || 'Añade una descripción impactante aquí.',
+      title: editForm.value.title || editTarget.value?.title || 'Título de la Masterclass',
+      description: editForm.value.description || editTarget.value?.description || 'Añade una descripción impactante aquí.',
       objectives: obs,
-      category_name: editForm.value.categoria || editForm.value.category_name || 'Desarrollo Web',
-      images: [{ image: localPreviews.value.images?.[0] || editTarget.value?.image_url || 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1950&q=80' }]
+      category_name: getCategoryName(editForm.value.id_categories) || editTarget.value?.category?.name || editTarget.value?.category_name || 'Desarrollo Web',
+      landing_banner: localPreviews.value.landing_banner?.[0] || editTarget.value?.landing_banner || '',
+      images: [{ image: currentImg }],
+      testimonials: editForm.value.testimonials || [],
+      faqs: editForm.value.faqs || []
     };
   } else if (showEditEbookModal.value) {
+    let currentImg = localPreviews.value.portada?.[0] 
+      || (editImages.value?.length ? (editImages.value[0]?.image || editImages.value[0]?.url) : null)
+      || editTarget.value?.cover_url 
+      || 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1950&q=80';
+      
+    if (currentImg && !currentImg.startsWith('http') && !currentImg.startsWith('blob:')) {
+      currentImg = getS3ImageUrl(currentImg);
+    }
+
     mappedCourse = {
-      title: editForm.value.nombre || editForm.value.title || 'Título del E-book',
-      description: editForm.value.descripcion || editForm.value.description || 'Descripción asombrosa de tu E-book.',
-      category_name: editForm.value.categoria || editForm.value.category_name || 'Categoría',
-      images: [{ image: localPreviews.value.portada?.[0] || editTarget.value?.cover_url || 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1950&q=80' }]
+      title: editForm.value.titulo || editTarget.value?.title || 'Título del E-book',
+      description: editForm.value.descripcion || editTarget.value?.description || 'Descripción asombrosa de tu E-book.',
+      category_name: getCategoryName(editForm.value.categoria) || editTarget.value?.category?.name || editTarget.value?.category_name || 'Categoría',
+      landing_banner: localPreviews.value.landing_banner?.[0] || editTarget.value?.landing_banner || '',
+      images: [{ image: currentImg }],
+      testimonials: editForm.value.testimonials || [],
+      faqs: editForm.value.faqs || []
     };
   } else if (showEditMiniModal.value) {
+    let currentImg = localPreviews.value.imagen?.[0] 
+      || (editImages.value?.length ? (editImages.value[0]?.image || editImages.value[0]?.url) : null)
+      || editTarget.value?.image_url 
+      || 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1950&q=80';
+      
+    if (currentImg && !currentImg.startsWith('http') && !currentImg.startsWith('blob:')) {
+      currentImg = getS3ImageUrl(currentImg);
+    }
+
     mappedCourse = {
-      title: editForm.value.nombre || editForm.value.title || 'Título del Mini Curso',
-      description: editForm.value.descripcion || editForm.value.description || 'Aprende rápido con este mini curso.',
-      category_name: editForm.value.categoria || editForm.value.category_name || 'Categoría',
-      images: [{ image: localPreviews.value.imagen?.[0] || editTarget.value?.image_url || 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1950&q=80' }]
+      title: editForm.value.titulo || editTarget.value?.title || 'Título del Mini Curso',
+      description: editForm.value.descripcion || editTarget.value?.description || 'Aprende rápido con este mini curso.',
+      category_name: getCategoryName(editForm.value.categoria) || editTarget.value?.category?.name || editTarget.value?.category_name || 'Categoría',
+      landing_banner: localPreviews.value.landing_banner?.[0] || editTarget.value?.landing_banner || '',
+      images: [{ image: currentImg }],
+      testimonials: editForm.value.testimonials || [],
+      faqs: editForm.value.faqs || []
     };
   }
   

@@ -31,17 +31,17 @@ export async function getCampaigns(params = {}) {
 }
 
 export async function getMasterclassDetail(id) {
-  const response = await apiClient.get(`/marketing/marketplace/masterclass/${id}`)
+  const response = await apiClient.get(`/marketing/marketplace/masterclass/${id}?t=${Date.now()}`)
   return response.data
 }
 
 export async function getEbookDetail(id) {
-  const response = await apiClient.get(`/marketing/marketplace/ebook/${id}`)
+  const response = await apiClient.get(`/marketing/marketplace/ebook/${id}?t=${Date.now()}`)
   return response.data
 }
 
 export async function getMiniCourseDetail(id) {
-  const response = await apiClient.get(`/marketing/marketplace/mini-course/${id}`)
+  const response = await apiClient.get(`/marketing/marketplace/mini-course/${id}?t=${Date.now()}`)
   return response.data
 }
 

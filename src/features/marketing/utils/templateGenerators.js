@@ -1,5 +1,5 @@
 export function generateCourseTemplate(templateId, course, refUsername) {
-  const { title, description, objectives, images, user, category_name, promotional_materials } = course;
+  const { title, description, objectives, images, user, category_name, promotional_materials, testimonials, faqs } = course;
   const authorName = user ? `${user.name} ${user.last_name || ''}`.trim() : 'Autor Destacado';
   const authorBio = user?.biography || 'Experto en su campo con años de experiencia impartiendo conocimientos transformadores.';
   const authorImage = user?.profile_photo_path || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(authorName) + '&background=random';
@@ -28,16 +28,16 @@ export function generateCourseTemplate(templateId, course, refUsername) {
   const ctaUrl = `/preregistro/${refUsername}?lado=automatico`;
   
   if (templateId === 'demo-light-clean') {
-    return generateLightClean(title, description, objectives, authorName, authorBio, authorImage, heroImage, ctaUrl, category_name);
+    return generateLightClean(title, description, objectives, authorName, authorBio, authorImage, heroImage, ctaUrl, category_name, testimonials, faqs);
   } else if (templateId === 'demo-minimal-impact') {
-    return generateMinimalImpact(title, description, objectives, authorName, authorBio, authorImage, heroImage, ctaUrl, category_name);
+    return generateMinimalImpact(title, description, objectives, authorName, authorBio, authorImage, heroImage, ctaUrl, category_name, testimonials, faqs);
   } else {
     // Default to Dark Pro
-    return generateDarkPro(title, description, objectives, authorName, authorBio, authorImage, heroImage, ctaUrl, category_name);
+    return generateDarkPro(title, description, objectives, authorName, authorBio, authorImage, heroImage, ctaUrl, category_name, testimonials, faqs);
   }
 }
 
-function generateDarkPro(title, description, objectives, authorName, authorBio, authorImage, heroImage, ctaUrl, categoryName) {
+function generateDarkPro(title, description, objectives, authorName, authorBio, authorImage, heroImage, ctaUrl, categoryName, testimonials, faqs) {
   const logoUrl = typeof window !== 'undefined' ? window.location.origin + '/images/logo-principal.png' : '/images/logo-principal.png';
   const faviconUrl = typeof window !== 'undefined' ? window.location.origin + '/images/logo/favicon.ico' : '/images/logo/favicon.ico';
   return `<!DOCTYPE html>
@@ -161,6 +161,18 @@ function generateDarkPro(title, description, objectives, authorName, authorBio, 
           <h2 class="text-2xl font-bold text-white">Lo que dicen otros</h2>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" data-repeatable-list="testimonios">
+          ${(testimonials && testimonials.length > 0) ? testimonials.map((t, index) => `
+            <div class="bg-card border border-border p-6 rounded-2xl flex flex-col justify-between" data-repeatable-item="testimonios">
+              <div>
+                <div class="text-5xl text-gray-700 font-serif leading-none mb-2">"</div>
+                <p class="text-sm text-gray-400 italic mb-6" data-editable="true" data-field="testimonio_${index+1}_texto">"${t.content || t.text || ''}"</p>
+              </div>
+              <div class="flex items-center gap-3 mt-auto">
+                <div class="w-8 h-8 rounded-full bg-blue-900/30 text-blue-400 flex items-center justify-center text-xs font-bold border border-blue-800/50">${(t.author_name || 'A').charAt(0).toUpperCase()}</div>
+                <span class="text-sm font-semibold text-white" data-editable="true" data-field="testimonio_${index+1}_autor">${t.author_name || ''}</span>
+              </div>
+            </div>
+          `).join('') : `
            <!-- Testimonio 1 -->
            <div class="bg-card border border-border p-6 rounded-2xl flex flex-col justify-between" data-repeatable-item="testimonios">
              <div>
@@ -183,6 +195,7 @@ function generateDarkPro(title, description, objectives, authorName, authorBio, 
                <span class="text-sm font-semibold text-white" data-editable="true" data-field="testimonio_2_autor">Esteban G.</span>
              </div>
            </div>
+          `}
         </div>
       </div>
       
@@ -190,27 +203,40 @@ function generateDarkPro(title, description, objectives, authorName, authorBio, 
       <div class="mb-10">
         <h2 class="text-2xl font-bold text-white mb-8">Preguntas frecuentes</h2>
         <div class="space-y-3" data-repeatable-list="faqs">
+          ${(faqs && faqs.length > 0) ? faqs.map((f, index) => `
+            <details class="group bg-card border border-border rounded-xl p-5 hover:border-gray-600 transition-colors cursor-pointer" data-repeatable-item="faqs">
+              <summary class="text-white text-sm font-semibold flex justify-between items-center list-none outline-none [&::-webkit-details-marker]:hidden">
+                <span data-editable="true" data-field="faq_${index+1}">${f.question || f.pregunta || ''}</span>
+                <svg class="w-5 h-5 text-gray-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+              </summary>
+              <p class="text-sm text-gray-400 mt-3" data-editable="true" data-field="faq_${index+1}_answer">${f.answer || f.respuesta || ''}</p>
+            </details>
+          `).join('') : `
           <!-- Item 1 -->
-          <div class="bg-card border border-border rounded-xl p-5 hover:border-gray-600 transition-colors cursor-pointer" data-repeatable-item="faqs">
-            <h4 class="text-white text-sm font-semibold flex justify-between items-center">
+          <details class="group bg-card border border-border rounded-xl p-5 hover:border-gray-600 transition-colors cursor-pointer" data-repeatable-item="faqs">
+            <summary class="text-white text-sm font-semibold flex justify-between items-center list-none outline-none [&::-webkit-details-marker]:hidden">
               <span data-editable="true" data-field="faq_1">¿Para quién es este evento?</span>
-              <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-            </h4>
-          </div>
+              <svg class="w-5 h-5 text-gray-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </summary>
+            <p class="text-sm text-gray-400 mt-3" data-editable="true" data-field="faq_1_answer">El evento es para emprendedores, estudiantes y cualquier persona interesada en mejorar sus habilidades de comunicación y ventas.</p>
+          </details>
           <!-- Item 2 -->
-          <div class="bg-card border border-border rounded-xl p-5 hover:border-gray-600 transition-colors cursor-pointer" data-repeatable-item="faqs">
-            <h4 class="text-white text-sm font-semibold flex justify-between items-center">
+          <details class="group bg-card border border-border rounded-xl p-5 hover:border-gray-600 transition-colors cursor-pointer" data-repeatable-item="faqs">
+            <summary class="text-white text-sm font-semibold flex justify-between items-center list-none outline-none [&::-webkit-details-marker]:hidden">
               <span data-editable="true" data-field="faq_2">No soy bueno hablando y me pongo muy nervioso. ¿Esto me servirá?</span>
-              <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-            </h4>
-          </div>
+              <svg class="w-5 h-5 text-gray-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </summary>
+            <p class="text-sm text-gray-400 mt-3" data-editable="true" data-field="faq_2_answer">¡Absolutamente! Nuestro método te enseña técnicas paso a paso para controlar los nervios y estructurar tu mensaje con confianza.</p>
+          </details>
           <!-- Item 3 -->
-          <div class="bg-card border border-border rounded-xl p-5 hover:border-gray-600 transition-colors cursor-pointer" data-repeatable-item="faqs">
-            <h4 class="text-white text-sm font-semibold flex justify-between items-center">
+          <details class="group bg-card border border-border rounded-xl p-5 hover:border-gray-600 transition-colors cursor-pointer" data-repeatable-item="faqs">
+            <summary class="text-white text-sm font-semibold flex justify-between items-center list-none outline-none [&::-webkit-details-marker]:hidden">
               <span data-editable="true" data-field="faq_3">¿El acceso es realmente gratuito?</span>
-              <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-            </h4>
-          </div>
+              <svg class="w-5 h-5 text-gray-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </summary>
+            <p class="text-sm text-gray-400 mt-3" data-editable="true" data-field="faq_3_answer">Sí, la sesión en vivo y todo el material práctico están 100% financiados por nuestros patrocinadores.</p>
+          </details>
+          `}
         </div>
       </div>
       
@@ -281,7 +307,7 @@ function generateDarkPro(title, description, objectives, authorName, authorBio, 
 </html>`;
 }
 
-function generateLightClean(title, description, objectives, authorName, authorBio, authorImage, heroImage, ctaUrl, categoryName) {
+function generateLightClean(title, description, objectives, authorName, authorBio, authorImage, heroImage, ctaUrl, categoryName, testimonials, faqs) {
   return `
 <!DOCTYPE html>
 <html lang="es">
@@ -362,7 +388,7 @@ function generateLightClean(title, description, objectives, authorName, authorBi
 </html>`;
 }
 
-function generateMinimalImpact(title, description, objectives, authorName, authorBio, authorImage, heroImage, ctaUrl, categoryName) {
+function generateMinimalImpact(title, description, objectives, authorName, authorBio, authorImage, heroImage, ctaUrl, categoryName, testimonials, faqs) {
   return `
 <!DOCTYPE html>
 <html lang="es">
