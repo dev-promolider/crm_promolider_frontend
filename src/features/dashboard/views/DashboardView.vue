@@ -94,9 +94,6 @@
               <option value="normal" style="background-color: var(--card-bg); color: var(--text-light);">Vista Normal</option>
               <option value="historical" style="background-color: var(--card-bg); color: var(--text-light);">Vista Histórica</option>
             </select>
-            <button class="stats-tab-btn" :style="isSimulated ? 'background-color: rgba(24, 214, 0, 0.12); border: 1px solid var(--primary-color); color: var(--primary-color);' : 'border: 1px dashed var(--text-light); color: var(--text-light);'" @click="isSimulated = !isSimulated">
-              {{ isSimulated ? 'Ver Real' : 'Simular Datos' }}
-            </button>
             <button class="stats-tab-btn" :class="{ active: activeStatsTab === 'classic' }" @click="activeStatsTab = 'classic'">Clásico</button>
             <button class="stats-tab-btn" :class="{ active: activeStatsTab === 'chart' }" @click="activeStatsTab = 'chart'">Gráfico</button>
           </div>
@@ -110,7 +107,7 @@
                   <TrendingUp :size="18" />
                 </div>
                 <div class="stat-info">
-                  <h4>$ {{ displayMonthly.expansion.toFixed(2) }}</h4>
+                  <h4>$ {{ (displayMonthly.fast_cash || 0).toFixed(2) }}</h4>
                   <p>Inicio Rápido</p>
                 </div>
               </div>
@@ -211,7 +208,7 @@
                 <circle :cx="radarPoints.p1.x" :cy="radarPoints.p1.y" r="2" fill="#fff" stroke="#18d600" stroke-width="1" style="transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);" />
                 <circle :cx="radarPoints.p2.x" :cy="radarPoints.p2.y" r="2" fill="#fff" stroke="#18d600" stroke-width="1" style="transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);" />
                 <circle :cx="radarPoints.p3.x" :cy="radarPoints.p3.y" r="2" fill="#fff" stroke="#18d600" stroke-width="1" style="transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);" />
-                <text x="50" y="10" text-anchor="middle" class="radar-label" font-size="4">Expansión ($ {{ displayMonthly.expansion.toFixed(0) }})</text>
+                <text x="50" y="10" text-anchor="middle" class="radar-label" font-size="4">Inicio ($ {{ (displayMonthly.fast_cash || 0).toFixed(0) }})</text>
                 <text x="90" y="73" text-anchor="end" class="radar-label" font-size="4">Binario ($ {{ displayMonthly.binary.toFixed(0) }})</text>
                 <text x="10" y="73" text-anchor="start" class="radar-label" font-size="4">Gen. ($ {{ displayMonthly.generational.toFixed(0) }})</text>
               </svg>
@@ -643,38 +640,24 @@ const filteredDirects = computed(() => {
 });
 
 const activeStatsTab = ref('classic');
-const isSimulated = ref(false);
 const timeframe = ref('normal');
 
 const displayMonthly = computed(() => {
-  if (isSimulated.value) {
-    return {
-      expansion: 1250,
-      binary: 850,
-      generational: 450
-    };
-  }
-  return widgetsData.value.monthly_bonuses || { expansion: 0, binary: 0, generational: 0 };
+  return widgetsData.value.monthly_bonuses || { fast_cash: 0, expansion: 0, binary: 0, generational: 0 };
 });
 
 const displayCumulative = computed(() => {
-  if (isSimulated.value) {
-    return {
-      fast_cash: 620,
-      producer: 1100,
-      course_sale: 350
-    };
-  }
   return widgetsData.value.cumulative_bonuses || { fast_cash: 0, producer: 0, course_sale: 0 };
 });
 
 const radarPoints = computed(() => {
   const b = displayMonthly.value;
-  const max = Math.max(b.expansion, b.binary, b.generational, 1); // evitamos dividir por cero
-  
+  const inicioRapido = b.fast_cash || 0;
+  const max = Math.max(inicioRapido, b.binary, b.generational, 1); // evitamos dividir por cero
+
   // Ratios
   // Un valor mínimo de 0.08 asegura que en cero se dibuje un pequeño triángulo circular
-  const r1 = Math.max(0.08, b.expansion / max);
+  const r1 = Math.max(0.08, inicioRapido / max);
   const r2 = Math.max(0.08, b.binary / max);
   const r3 = Math.max(0.08, b.generational / max);
 

@@ -47,7 +47,23 @@ const PERFILES = {
  * cuenta el panel abría con el perfil de la sesión anterior.
  */
 const perfil = ref(null);
-const selectedLeg = ref('izquierda');
+
+/**
+ * La pierna arranca en la que el usuario tiene guardada, no siempre en «Izquierda».
+ * Antes se inicializaba fija: quien tuviera configurada la derecha veía izquierda al
+ * volver a entrar y, si generaba un enlace sin tocar el selector, se le sobrescribía la
+ * configuración y el invitado caía al lado contrario del que había elegido.
+ */
+const legGuardada = () => {
+  try {
+    const guardado = JSON.parse(localStorage.getItem('auth_user') || 'null');
+    return Number(guardado?.position) === 1 ? 'derecha' : 'izquierda';
+  } catch (e) {
+    return 'izquierda';
+  }
+};
+
+const selectedLeg = ref(legGuardada());
 const timeRemaining = ref(0);
 let timerInterval = null;
 
@@ -64,6 +80,8 @@ onMounted(async () => {
   Object.keys(localStorage)
     .filter(clave => clave.startsWith('registro:perfil'))
     .forEach(clave => localStorage.removeItem(clave));
+
+  selectedLeg.value = legGuardada();
 
   await loadData();
 });
