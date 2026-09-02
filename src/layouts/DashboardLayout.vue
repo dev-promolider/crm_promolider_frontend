@@ -601,6 +601,17 @@
               </small>
             </div>
             
+            <div class="opc-total-section mt-3" v-if="opcPricePerQuota !== null">
+              <div class="opc-total-row">
+                <span>Precio por cuota</span>
+                <strong>$ {{ opcPricePerQuota.toFixed(2) }}</strong>
+              </div>
+              <div class="opc-total-row opc-total-row--main">
+                <span>Total a pagar</span>
+                <strong>$ {{ (opcPricePerQuota * cuotasToPay).toFixed(2) }}</strong>
+              </div>
+            </div>
+
             <div class="opc-payment-method mt-4">
               <label>Método de Pago</label>
               <select v-model="opcPaymentMethod" class="form-control">
@@ -1040,6 +1051,9 @@ const isOpcActive = computed(() => {
   // --- OPC Modal State ---
   const isOpcModalOpen = ref(false);
   const cuotasToPay = ref(1);
+  // Precio de la cuota de OPC. La ventana no lo mostraba en ningún momento: se elegían
+  // cuotas y método de pago y se confirmaba sin saber cuánto se iba a cobrar.
+  const opcPricePerQuota = ref(null);
   const isOpcLoading = ref(false);
   const opcError = ref('');
   const opcPaymentMethod = ref('openpay');
@@ -1102,10 +1116,21 @@ const updateCountdown = () => {
   timeLeft.value = calculateTimeLeft();
 };
 
+const loadOpcPrice = async () => {
+  try {
+    const { data } = await api.get('/opc/summary');
+    opcPricePerQuota.value = Number(data?.data?.price_per_quota ?? 0);
+  } catch (error) {
+    opcPricePerQuota.value = null;
+  }
+};
+
 const openOpcModal = () => {
   cuotasToPay.value = Math.min(1, maxOpcCuotas.value);
   opcError.value = '';
   opcPaymentMethod.value = 'openpay';
+  opcPricePerQuota.value = null;
+  loadOpcPrice();
   isOpcModalOpen.value = true;
   updateCountdown();
   if (countdownInterval) clearInterval(countdownInterval);
@@ -1819,6 +1844,38 @@ onBeforeUnmount(() => {
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+.opc-total-section {
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  background: var(--main-bg);
+}
+
+.opc-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  font-size: 0.9rem;
+  color: var(--text-light);
+}
+
+.opc-total-row + .opc-total-row {
+  margin-top: 0.4rem;
+  padding-top: 0.4rem;
+  border-top: 1px dashed var(--border-color);
+}
+
+.opc-total-row--main {
+  font-size: 1rem;
+  color: var(--text-main);
+}
+
+.opc-total-row--main strong {
+  font-size: 1.15rem;
+  color: var(--primary-color);
 }
 
 .opc-payment-method select { width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--main-bg); color: var(--text-main); font-size: 1rem; }
