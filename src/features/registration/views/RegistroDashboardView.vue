@@ -1,13 +1,18 @@
 <script setup>
 import { ref, onMounted, computed, onUnmounted, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-vue-next';
 import { useRegistroDashboardStore } from '../stores/registroDashboardStore';
 
 const store = useRegistroDashboardStore();
+const router = useRouter();
 
 /**
- * Los dos perfiles que se pueden invitar. `rol` es el nombre del rol en la base (Spatie),
+ * Los perfiles que se pueden invitar. `rol` es el nombre del rol en la base (Spatie),
  * y `param` viaja en el enlace para que el formulario público sepa qué pedir.
+ *
+ * El consumidor es distinto a los otros dos: no se invita con un enlace de patrocinio
+ * sino desde el marketplace, eligiendo un curso, así que no tiene ni `rol` ni `param`.
  */
 const PERFILES = {
   productor: {
@@ -36,6 +41,20 @@ const PERFILES = {
       'Se coloca en la pierna que elijas y empieza a construir tu estructura.',
       'Su membresía te deja comisión directa desde el primer día.',
       'Lo que compren él y su equipo alimenta tu corte binario.'
+    ]
+  },
+  consumidor: {
+    id: 'consumidor',
+    rol: null,
+    param: null,
+    titulo: 'Consumidor',
+    resumen: 'Compra cursos del marketplace y puede convertirse en distribuidor.',
+    registro: 'Se invita desde el marketplace, con un curso',
+    gancho: 'Convierte compradores en parte de tu red',
+    beneficios: [
+      'Entra comprando un curso y puede registrarse gratis o con membresía.',
+      'Queda en tu lista de directos con su curso y su membresía a la vista.',
+      'Si más adelante compra una membresía, pasa a contar en tu red.'
     ]
   }
 };
@@ -190,8 +209,21 @@ const backendEnviaRoles = computed(() =>
   store.directs.some(row => Array.isArray(row.roles))
 );
 
+// El backend nuevo manda `perfil` ya resuelto, que es lo fiable: los consumidores
+// tienen el rol 'Producer' asignado en la base, así que filtrando por rol saldrían
+// mezclados con los productores. Si la respuesta no lo trae, se cae al filtro por rol.
+const backendEnviaPerfil = computed(() =>
+  store.directs.some(row => typeof row.perfil === 'string')
+);
+
 const directosDelPerfil = computed(() => {
-  if (!perfilActual.value || !backendEnviaRoles.value) return store.directs;
+  if (!perfilActual.value) return store.directs;
+
+  if (backendEnviaPerfil.value) {
+    return store.directs.filter(row => row.perfil === perfilActual.value.id);
+  }
+
+  if (!backendEnviaRoles.value || !perfilActual.value.rol) return store.directs;
   return store.directs.filter(row => (row.roles || []).includes(perfilActual.value.rol));
 });
 
@@ -236,6 +268,13 @@ const irA = (destino) => {
 };
 
 const esProductor = computed(() => perfil.value === 'productor');
+const esConsumidor = computed(() => perfil.value === 'consumidor');
+
+// El consumidor no se invita con un enlace de patrocinio: se le manda un curso del
+// marketplace y el registro sale de ahí.
+const irAlMarketplace = () => {
+  router.push({ name: 'marketing-marketplace' });
+};
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '—';
@@ -313,7 +352,26 @@ const getInitials = (nombres, apellidos) => {
         </p>
       </div>
 
-      <div class="widgets-grid">
+      <!-- Consumidor: no hay enlace de patrocinio ni elección de pierna -->
+      <div v-if="esConsumidor" class="card consumidor-panel">
+        <div class="consumidor-leyenda">
+          <h3 class="card-title">Cómo entra un consumidor</h3>
+          <p>
+            Al consumidor se le invita <strong>desde el marketplace</strong>: eliges un curso,
+            generas su enlace y se lo compartes. Al comprarlo puede registrarse gratis o llevarse
+            una membresía.
+          </p>
+          <p>
+            Aquí no eliges pierna. <strong>El sistema lo coloca automáticamente en la pierna con
+            menos puntos</strong>, para que tu estructura se compense sola.
+          </p>
+        </div>
+        <button type="button" class="primary-btn consumidor-invitar" @click="irAlMarketplace">
+          <span class="btn-content">Invitar consumidor →</span>
+        </button>
+      </div>
+
+      <div v-else class="widgets-grid">
 
         <div class="card control-card">
           <div class="card-header">
@@ -372,7 +430,7 @@ const getInitials = (nombres, apellidos) => {
       </div>
 
       <!-- Enlace generado -->
-      <div v-if="hasActiveLink" class="card">
+      <div v-if="hasActiveLink && !esConsumidor" class="card">
         <div class="card-header link-header">
           <div>
             <h3 class="card-title accent">Tu enlace para invitar {{ perfilActual.titulo.toLowerCase() }}es</h3>
@@ -424,19 +482,23 @@ const getInitials = (nombres, apellidos) => {
           </template>
           <template v-else>
             <h4>Todavía no tienes {{ perfilActual.titulo.toLowerCase() }}es directos.</h4>
-            <p>Genera un enlace y compártelo para empezar.</p>
+            <p v-if="esConsumidor">Invita desde el marketplace compartiendo un curso.</p>
+            <p v-else>Genera un enlace y compártelo para empezar.</p>
           </template>
         </div>
 
         <div v-else class="custom-table-wrapper">
-          <table class="custom-table" :class="esProductor ? 'tabla-productor' : 'tabla-distribuidor'">
+          <table class="custom-table" :class="esConsumidor ? 'tabla-consumidor' : (esProductor ? 'tabla-productor' : 'tabla-distribuidor')">
             <colgroup>
               <col class="col-persona" />
               <col class="col-apellidos" />
-              <col v-if="!esProductor" class="col-posicion" />
+              <col v-if="esConsumidor" class="col-estatus" />
+              <col v-if="esConsumidor" class="col-curso" />
+              <col v-if="esConsumidor" class="col-membresia" />
+              <col v-if="!esProductor && !esConsumidor" class="col-posicion" />
               <col class="col-telefono" />
               <col class="col-correo" />
-              <col v-if="!esProductor" class="col-invitados" />
+              <col v-if="!esProductor && !esConsumidor" class="col-invitados" />
               <col v-if="esProductor" class="col-cursos" />
               <col v-if="esProductor" class="col-vendido" />
               <col class="col-fecha" />
@@ -445,10 +507,13 @@ const getInitials = (nombres, apellidos) => {
               <tr>
                 <th>Nombre</th>
                 <th>Apellidos</th>
-                <th v-if="!esProductor" class="center">Posición</th>
+                <th v-if="esConsumidor" class="center">Estatus</th>
+                <th v-if="esConsumidor">Curso comprado</th>
+                <th v-if="esConsumidor">Membresía</th>
+                <th v-if="!esProductor && !esConsumidor" class="center">Posición</th>
                 <th>Teléfono</th>
                 <th>Correo</th>
-                <th v-if="!esProductor" class="center">Invitados</th>
+                <th v-if="!esProductor && !esConsumidor" class="center">Invitados</th>
                 <th v-if="esProductor" class="center">Cursos</th>
                 <th v-if="esProductor">Más vendido</th>
                 <th class="center">Registro</th>
@@ -463,7 +528,16 @@ const getInitials = (nombres, apellidos) => {
                   </div>
                 </td>
                 <td class="celda-texto">{{ row.apellidos || '—' }}</td>
-                <td v-if="!esProductor" class="center">
+                <td v-if="esConsumidor" class="center">
+                  <span class="badge" :class="row.membresia_activa ? 'badge-green' : 'badge-orange'">
+                    {{ row.membresia_activa ? 'Activo' : 'Registrado' }}
+                  </span>
+                </td>
+                <td v-if="esConsumidor" class="celda-texto" :title="row.curso_comprado?.titulo || ''">
+                  {{ row.curso_comprado?.titulo || '—' }}
+                </td>
+                <td v-if="esConsumidor" class="celda-texto">{{ row.membresia || '—' }}</td>
+                <td v-if="!esProductor && !esConsumidor" class="center">
                   <span v-if="row.lado" class="badge" :class="row.lado === 'derecha' ? 'badge-blue' : 'badge-green'">
                     {{ row.lado === 'derecha' ? 'Derecha' : 'Izquierda' }}
                   </span>
@@ -477,7 +551,7 @@ const getInitials = (nombres, apellidos) => {
                   <span v-if="row.correo" class="contact-link mail" :title="row.correo">{{ row.correo }}</span>
                   <span v-else class="vacio">—</span>
                 </td>
-                <td v-if="!esProductor" class="center">
+                <td v-if="!esProductor && !esConsumidor" class="center">
                   <span class="conteo" :class="{ cero: !row.invitados }">{{ row.invitados ?? 0 }}</span>
                 </td>
                 <td v-if="esProductor" class="center">
@@ -837,6 +911,37 @@ body.dark-theme .custom-input { background-color: rgba(255, 255, 255, 0.03); }
 .col-telefono { width: 13%; }
 .col-correo   { width: 21%; }
 .col-invitados { width: 9%; }
+.col-estatus { width: 11%; }
+.col-curso { width: 20%; }
+.col-membresia { width: 14%; }
+
+.consumidor-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+}
+
+.consumidor-leyenda {
+  flex: 1 1 420px;
+  min-width: 0;
+}
+
+.consumidor-leyenda p {
+  margin: 0.5rem 0 0;
+  color: var(--text-light);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.consumidor-invitar {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 768px) {
+  .consumidor-invitar { width: 100%; }
+}
 .col-cursos   { width: 8%; }
 .col-vendido  { width: 18%; }
 .col-fecha    { width: 11%; }
